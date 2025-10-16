@@ -98,7 +98,7 @@ DATABASES = {
         'HOST': os.environ.get("SUPABASE_HOST"),
         'PORT': '5432',
         'OPTIONS': {
-            'sslmode': 'quire',
+            'sslmode': 'require',
         },
     }
 }
