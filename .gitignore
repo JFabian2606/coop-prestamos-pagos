@@ -40,3 +40,15 @@ entorno-desarrollo/scripts/__pycache__/
 *.log
 .DS_Store
 Thumbs.db
+
+# Secrets
+*.crt
+*.env
+frontend/.env
+backend/.env
+
+# Secrets
+*.crt
+*.env
+frontend/.env
+backend/.env
