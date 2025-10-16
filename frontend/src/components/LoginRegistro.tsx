@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
+import "../styles/autenticacion.css";
 
 type ModoVista = "iniciar" | "registrar";
 
