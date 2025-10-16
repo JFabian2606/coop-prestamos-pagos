@@ -99,7 +99,6 @@ DATABASES = {
         'PORT': '5432',
         'OPTIONS': {
             'sslmode': 'verify-full',
-            'sslrootcert': os.path.join(BASE_DIR, 'prod-ca-2021.crt'),
         },
     }
 }
