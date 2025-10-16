@@ -31,7 +31,6 @@ function App() {
   if (!session) {
     return (
       <div style={{ maxWidth: 920, margin: "2rem auto" }}>
-        <h1>COOPRESTAMOS.</h1>
         <LoginRegistro /> {/* UI propia con Supabase */}
       </div>
     );

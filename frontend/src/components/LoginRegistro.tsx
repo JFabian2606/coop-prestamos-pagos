@@ -136,7 +136,7 @@ export default function LoginRegistro() {
       </div>
 
       {/* Toggle / Mensajes laterales */}
-      <div className="toggle-container" aria-hidden>
+      <div className="toggle-container" aria-hidden={true}>
         <div className="toggle">
           <div className="toggle-panel toggle-left">
             <h1>¡Bienvenido de nuevo!</h1>
