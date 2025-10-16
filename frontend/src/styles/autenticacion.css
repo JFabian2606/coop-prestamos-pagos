@@ -75,6 +75,14 @@ body{
     height: 100%;
 }
 
+/* Logo en la parte superior de los formularios */
+.form-title-logo{
+    width: 220px;
+    height: auto;
+    display: block;
+    margin: 12px 0 16px;
+}
+
 .container input{
     background-color: #eee;
     border: none;

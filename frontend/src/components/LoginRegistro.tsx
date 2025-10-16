@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import "../styles/autenticacion.css";
+import logo from "../assets/logo-cooprestamos-vector.svg";
 
 type ModoVista = "iniciar" | "registrar";
 
@@ -36,7 +37,7 @@ export default function LoginRegistro() {
       {/* Panel de Registro */}
       <div className="form-container sign-up">
         <form onSubmit={manejarEnvioRegistro} aria-label="Formulario de registro">
-          <h1>Crear cuenta</h1>
+          <img src={logo} alt="Coop Préstamos" className="form-title-logo" />
 
           <div className="social-icons" aria-label="Ingresar con redes">
             <a href="#" className="icon" aria-label="Google">
@@ -91,7 +92,7 @@ export default function LoginRegistro() {
       {/* Panel de Inicio de Sesión */}
       <div className="form-container sign-in">
         <form onSubmit={manejarEnvioInicioSesion} aria-label="Formulario de inicio de sesión">
-          <h1>Iniciar sesión</h1>
+          <img src={logo} alt="Coop Préstamos" className="form-title-logo" />
 
           <div className="social-icons" aria-label="Ingresar con redes">
             <a href="#" className="icon" aria-label="Google">
