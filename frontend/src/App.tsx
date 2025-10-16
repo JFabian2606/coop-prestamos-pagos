@@ -26,7 +26,7 @@ function App() {
   if (!session) {
     return (
       <div style={{ maxWidth: 420, margin: '2rem auto' }}>
-        <h1>COOPRESTAMOS</h1>
+        <h1>COOPRESTAMOS.</h1>
         <Auth
           supabaseClient={supabase}
           appearance={{ theme: ThemeSupa }}
