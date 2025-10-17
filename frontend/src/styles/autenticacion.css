@@ -223,3 +223,10 @@ body{
 .container.active .toggle-right{
     transform: translateX(200%);
 }
+
+button:hover{
+    border-color: #D9D21F;
+    background: linear-gradient(to right, #66B7B1, #259990);
+    color: #D9D21F;
+    transition: all 0.3s ease-in-out;
+}

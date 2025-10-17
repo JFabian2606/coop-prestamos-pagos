@@ -154,7 +154,7 @@ export default function LoginRegistro() {
           </div>
           <div className="toggle-panel toggle-right">
             <h1>¡Hola!</h1>
-            <p>Regístrate con tus datos personales para empezar a usar el sitio.</p>
+            <p>Regístrate con tus datos personales para empezar a ser parte de la familia COOPRESTAMOS.</p>
             <button
               className="hidden"
               id="btnIrRegistrar"
