@@ -224,9 +224,34 @@ body{
     transform: translateX(200%);
 }
 
-button:hover{
-    border-color: #D9D21F;
-    background: linear-gradient(to right, #66B7B1, #259990);
-    color: #D9D21F;
-    transition: all 0.3s ease-in-out;
+.container button:hover,
+.container button:active {
+  border-color: #D9D21F;
+  background: linear-gradient(to right, #66B7B1, #259990);
+  color: #D9D21F;
 }
+
+.container button:active {
+  filter: brightness(0.95);
+  transform: translateY(1px);
+  transition-duration: 80ms;
+}
+
+.container button[type="submit"]:hover,
+.container button[type="submit"]:focus-visible {
+  border-color: #D9D21F;
+  background: linear-gradient(to right, #66B7B1, #259990);
+  color: #D9D21F;
+}
+
+
+.container button[type="submit"]:active {
+  transform: translateY(1px);
+  filter: brightness(0.96);
+}
+
+.container button[type="submit"]:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+

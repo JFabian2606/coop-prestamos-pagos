@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.http import HttpResponse, JsonResponse
-from django.urls import path
+from django.urls import path, include
 
 
 def healthz(_request):
@@ -30,4 +30,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('healthz', healthz),
     path('api/ping/', api_ping),
+    path('api/', include('socios.urls')),
 ]

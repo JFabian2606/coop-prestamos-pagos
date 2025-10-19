@@ -2,13 +2,14 @@ import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import "../styles/autenticacion.css";
 import logo from "../assets/logo-cooprestamos-vector.svg";
+import { supabase } from "../supabaseClient";
+import { api } from "../api";
 
 type ModoVista = "iniciar" | "registrar";
 
 export default function LoginRegistro() {
   const [modoVista, setModoVista] = useState<ModoVista>("iniciar");
 
-  // Estado controlado (solo demostrativo; conéctalo a tu API)
   const [correo, setCorreo] = useState<string>("");
   const [contrasena, setContrasena] = useState<string>("");
   const [nombreCompleto, setNombreCompleto] = useState<string>("");
@@ -20,16 +21,53 @@ export default function LoginRegistro() {
 
   const manejarEnvioInicioSesion = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // TODO: integrar con tu servicio de autenticación
-    // datos: { correo, contrasena }
-    console.log("Iniciar sesión =>", { correo, contrasena });
+    (async () => {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: correo,
+        password: contrasena,
+      });
+      if (error) {
+        alert(error.message);
+        return;
+      }
+      try {
+        const me = await api.get("/auth/me");
+        console.log("Perfil socio:", me.data);
+      } catch (err: any) {
+        console.warn("Perfil de socio no encontrado todavía", err?.response?.data || err);
+      }
+    })();
   };
 
   const manejarEnvioRegistro = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // TODO: integrar con tu servicio de registro
-    // datos: { nombreCompleto, correo, contrasena }
-    console.log("Registrar =>", { nombreCompleto, correo, contrasena });
+    (async () => {
+      const { data, error } = await supabase.auth.signUp({
+        email: correo,
+        password: contrasena,
+        options: { data: { fullname: nombreCompleto } },
+      });
+      if (error) {
+        alert(error.message);
+        return;
+      }
+      if (!data.session) {
+        alert("Revisa tu correo para confirmar la cuenta.");
+        return;
+      }
+      try {
+        const resp = await api.post("/socios/profile", {
+          nombreCompleto,
+          documento: "",
+          telefono: "",
+          direccion: "",
+        });
+        console.log("Perfil creado:", resp.data);
+        setModoVista("iniciar");
+      } catch (err: any) {
+        alert("No se pudo crear el perfil: " + (err?.response?.data?.detail || ""));
+      }
+    })();
   };
 
   return (
@@ -170,3 +208,4 @@ export default function LoginRegistro() {
     </div>
   );
 }
+

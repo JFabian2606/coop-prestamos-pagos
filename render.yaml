@@ -26,3 +26,5 @@ services:
         sync: false
       - key: ALLOWED_HOSTS
         sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
