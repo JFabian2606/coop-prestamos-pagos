@@ -30,5 +30,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('healthz', healthz),
     path('api/ping/', api_ping),
-    path('api/', include('socios.urls')),
+    path('api/', include('apps.socios.urls')),
 ]

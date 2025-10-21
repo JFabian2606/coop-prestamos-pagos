@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'rest_framework',
-    'socios',
+    'apps.socios',
 ]
 
 MIDDLEWARE = [
@@ -150,7 +150,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # DRF configuration
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'socios.auth.SupabaseAuthentication',
+        'apps.socios.auth.SupabaseAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ),
 }
