@@ -1,0 +1,9 @@
+Cordial salduo,
+
+Le cuento que veo varios errores en los diagramas empezando por los Entidad- Relacion y los de Clsaes, Los nombres de los campos, la definición en las entidad considerando los atributos y caracteristicas 
+Esta ingresando campos que son calculados por fechas y replica muchos los valores de las entidades como llaves primarias un caso ese le del socio y referencia, se nota que esta realizando varios 
+proesos en uno solicitud de prestamos, aprobacion de prestamo y cartera, debe definir muy bien la logica del sistema para no crear duplicidad.
+
+Recomendación reunnirnos para entender la idea del proyecto y realizarle mejores sugerencias de diseño.
+
+Feliz dia
