@@ -92,6 +92,22 @@ body{
     border-radius: 8px;
     width: 100%;
     outline: none;
+    /* Color de texto visible en inputs */
+    color: #1f2937; /* gris muy oscuro */
+}
+
+/* Color de placeholder más legible */
+.container input::placeholder {
+    color: #6b7280; /* gris medio */
+    opacity: 1; /* que no se aclare demasiado */
+}
+
+/* Compatibilidad con algunos navegadores antiguos */
+.container input::-ms-input-placeholder { /* Edge antiguo */
+    color: #6b7280;
+}
+.container input::-webkit-input-placeholder { /* Safari/Chrome antiguos */
+    color: #6b7280;
 }
 
 .form-container{
