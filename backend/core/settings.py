@@ -11,10 +11,11 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+import sys
 
 from dotenv import load_dotenv
 load_dotenv()
-import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -43,6 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'rest_framework',
+    'drf_spectacular',
     'apps.socios',
 ]
 
@@ -90,19 +92,30 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': os.environ.get('SUPABASE_USER'),
-        'PASSWORD': os.environ.get("SUPABASE_PASSWORD"),
-        'HOST': os.environ.get("SUPABASE_HOST"),
-        'PORT': '5432',
-        'OPTIONS': {
-            'sslmode': 'require',
-        },
+SUPABASE_HOST = os.environ.get("SUPABASE_HOST")
+RUNNING_TESTS = 'test' in sys.argv
+
+if not SUPABASE_HOST or RUNNING_TESTS:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'postgres',
+            'USER': os.environ.get('SUPABASE_USER'),
+            'PASSWORD': os.environ.get("SUPABASE_PASSWORD"),
+            'HOST': SUPABASE_HOST,
+            'PORT': '5432',
+            'OPTIONS': {
+                'sslmode': 'require',
+            },
+        }
+    }
 
 
 # Password validation
@@ -153,4 +166,12 @@ REST_FRAMEWORK = {
         'apps.socios.auth.SupabaseAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Cooperativa - API socios',
+    'DESCRIPTION': 'Gestión de socios, pagos y monitoreo para el panel administrativo.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
 }

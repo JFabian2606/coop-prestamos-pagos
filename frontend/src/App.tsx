@@ -4,10 +4,11 @@ import { supabase } from "./supabaseClient";
 import { api } from "./api";
 import { type Session } from "@supabase/supabase-js";
 import LoginRegistro from "./components/LoginRegistro";
+import SociosViewer from "./components/SociosViewer";
 
 function App() {
   const [session, setSession] = useState<Session | null>(null);
-  const [apiResult, setApiResult] = useState<string | null>(null); // <-- mover arriba
+  const [apiResult, setApiResult] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -31,43 +32,44 @@ function App() {
   if (!session) {
     return (
       <div style={{ maxWidth: 920, margin: "2rem auto" }}>
-        <LoginRegistro /> {/* UI propia con Supabase */}
+        <LoginRegistro />
       </div>
     );
   }
 
   return (
-    <div style={{ maxWidth: 600, margin: "2rem auto" }}>
-      <h1>Bienvenido</h1>
-      <p>
-        Sesión iniciada como <strong>{session.user.email}</strong>
-      </p>
+    <div className="dashboard">
+      <header className="dashboard__header">
+        <div>
+          <p className="eyebrow">Panel seguro</p>
+          <h1>Administración de socios</h1>
+          <p className="subtitle">
+            Sesión iniciada como <strong>{session.user.email}</strong>. Todas las operaciones quedan auditadas.
+          </p>
+        </div>
+        <div className="dashboard__cta">
+          <button
+            className="ghost"
+            onClick={async () => {
+              try {
+                const { data } = await api.get("/api/ping/");
+                setApiResult(JSON.stringify(data, null, 2));
+              } catch (e: any) {
+                setApiResult(e?.message ?? "Error al llamar API");
+              }
+            }}
+          >
+            Probar API
+          </button>
+          <button className="danger" onClick={() => supabase.auth.signOut()}>
+            Cerrar sesión
+          </button>
+        </div>
+      </header>
 
-      <div style={{ display: "flex", gap: 8 }}>
-        <button onClick={() => supabase.auth.signOut()}>Cerrar sesión</button>
-        <button
-          onClick={async () => {
-            try {
-              const { data } = await api.get("api/ping/");
-              setApiResult(JSON.stringify(data, null, 2));
-            } catch (e: any) {
-              setApiResult(e?.message ?? "Error al llamar API");
-            }
-          }}
-        >
-          Probar API
-        </button>
-      </div>
+      {apiResult && <pre className="api-result">{apiResult}</pre>}
 
-      {apiResult && (
-        <pre style={{ marginTop: 16, background: "#f8f8f8", padding: 12 }}>
-          {apiResult}
-        </pre>
-      )}
-
-      <div style={{ marginTop: 16, fontSize: 12, color: "#666" }}>
-        <p>Token (corto): {session?.access_token?.slice(0, 12)}…</p>
-      </div>
+      <SociosViewer />
     </div>
   );
 }
