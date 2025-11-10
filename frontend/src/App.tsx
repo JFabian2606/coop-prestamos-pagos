@@ -52,7 +52,7 @@ function App() {
             className="ghost"
             onClick={async () => {
               try {
-                const { data } = await api.get("/api/ping/");
+                const { data } = await api.get("ping/");
                 setApiResult(JSON.stringify(data, null, 2));
               } catch (e: any) {
                 setApiResult(e?.message ?? "Error al llamar API");

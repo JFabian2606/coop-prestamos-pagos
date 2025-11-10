@@ -31,7 +31,7 @@ export default function SociosViewer() {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await api.get<SocioDto[]>("/api/socios");
+      const { data } = await api.get<SocioDto[]>("socios");
       setSocios(data);
       if (data.length && !seleccionado) {
         setSeleccionado(data[0].id);

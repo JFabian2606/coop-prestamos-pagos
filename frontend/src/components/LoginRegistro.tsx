@@ -31,7 +31,7 @@ export default function LoginRegistro() {
         return;
       }
       try {
-        const me = await api.get("/api/auth/me");
+        const me = await api.get("auth/me");
         console.log("Perfil socio:", me.data);
       } catch (err: any) {
         console.warn("Perfil de socio no encontrado todavía", err?.response?.data || err);
@@ -56,7 +56,7 @@ export default function LoginRegistro() {
         return;
       }
       try {
-        const resp = await api.post("/api/socios/profile", {
+        const resp = await api.post("socios/profile", {
           nombreCompleto,
           documento: "",
           telefono: "",
