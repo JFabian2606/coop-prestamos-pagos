@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { AxiosError, isAxiosError } from "axios";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api";
 
 export type SocioDto = {
@@ -26,28 +27,65 @@ export default function SociosViewer() {
   const [error, setError] = useState<string | null>(null);
   const [filtro, setFiltro] = useState<"todos" | SocioDto["estado"]>("todos");
   const [seleccionado, setSeleccionado] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
-  const fetchSocios = async () => {
+  const fetchSocios = useCallback(async () => {
+    if (abortRef.current) {
+      abortRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortRef.current = controller;
     setLoading(true);
     setError(null);
     try {
-      const { data } = await api.get<SocioDto[]>("socios");
+      const { data } = await api.get<SocioDto[]>("socios", { signal: controller.signal });
       setSocios(data);
-      if (data.length && !seleccionado) {
-        setSeleccionado(data[0].id);
+      setSeleccionado((prev) => {
+        if (prev && data.some((s) => s.id === prev)) {
+          return prev;
+        }
+        return data[0]?.id ?? null;
+      });
+    } catch (err) {
+      if (controller.signal.aborted) {
+        return;
       }
-    } catch (err: any) {
-      const detail = err?.response?.data?.detail ?? "No se pudo cargar la lista de socios";
+      if (isAxiosError(err) && err.code === AxiosError.ERR_CANCELED) {
+        return;
+      }
+
+      let detail = "No se pudo cargar la lista de socios";
+      if (isAxiosError(err)) {
+        const status = err.response?.status;
+        if (status === 401) {
+          detail = "Tu sesion expiro. Ingresa nuevamente.";
+          setSocios([]);
+          setSeleccionado(null);
+        } else if (status === 403) {
+          detail = "Tu usuario no tiene permisos para administrar socios.";
+          setSocios([]);
+          setSeleccionado(null);
+        } else {
+          detail = (err.response?.data as any)?.detail ?? detail;
+        }
+      }
       setError(detail);
     } finally {
-      setLoading(false);
+      if (abortRef.current === controller) {
+        abortRef.current = null;
+      }
+      if (!controller.signal.aborted) {
+        setLoading(false);
+      }
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchSocios();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    void fetchSocios();
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, [fetchSocios]);
 
   const sociosFiltrados = useMemo(() => {
     if (filtro === "todos") return socios;
@@ -81,7 +119,7 @@ export default function SociosViewer() {
               <option value="suspendido">Suspendidos</option>
             </select>
           </label>
-          <button className="ghost" onClick={fetchSocios} disabled={loading}>
+          <button className="ghost" onClick={() => void fetchSocios()} disabled={loading}>
             {loading ? "Actualizando..." : "Actualizar"}
           </button>
         </div>
@@ -94,7 +132,7 @@ export default function SociosViewer() {
           <div className="socios-table__head">
             <span>Nombre</span>
             <span>Documento</span>
-            <span>Teléfono</span>
+            <span>Telefono</span>
             <span>Estado</span>
           </div>
           <div className="socios-table__body">
@@ -111,8 +149,8 @@ export default function SociosViewer() {
                   <strong>{socio.nombre_completo}</strong>
                   <small>{socio.email}</small>
                 </span>
-                <span>{socio.documento ?? "—"}</span>
-                <span>{socio.telefono ?? "—"}</span>
+                <span>{socio.documento ?? "-"}</span>
+                <span>{socio.telefono ?? "-"}</span>
                 <span className={`estado-pill estado-pill--${socio.estado}`}>{estadoLabels[socio.estado]}</span>
               </button>
             ))}
@@ -127,9 +165,9 @@ export default function SociosViewer() {
               <dl>
                 <dt>Documento</dt>
                 <dd>{socioActivo.documento || "No registrado"}</dd>
-                <dt>Teléfono</dt>
+                <dt>Telefono</dt>
                 <dd>{socioActivo.telefono || "No registrado"}</dd>
-                <dt>Dirección</dt>
+                <dt>Direccion</dt>
                 <dd>{socioActivo.direccion || "No registrada"}</dd>
                 <dt>Estado</dt>
                 <dd>
@@ -141,7 +179,7 @@ export default function SociosViewer() {
                 <dd>
                   <code>{JSON.stringify(socioActivo.datos_fiscales ?? {}, null, 2)}</code>
                 </dd>
-                <dt>Última actualización</dt>
+                <dt>Ultima actualizacion</dt>
                 <dd>{new Date(socioActivo.updated_at).toLocaleString()}</dd>
               </dl>
             </>

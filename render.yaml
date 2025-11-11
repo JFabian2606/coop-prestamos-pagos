@@ -16,6 +16,8 @@ services:
         value: 3.12.7
       - key: DJANGO_SETTINGS_MODULE
         value: core.settings
+      - key: DEBUG
+        value: False
       - key: SECRET_KEY
         sync: false
       - key: SUPABASE_HOST
@@ -24,7 +26,27 @@ services:
         sync: false
       - key: SUPABASE_PASSWORD
         sync: false
+      - key: SUPABASE_DB_NAME
+        value: postgres
+      - key: SUPABASE_PORT
+        value: '6543'
+      - key: SUPABASE_POOL_MODE
+        value: session
+      - key: DB_CONN_MAX_AGE
+        value: '0'
+      - key: DB_CONNECT_TIMEOUT
+        value: '10'
+      - key: PG_APP_NAME
+        value: coop-backend
       - key: ALLOWED_HOSTS
         sync: false
       - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: SUPABASE_JWT_AUDIENCE
+        value: authenticated
+      - key: SUPABASE_JWT_ISS
+        sync: false
+      - key: SUPABASE_ADMIN_ROLES
+        value: admin
+      - key: SUPABASE_ADMIN_EMAILS
         sync: false

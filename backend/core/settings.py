@@ -17,6 +17,16 @@ import sys
 from dotenv import load_dotenv
 load_dotenv()
 
+
+def env_int(name: str, default: int) -> int:
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -28,7 +38,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-desarrollo-local-cambiar-en-produccion")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*").split(",")
 
@@ -93,7 +103,13 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 SUPABASE_HOST = os.environ.get("SUPABASE_HOST")
+SUPABASE_DB_NAME = os.environ.get("SUPABASE_DB_NAME", "postgres")
+SUPABASE_PORT = os.environ.get("SUPABASE_PORT", "5432")
+SUPABASE_POOL_MODE = os.environ.get("SUPABASE_POOL_MODE", "direct").lower()
 RUNNING_TESTS = 'test' in sys.argv
+DB_CONN_MAX_AGE = env_int("DB_CONN_MAX_AGE", 0 if SUPABASE_POOL_MODE == "transaction" else 60)
+DB_CONNECT_TIMEOUT = env_int("DB_CONNECT_TIMEOUT", 10)
+PG_APP_NAME = os.environ.get("PG_APP_NAME", "coop-backend")
 
 if not SUPABASE_HOST or RUNNING_TESTS:
     DATABASES = {
@@ -106,16 +122,21 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'postgres',
+            'NAME': SUPABASE_DB_NAME,
             'USER': os.environ.get('SUPABASE_USER'),
             'PASSWORD': os.environ.get("SUPABASE_PASSWORD"),
             'HOST': SUPABASE_HOST,
-            'PORT': '5432',
+            'PORT': SUPABASE_PORT,
+            'CONN_MAX_AGE': DB_CONN_MAX_AGE,
             'OPTIONS': {
                 'sslmode': 'require',
+                'connect_timeout': DB_CONNECT_TIMEOUT,
+                'options': f"-c application_name={PG_APP_NAME}",
             },
         }
     }
+
+DISABLE_SERVER_SIDE_CURSORS = SUPABASE_POOL_MODE in {'session', 'transaction'}
 
 
 # Password validation
