@@ -5,31 +5,34 @@ Bienvenido a la sección de **Diagramas** del proyecto **Cooprestamos** 🏦.
 Aquí se documentan las representaciones visuales que reflejan la estructura, relaciones y funcionamiento del sistema, tanto a nivel de **base de datos** como **modelo orientado a objetos**.
 
 ---
+## 🧩 1. Diagrama de Entidad–Relación (ER)
 
-## 🧩 **1. Diagrama de Entidad–Relación (ER)**  
-Este diagrama representa las entidades, sus atributos y las relaciones existentes entre ellas.  
-Es la base del diseño lógico de la base de datos implementada en **Supabase**.
-
-🔗 **Ver diagrama en línea:**  
-👉 [Abrir Diagrama ER en MermaidChart](https://www.mermaidchart.com/d/b23db98e-9fc4-44a8-bcc1-9d18d9678f81)
+### 🧱 Descripción  
+El **Diagrama ER** muestra las **entidades**, **atributos** y **relaciones** del sistema.  
+Es la base del diseño lógico de la base de datos implementada en **Supabase (PostgreSQL)**.  
 
 
-📘 **Descripción:**  
-> El modelo ER muestra cómo interactúan las tablas principales del sistema: usuarios, préstamos, pagos, roles, socios y transacciones.  
-> Permite asegurar la integridad referencial y optimizar las consultas SQL en la capa de persistencia.
+### 🔗 Acceso al diagrama  
+- 📄 **Versión Draw.io** → [Abrir en Draw.io](https://drive.google.com/file/d/13iGkCnTIVcUe5uLYJVLEf9XAWANTqU5X/view?usp=sharing)
+- > ⚠️ *Nota:* Para poder visualizar este enlace debes iniciar sesión en tu navegador con tu **correo institucional de la Universidad del Valle (@correounivalle.edu.co)**.    
+- 🌐 **Versión visual (PNG)** → [Ver imagen en GitHub](docs/base-de-datos/diagramas/Diagrama_ER_COOPRESTAMOS.drawio.png)
 
 ---
 
-## 🧱 **2. Diagrama de Clases (UML)**  
-El diagrama de clases define la estructura del sistema desde una perspectiva **orientada a objetos**, mostrando las clases, atributos, métodos y relaciones entre ellas.
+## 🧭 2. Diagrama de Clases (UML)
 
-🔗 **Ver diagrama en línea:**  
-👉 [Abrir Diagrama de Clases en MermaidChart](https://www.mermaidchart.com/d/c73190ed-52eb-49a7-b34d-65dab1565826)
+### 🧱 Descripción  
+El **Diagrama de Clases UML** define la estructura del sistema desde una perspectiva **orientada a objetos**, mostrando:
+- Clases principales (como `Usuario`, `Prestamo`, `Pago`, `Cartera`, `Evaluacion`, etc.)  
+- Sus **atributos** y **métodos**  
+- Las **relaciones** entre ellas (asociaciones, composiciones, dependencias).  
 
+Este diagrama sirve como guía para el desarrollo del backend en **Django**, reflejando la correspondencia entre modelos y tablas en Supabase.
 
-📘 **Descripción:**  
-> Este diagrama facilita la comprensión del diseño lógico de las clases, incluyendo asociaciones, composiciones y dependencias.  
-> Sirve como guía para el desarrollo backend del sistema en **Django** y la integración con la base de datos **Supabase**.
+### 🔗 Acceso al diagrama  
+- 📄 **Versión Draw.io** → [Abrir en Draw.io](https://drive.google.com/file/d/13iGkCnTIVcUe5uLYJVLEf9XAWANTqU5X/view?usp=sharing)
+- > ⚠️ *Nota:* Para poder visualizar este enlace debes iniciar sesión en tu navegador con tu **correo institucional de la Universidad del Valle (@correounivalle.edu.co)**.  
+- 🌐 **Versión visual (PNG)** → [Ver imagen en GitHub](docs/base-de-datos/diagramas/DiagramaClases-COOPRESTAMOS.drawio.png)
 
 ---
 
