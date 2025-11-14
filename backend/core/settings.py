@@ -71,6 +71,7 @@ MIDDLEWARE = [
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
+    "https://coop-prestamos-pagos-git-featu-e24d9d-fabians-projects-90211731.vercel.app",
 ]
 
 # Permitir previews desde Vercel y Render
