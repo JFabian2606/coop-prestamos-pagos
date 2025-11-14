@@ -1,14 +1,12 @@
 import { useEffect, useState } from "react";
 import "./App.css";
 import { supabase } from "./supabaseClient";
-import { api } from "./api";
 import { type Session } from "@supabase/supabase-js";
 import LoginRegistro from "./components/LoginRegistro";
 import SociosViewer from "./components/SociosViewer";
 
 function App() {
   const [session, setSession] = useState<Session | null>(null);
-  const [apiResult, setApiResult] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -48,26 +46,11 @@ function App() {
           </p>
         </div>
         <div className="dashboard__cta">
-          <button
-            className="ghost"
-            onClick={async () => {
-              try {
-                const { data } = await api.get("ping/");
-                setApiResult(JSON.stringify(data, null, 2));
-              } catch (e: any) {
-                setApiResult(e?.message ?? "Error al llamar API");
-              }
-            }}
-          >
-            Probar API
-          </button>
           <button className="danger" onClick={() => supabase.auth.signOut()}>
             Cerrar sesión
           </button>
         </div>
       </header>
-
-      {apiResult && <pre className="api-result">{apiResult}</pre>}
 
       <SociosViewer />
     </div>

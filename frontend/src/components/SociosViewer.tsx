@@ -1,6 +1,7 @@
 import { AxiosError, isAxiosError } from "axios";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api";
+import "../styles/SociosViewer.css";
 
 export type SocioDto = {
   id: string;

@@ -1,0 +1,199 @@
+.socios-panel {
+  background: white;
+  border: 1px solid #e4e7ec;
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+.socios-panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.socios-panel__actions {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+}
+
+.select {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: #475467;
+}
+
+.select select {
+  border-radius: 999px;
+  border: 1px solid #d0d5dd;
+  padding: 0.4rem 1rem;
+}
+
+.alert {
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.alert.error {
+  background: #fee4e2;
+  color: #b42318;
+}
+
+.socios-layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1rem;
+}
+
+.socios-table {
+  border: 1px solid #e4e7ec;
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.socios-table__head {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  font-size: 0.85rem;
+  color: #475467;
+  font-weight: 600;
+}
+
+.socios-table__body {
+  max-height: 420px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.socios-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  padding: 0.85rem 1rem;
+  text-align: left;
+  border: none;
+  border-bottom: 1px solid #f2f4f7;
+  background: white;
+  border-radius: 0;
+}
+
+.socios-row span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: #101828;
+}
+
+.socios-row small {
+  color: #667085;
+  font-size: 0.75rem;
+}
+
+.socios-row:hover {
+  background: #f8fafc;
+}
+
+.socios-row.active {
+  background: #eef2ff;
+}
+
+.estado-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.estado-pill--activo {
+  background: rgba(2, 122, 72, 0.12);
+  color: #027a48;
+}
+
+.estado-pill--inactivo {
+  background: rgba(102, 112, 133, 0.12);
+  color: #475467;
+}
+
+.estado-pill--suspendido {
+  background: rgba(217, 45, 32, 0.12);
+  color: #b42318;
+}
+
+.socios-detail {
+  border: 1px solid #e4e7ec;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  background: #f9fafb;
+}
+
+.socios-detail h3 {
+  margin-top: 0;
+}
+
+.socios-detail dl {
+  margin: 1rem 0 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  row-gap: 0.5rem;
+}
+
+.socios-detail dt {
+  font-size: 0.8rem;
+  color: #475467;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.socios-detail dd {
+  margin: 0;
+  font-weight: 600;
+  color: #101828;
+  word-break: break-word;
+}
+
+.socios-detail code {
+  display: block;
+  white-space: pre-wrap;
+  background: #0f172a;
+  color: #e0f2fe;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+}
+
+.muted {
+  padding: 1rem;
+  color: #667085;
+}
+
+@media (max-width: 960px) {
+  .socios-panel__header {
+    flex-direction: column;
+  }
+
+  .socios-panel__actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .socios-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .socios-table__head,
+  .socios-row {
+    grid-template-columns: repeat(2, 1fr);
+    row-gap: 0.5rem;
+  }
+}
