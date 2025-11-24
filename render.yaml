@@ -11,7 +11,13 @@ services:
       python manage.py collectstatic --noinput
     startCommand: |
       cd backend && \
-      python manage.py migrate && \
+      python manage.py migrate contenttypes --fake-initial || python manage.py migrate contenttypes || true && \
+      python manage.py migrate auth --fake-initial || python manage.py migrate auth || true && \
+      python manage.py migrate usuarios --fake-initial || python manage.py migrate usuarios || true && \
+      python manage.py migrate admin --fake-initial || python manage.py migrate admin || true && \
+      python manage.py migrate sessions --fake-initial || python manage.py migrate sessions || true && \
+      python manage.py migrate socios --fake-initial || python manage.py migrate socios || true && \
+      python manage.py migrate || true && \
       gunicorn core.wsgi:application --bind 0.0.0.0:$PORT
     envVars:
       - key: PYTHON_VERSION
