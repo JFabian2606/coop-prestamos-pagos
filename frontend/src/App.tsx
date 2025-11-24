@@ -1,33 +1,34 @@
 import { useEffect, useState } from "react";
 import "./App.css";
-import { supabase } from "./supabaseClient";
-import { type Session } from "@supabase/supabase-js";
+import { api } from "./api";
 import LoginRegistro from "./components/LoginRegistro";
 import SociosViewer from "./components/SociosViewer";
 
 function App() {
-  const [session, setSession] = useState<Session | null>(null);
+  const [usuario, setUsuario] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let mounted = true;
-
-    supabase.auth.getSession().then(({ data }) => {
-      if (mounted) setSession(data.session ?? null);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, s) => {
-      setSession(s);
-    });
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
+    // Verificar si hay sesión activa
+    const verificarSesion = async () => {
+      try {
+        const response = await api.get("auth/usuario-actual/");
+        setUsuario(response.data);
+      } catch (err) {
+        setUsuario(null);
+      } finally {
+        setLoading(false);
+      }
     };
+
+    verificarSesion();
   }, []);
 
-  if (!session) {
+  if (loading) {
+    return <div>Cargando...</div>;
+  }
+
+  if (!usuario) {
     return (
       <div style={{ maxWidth: 920, margin: "2rem auto" }}>
         <LoginRegistro />
@@ -42,11 +43,22 @@ function App() {
           <p className="eyebrow">Panel seguro</p>
           <h1>Administración de socios</h1>
           <p className="subtitle">
-            Sesión iniciada como <strong>{session.user.email}</strong>. Todas las operaciones quedan auditadas.
+            Sesión iniciada como <strong>{usuario.email}</strong>. Todas las operaciones quedan auditadas.
           </p>
         </div>
         <div className="dashboard__cta">
-          <button className="danger" onClick={() => supabase.auth.signOut()}>
+          <button 
+            className="danger" 
+            onClick={async () => {
+              try {
+                await api.post("auth/logout/");
+                window.location.reload();
+              } catch (err) {
+                console.error("Error al cerrar sesión:", err);
+                window.location.reload();
+              }
+            }}
+          >
             Cerrar sesión
           </button>
         </div>
