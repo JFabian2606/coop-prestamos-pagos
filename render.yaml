@@ -10,15 +10,7 @@ services:
       pip install -r requirements.txt && \
       python manage.py collectstatic --noinput
     startCommand: |
-      cd backend && \
-      python manage.py migrate contenttypes --run-syncdb || python manage.py migrate contenttypes || true && \
-      python manage.py migrate auth --run-syncdb || python manage.py migrate auth || true && \
-      python manage.py migrate usuarios --run-syncdb || python manage.py migrate usuarios || true && \
-      python manage.py migrate admin --run-syncdb || python manage.py migrate admin || true && \
-      python manage.py migrate sessions --run-syncdb || python manage.py migrate sessions || true && \
-      python manage.py migrate socios --run-syncdb || python manage.py migrate socios || true && \
-      python manage.py migrate || true && \
-      gunicorn core.wsgi:application --bind 0.0.0.0:$PORT
+      web: cd backend && python scripts/mark_existing_tables_as_fake.py 2>/dev/null || true && python manage.py migrate --fake-initial 2>/dev/null || python manage.py migrate || true && gunicorn core.wsgi:application --bind 0.0.0.0:$PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.7
