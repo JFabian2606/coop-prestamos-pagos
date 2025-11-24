@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'drf_spectacular',
+    'apps.usuarios',  # Debe ir antes de apps.socios
     'apps.socios',
 ]
 
@@ -69,16 +70,36 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "https://coop-prestamos-pagos-git-featu-e24d9d-fabians-projects-90211731.vercel.app",
-]
+# CORS: Permitir orígenes desde variables de entorno o usar defaults
+CORS_ORIGINS_ENV = os.environ.get('CORS_ALLOWED_ORIGINS', '')
+if CORS_ORIGINS_ENV:
+    CORS_ALLOWED_ORIGINS = [origin.strip() for origin in CORS_ORIGINS_ENV.split(',') if origin.strip()]
+else:
+    CORS_ALLOWED_ORIGINS = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://coop-prestamos-pagos-git-featu-e24d9d-fabians-projects-90211731.vercel.app",
+    ]
 
 # Permitir previews desde Vercel y Render
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://.*\.vercel\.app$",
     r"^https://.*\.onrender\.com$",
 ]
+
+# Configuración CORS para cookies (necesario para SessionAuthentication)
+CORS_ALLOW_CREDENTIALS = True
+
+# Configuración de sesiones para autenticación
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SECURE = not DEBUG  # True en producción con HTTPS
+CSRF_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_HTTPONLY = False
+
+# Configuración CORS para cookies
+CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = 'core.urls'
 
@@ -182,11 +203,17 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Custom User Model - Usa la tabla 'usuario' de Supabase
+AUTH_USER_MODEL = 'usuarios.Usuario'
+
 # DRF configuration
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'apps.socios.auth.SupabaseAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.SessionAuthentication',  # Autenticación propia
+        # 'apps.socios.auth.SupabaseAuthentication',  # Deshabilitado - usando auth propia
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }

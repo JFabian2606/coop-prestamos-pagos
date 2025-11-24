@@ -22,18 +22,33 @@ class Socio(models.Model):
     }
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='socio')
+    # Relación con usuario (opcional - un socio puede existir sin cuenta de usuario)
+    usuario = models.OneToOneField(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='socio',
+        db_column='usuario_id'  # Mapea a usuario_id en la BD
+    )
     nombre_completo = models.CharField(max_length=150)
     documento = models.CharField(max_length=30, unique=True, null=True, blank=True)
     telefono = models.CharField(max_length=30, null=True, blank=True)
     direccion = models.CharField(max_length=255, null=True, blank=True)
     estado = models.CharField(max_length=15, choices=ESTADO_CHOICES, default=ESTADO_ACTIVO)
     datos_fiscales = models.JSONField(default=dict, blank=True)
+    fecha_alta = models.DateField(null=True, blank=True, auto_now_add=False)  # Para compatibilidad con esquema Supabase
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'socio'  # Usa la tabla 'socio' de Supabase
+        verbose_name = 'Socio'
+        verbose_name_plural = 'Socios'
 
     def __str__(self) -> str:
-        return f"{self.nombre_completo} <{self.user.email}>"
+        email = self.usuario.email if self.usuario else 'Sin usuario'
+        return f"{self.nombre_completo} <{email}>"
 
 
 class SocioAuditLog(models.Model):
