@@ -6,11 +6,13 @@ services:
     plan: free
     autoDeploy: true
     buildCommand: |
-      pip install -r backend/requirements.txt && \
-      python backend/manage.py collectstatic --noinput
+      cd backend && \
+      pip install -r requirements.txt && \
+      python manage.py collectstatic --noinput
     startCommand: |
-      python backend/manage.py migrate && \
-      gunicorn core.wsgi:application --chdir backend
+      cd backend && \
+      python manage.py migrate && \
+      gunicorn core.wsgi:application --bind 0.0.0.0:$PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.7
@@ -49,4 +51,7 @@ services:
       - key: SUPABASE_ADMIN_ROLES
         value: admin
       - key: SUPABASE_ADMIN_EMAILS
+        sync: false
+      # Variables para autenticación propia (ya no necesitamos Supabase Auth)
+      - key: CORS_ALLOWED_ORIGINS
         sync: false
