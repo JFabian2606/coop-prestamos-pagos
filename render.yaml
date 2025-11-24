@@ -11,6 +11,8 @@ services:
       python manage.py collectstatic --noinput
     startCommand: |
       cd backend && \
+      python -c "from django.db import connection; cursor = connection.cursor(); cursor.execute('DELETE FROM django_migrations WHERE app IN (\'admin\', \'auth\', \'contenttypes\', \'sessions\', \'socios\')'); print('Migraciones problemáticas eliminadas')" 2>/dev/null || true && \
+      python manage.py migrate --fake-initial || \
       python manage.py migrate contenttypes --fake-initial || python manage.py migrate contenttypes || true && \
       python manage.py migrate auth --fake-initial || python manage.py migrate auth || true && \
       python manage.py migrate usuarios --fake-initial || python manage.py migrate usuarios || true && \
