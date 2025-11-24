@@ -44,7 +44,7 @@ class SocioListView(APIView):
         description='Devuelve todos los socios registrados. Solo administradores.',
     )
     def get(self, _request):
-        queryset = Socio.objects.select_related('user').order_by('nombre_completo')
+        queryset = Socio.objects.select_related('usuario').order_by('nombre_completo')
         return Response(SocioSerializer(queryset, many=True).data)
 
 
@@ -52,7 +52,7 @@ class SocioAdminDetailView(APIView):
     permission_classes = [permissions.IsAdminUser]
 
     def get_object(self, socio_id):
-        return get_object_or_404(Socio.objects.select_related('user'), pk=socio_id)
+        return get_object_or_404(Socio.objects.select_related('usuario'), pk=socio_id)
 
     @extend_schema(
         tags=['Socios'],

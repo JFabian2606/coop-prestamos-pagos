@@ -4,8 +4,8 @@ from .models import Socio, SocioAuditLog
 
 @admin.register(Socio)
 class SocioAdmin(admin.ModelAdmin):
-    list_display = ("id", "nombre_completo", "documento", "estado", "user", "updated_at")
-    search_fields = ("nombre_completo", "documento", "user__email")
+    list_display = ("id", "nombre_completo", "documento", "estado", "usuario", "updated_at")
+    search_fields = ("nombre_completo", "documento", "usuario__email")
     list_filter = ("estado",)
 
 

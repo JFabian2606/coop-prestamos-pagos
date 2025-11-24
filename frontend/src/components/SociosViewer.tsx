@@ -107,7 +107,7 @@ export default function SociosViewer() {
           <p className="eyebrow">Panel de administración</p>
           <h2>Socios registrados</h2>
           <p className="subtitle">
-            Visualiza el estado actual, datos de contacto y datos fiscales sincronizados desde Supabase.
+            Visualiza el estado actual, datos de contacto y datos fiscales.
           </p>
         </div>
         <div className="socios-panel__actions">
