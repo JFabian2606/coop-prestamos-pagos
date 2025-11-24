@@ -90,52 +90,75 @@ class SupabaseAuthentication(authentication.BaseAuthentication):
             raise exceptions.AuthenticationFailed(_('Invalid token')) from exc
 
     def _resolve_user(self, *, email: Optional[str], subject: Optional[str], payload: Dict[str, Any]) -> User:
+        """Resuelve o crea un usuario Usuario (tabla 'usuario' de Supabase)"""
         normalized_email = self._normalize_email(email)
         user: Optional[User] = None
 
+        # Buscar por email (campo principal en Usuario)
         if normalized_email:
             user = User.objects.filter(email__iexact=normalized_email).first()
 
-        if not user and subject:
-            user = User.objects.filter(username=subject).first()
-
+        # Si no existe, crear nuevo usuario
         if not user:
-            username = self._build_username(normalized_email or subject or 'user')
-            extra_fields: Dict[str, Any] = {}
             full_name = self._extract_full_name(payload)
-            if full_name:
-                extra_fields['first_name'] = full_name[:150]
+            nombres = full_name[:255] if full_name else normalized_email.split('@')[0] if normalized_email else 'Usuario'
+            
+            # Asignar rol SOCIO por defecto (a menos que sea admin según configuración)
+            from apps.usuarios.models import Rol
+            rol_socio = Rol.objects.filter(nombre='SOCIO').first()
+            
+            # Si no existe el rol SOCIO, crearlo
+            if not rol_socio:
+                rol_socio = Rol.objects.create(nombre='SOCIO')
+                logger.info('Created default role SOCIO')
+            
             user = User.objects.create_user(
-                username=username,
-                email=normalized_email or '',
-                password=None,
-                **extra_fields,
+                email=normalized_email or f'{subject}@supabase.local',
+                password=None,  # No se usa password con Supabase Auth
+                nombres=nombres,
+                activo=True,
+                rol=rol_socio,  # Asignar rol SOCIO por defecto
             )
-            logger.debug('Created local user %s from Supabase subject %s', user.pk, subject)
+            logger.debug('Created usuario %s from Supabase subject %s with role SOCIO', user.pk, subject)
 
         self._sync_profile(user, normalized_email, payload)
         self._sync_staff_flag(user, normalized_email, payload)
         return user
 
     def _sync_profile(self, user: User, normalized_email: str, payload: Dict[str, Any]) -> None:
+        """Sincroniza el perfil del usuario con datos de Supabase"""
         updates: Set[str] = set()
         if normalized_email and user.email.casefold() != normalized_email.casefold():
             user.email = normalized_email
             updates.add('email')
 
         full_name = self._extract_full_name(payload)
-        if full_name and user.first_name != full_name[:150]:
-            user.first_name = full_name[:150]
-            updates.add('first_name')
+        if full_name and user.nombres != full_name[:255]:
+            user.nombres = full_name[:255]
+            updates.add('nombres')
 
         if updates:
             user.save(update_fields=list(updates))
 
     def _sync_staff_flag(self, user: User, normalized_email: str, payload: Dict[str, Any]) -> None:
+        """Sincroniza flags de staff y actualiza rol si es admin"""
         if user.is_superuser:
             return
 
         should_be_admin = self._should_be_admin(normalized_email, payload)
+        
+        # Si debe ser admin, cambiar rol a ADMIN
+        if should_be_admin:
+            from apps.usuarios.models import Rol
+            rol_admin = Rol.objects.filter(nombre='ADMIN').first()
+            if rol_admin and (not user.rol or user.rol.nombre != 'ADMIN'):
+                user.rol = rol_admin
+                user.is_staff = True
+                user.save(update_fields=['rol', 'is_staff'])
+                logger.info('Updated user %s to ADMIN role based on Supabase claims', user.pk)
+                return
+        
+        # Si no es admin pero tiene is_staff, mantenerlo
         if should_be_admin == user.is_staff:
             return
 
@@ -183,21 +206,11 @@ class SupabaseAuthentication(authentication.BaseAuthentication):
             return full_name.strip()
         return ''
 
-    def _build_username(self, seed: str) -> str:
-        base = (seed or 'user').split('@')[0]
-        filtered = ''.join(ch for ch in base if ch.isalnum() or ch in ('.', '-', '_')).lower() or 'user'
-        filtered = filtered[:150]
-        candidate = filtered
-        suffix = 1
-        while User.objects.filter(username=candidate).exists():
-            suffix += 1
-            trimmed = filtered[: max(1, 150 - len(str(suffix)))]
-            candidate = f"{trimmed}{suffix}"
-        return candidate
-
     def _normalize_email(self, email: Optional[str]) -> str:
+        """Normaliza el email usando el método de Django"""
         if not email:
             return ''
+        # Usar el método de normalización de AbstractBaseUser
         return User.objects.normalize_email(email)
 
     @staticmethod
