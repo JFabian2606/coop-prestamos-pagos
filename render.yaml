@@ -16,7 +16,7 @@ services:
       - key: DJANGO_SETTINGS_MODULE
         value: core.settings
       - key: DEBUG
-        value: False
+        value: True
       - key: SECRET_KEY
         sync: false
       - key: SUPABASE_HOST
