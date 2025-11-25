@@ -9,10 +9,10 @@ services:
       cd backend && \
       pip install -r requirements.txt && \
       python manage.py collectstatic --noinput
-    startCommand: |
-      cd backend && \
-      python scripts/mark_existing_tables_as_fake.py || true && \
-      python manage.py migrate --fake-initial || python manage.py migrate || true && \
+    startCommand: >
+      cd backend &&
+      python scripts/mark_existing_tables_as_fake.py || true &&
+      python manage.py migrate --fake-initial || python manage.py migrate || true &&
       python -m gunicorn core.wsgi:application --bind 0.0.0.0:$PORT
     envVars:
       - key: PYTHON_VERSION
