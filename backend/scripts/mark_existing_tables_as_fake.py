@@ -55,6 +55,11 @@ def ensure_migrations_table():
                 name varchar(255) NOT NULL,
                 applied timestamp with time zone NOT NULL
             );
+            """
+        )
+        # Ensure the unique index exists (some preseeded DBs may miss it)
+        cursor.execute(
+            """
             CREATE UNIQUE INDEX IF NOT EXISTS django_migrations_app_name_idx
                 ON django_migrations (app, name);
             """
@@ -67,10 +72,12 @@ def mark_migration_as_fake(app: str, migration_name: str) -> bool:
         cursor.execute(
             """
             INSERT INTO django_migrations (app, name, applied)
-            VALUES (%s, %s, NOW())
-            ON CONFLICT (app, name) DO NOTHING;
+            SELECT %s, %s, NOW()
+            WHERE NOT EXISTS (
+                SELECT 1 FROM django_migrations WHERE app = %s AND name = %s
+            );
             """,
-            [app, migration_name],
+            [app, migration_name, app, migration_name],
         )
         return cursor.rowcount > 0
 
@@ -80,7 +87,7 @@ if __name__ == "__main__":
 
     if not migrations_table_exists():
         print("django_migrations does not exist; creating it so we can record faked migrations.")
-        ensure_migrations_table()
+    ensure_migrations_table()
 
     AUTH_MIGRATIONS = [
         "0001_initial",
