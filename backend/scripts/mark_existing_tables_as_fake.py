@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
-Marca migraciones como aplicadas (fake) si las tablas ya existen.
-Evita errores de "relation already exists" en despliegues sobre una base con tablas precargadas.
+Mark migrations as applied (fake) when the tables already exist.
+Prevents "relation already exists" errors on databases that were pre-seeded.
 """
 import os
 import sys
@@ -44,8 +44,25 @@ def migrations_table_exists() -> bool:
         return cursor.fetchone()[0]
 
 
+def ensure_migrations_table():
+    """Create django_migrations if it does not exist (matches Django schema)."""
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS django_migrations (
+                id serial PRIMARY KEY,
+                app varchar(255) NOT NULL,
+                name varchar(255) NOT NULL,
+                applied timestamp with time zone NOT NULL
+            );
+            CREATE UNIQUE INDEX IF NOT EXISTS django_migrations_app_name_idx
+                ON django_migrations (app, name);
+            """
+        )
+
+
 def mark_migration_as_fake(app: str, migration_name: str) -> bool:
-    """Inserta en django_migrations si no existe ya."""
+    """Insert into django_migrations if it is not already recorded."""
     with connection.cursor() as cursor:
         cursor.execute(
             """
@@ -59,11 +76,11 @@ def mark_migration_as_fake(app: str, migration_name: str) -> bool:
 
 
 if __name__ == "__main__":
-    print("Verificando tablas existentes y marcando migraciones como fake...")
+    print("Checking existing tables and marking migrations as fake...")
 
     if not migrations_table_exists():
-        print("Tabla django_migrations no existe aún; Django la creará en la primera migración.")
-        sys.exit(0)
+        print("django_migrations does not exist; creating it so we can record faked migrations.")
+        ensure_migrations_table()
 
     AUTH_MIGRATIONS = [
         "0001_initial",
@@ -89,35 +106,35 @@ if __name__ == "__main__":
 
     # contenttypes
     if table_exists("django_content_type"):
-        print("OK. Tabla django_content_type existe - marcando migraciones como fake")
+        print("OK. Table django_content_type exists - marking migrations as fake")
         mark_migration_as_fake("contenttypes", "0001_initial")
         mark_migration_as_fake("contenttypes", "0002_remove_content_type_name")
 
     # auth
     if table_exists("auth_user") or table_exists("auth_permission"):
-        print("OK. Tablas de auth existen - marcando migraciones como fake")
+        print("OK. Auth tables exist - marking migrations as fake")
         for name in AUTH_MIGRATIONS:
             mark_migration_as_fake("auth", name)
 
     # usuarios (custom app)
     if table_exists("rol") or table_exists("usuario"):
-        print("OK. Tablas rol/usuario existen - marcando migración de usuarios como fake")
+        print("OK. rol/usuario tables exist - marking usuarios migration as fake")
         mark_migration_as_fake("usuarios", "0001_initial")
 
     # admin
     if table_exists("django_admin_log"):
-        print("OK. Tabla django_admin_log existe - marcando migraciones de admin como fake")
+        print("OK. django_admin_log exists - marking admin migrations as fake")
         for name in ADMIN_MIGRATIONS:
             mark_migration_as_fake("admin", name)
 
     # sessions
     if table_exists("django_session"):
-        print("OK. Tabla django_session existe - marcando migración de sessions como fake")
+        print("OK. django_session exists - marking sessions migration as fake")
         mark_migration_as_fake("sessions", "0001_initial")
 
     # socios
     if table_exists("socio"):
-        print("OK. Tabla socio existe - marcando migración de socios como fake")
+        print("OK. socio exists - marking socios migration as fake")
         mark_migration_as_fake("socios", "0001_initial")
 
-    print("OK. Proceso completado. Las tablas existentes están marcadas como migradas.")
+    print("OK. Done. Existing tables are now marked as migrated.")
