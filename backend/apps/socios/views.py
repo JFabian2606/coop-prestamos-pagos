@@ -22,8 +22,8 @@ from .serializers import (
     SocioSerializer,
 )
 
-HEADER_FONT = Font(bold=True, color="111827")
-HEADER_FILL = PatternFill("solid", fgColor="E4E7EC")
+HEADER_FONT = Font(bold=True, color="FFFFFF")
+HEADER_FILL = PatternFill("solid", fgColor="43A59D")
 
 
 def style_header_row(ws, row_idx: int = 1):
