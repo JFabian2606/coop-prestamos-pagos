@@ -87,6 +87,18 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://.*\.onrender\.com$",
 ]
 
+CSRF_TRUSTED_ORIGINS_ENV = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
+if CSRF_TRUSTED_ORIGINS_ENV:
+    CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in CSRF_TRUSTED_ORIGINS_ENV.split(',') if origin.strip()]
+else:
+    CSRF_TRUSTED_ORIGINS = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://*.vercel.app",
+        "https://*.onrender.com",
+        "https://coop-prestamos-pagos-git-featu-e24d9d-fabians-projects-90211731.vercel.app",
+    ]
+
 # Configuración CORS para cookies (necesario para SessionAuthentication)
 CORS_ALLOW_CREDENTIALS = True
 
