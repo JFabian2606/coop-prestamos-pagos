@@ -354,6 +354,12 @@ export default function SociosViewer() {
     );
   };
 
+  const EstadoBadge = ({ estado }: { estado: SocioDto["estado"] }) => (
+    <span className={`estado-pill estado-pill--${estado} estado-pill--static`}>
+      {estadoLabels[estado]}
+    </span>
+  );
+
   return (
     <section className="socios-panel">
       <header className="socios-panel__header">
@@ -427,7 +433,7 @@ export default function SociosViewer() {
                 </span>
                 <span>{socio.documento ?? "-"}</span>
                 <span>{socio.telefono ?? "-"}</span>
-                <EstadoPill socio={socio} />
+                <EstadoBadge estado={socio.estado} />
               </button>
             ))}
           </div>
@@ -440,15 +446,16 @@ export default function SociosViewer() {
               <h3>{socioActivo.nombre_completo}</h3>
               <div className="socios-detail__actions">
                 <button type="button" className="ghost icon-button" onClick={abrirEdicion}>
-                  <i className="bx bxs-pencil" style={{ color: "#43a59d" }} aria-hidden />
+                  <i className="bx bxs-pencil icon-brand-hover" aria-hidden />
                   <span>Editar datos</span>
                 </button>
                 <button
                   type="button"
-                  className="ghost danger-ghost"
+                  className="ghost danger-ghost skull-button"
                   onClick={() => void handleDelete()}
                   disabled={deleteEnProgreso === socioActivo.id}
                 >
+                  <i className="bx bxs-skull icon-brand-hover" aria-hidden />
                   {deleteEnProgreso === socioActivo.id ? "Procesando..." : "Dar de baja"}
                 </button>
               </div>
