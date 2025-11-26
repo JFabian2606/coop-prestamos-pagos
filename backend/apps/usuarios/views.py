@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import ensure_csrf_cookie
 from apps.usuarios.models import Rol
 from apps.socios.models import Socio
 from datetime import date
@@ -157,6 +158,16 @@ def logout(request):
     from django.contrib.auth import logout as django_logout
     django_logout(request)
     return Response({'message': 'Logout exitoso'}, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+@ensure_csrf_cookie
+def csrf_token(_request):
+    """
+    Devuelve un OK y fuerza el seteo de la cookie CSRF (csrftoken) para clientes JS.
+    """
+    return Response({'detail': 'ok'}, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import "./App.css";
-import { api } from "./api";
+import { api, ensureCsrfCookie } from "./api";
 import LoginRegistro from "./components/LoginRegistro";
 import SociosViewer from "./components/SociosViewer";
 
@@ -12,6 +12,7 @@ function App() {
     // Verificar si hay sesion activa
     const verificarSesion = async () => {
       try {
+        await ensureCsrfCookie();
         const response = await api.get("auth/usuario-actual/");
         setUsuario(response.data);
       } catch (err) {

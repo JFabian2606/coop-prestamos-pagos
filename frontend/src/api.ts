@@ -14,6 +14,21 @@ export const api = axios.create({
   xsrfHeaderName: "X-CSRFToken",
 });
 
+let csrfPromise: Promise<void> | null = null;
+
+/**
+ * Garantiza que exista la cookie CSRF para SessionAuthentication.
+ */
+export function ensureCsrfCookie() {
+  if (!csrfPromise) {
+    csrfPromise = api
+      .get("auth/csrf/")
+      .then(() => {})
+      .catch(() => {}); // si falla, se reintentará en próxima llamada
+  }
+  return csrfPromise;
+}
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
