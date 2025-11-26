@@ -23,7 +23,12 @@ export function ensureCsrfCookie() {
   if (!csrfPromise) {
     csrfPromise = api
       .get("auth/csrf/")
-      .then(() => {})
+      .then((resp) => {
+        const token = (resp.data as any)?.csrfToken;
+        if (token) {
+          api.defaults.headers.common["X-CSRFToken"] = token;
+        }
+      })
       .catch(() => {}); // si falla, se reintentará en próxima llamada
   }
   return csrfPromise;

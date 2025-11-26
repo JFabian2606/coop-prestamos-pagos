@@ -9,6 +9,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.middleware.csrf import get_token
 from apps.usuarios.models import Rol
 from apps.socios.models import Socio
 from datetime import date
@@ -167,7 +168,8 @@ def csrf_token(_request):
     """
     Devuelve un OK y fuerza el seteo de la cookie CSRF (csrftoken) para clientes JS.
     """
-    return Response({'detail': 'ok'}, status=status.HTTP_200_OK)
+    token = get_token(_request)
+    return Response({'detail': 'ok', 'csrfToken': token}, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
