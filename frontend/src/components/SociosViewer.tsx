@@ -47,6 +47,7 @@ export default function SociosViewer() {
   const [estadoLoading, setEstadoLoading] = useState<string | null>(null);
   const [accionError, setAccionError] = useState<string | null>(null);
   const [accionOk, setAccionOk] = useState<string | null>(null);
+  const [exportando, setExportando] = useState(false);
   const [editModalAbierta, setEditModalAbierta] = useState(false);
   const [editando, setEditando] = useState(false);
   const [formEdicion, setFormEdicion] = useState<EditFormState>({
@@ -175,6 +176,39 @@ export default function SociosViewer() {
     } finally {
       setEstadoLoading(null);
       setEstadoMenuPara(null);
+    }
+  };
+
+  const handleExportarExcel = async () => {
+    setExportando(true);
+    setAccionError(null);
+    setAccionOk(null);
+    try {
+      const params: Record<string, string> = {};
+      if (filtro !== "todos") {
+        params.estado = filtro;
+      }
+      const { data } = await api.get<ArrayBuffer>("socios/export/", {
+        params,
+        responseType: "arraybuffer",
+      });
+      const blob = new Blob([data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      const stamp = new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14);
+      link.download = `socios_auditoria_${stamp}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      setAccionOk("Exportacion generada.");
+    } catch (err) {
+      setAccionError(getErrorMessage(err, "No se pudo exportar el Excel."));
+    } finally {
+      setExportando(false);
     }
   };
 
@@ -323,9 +357,19 @@ export default function SociosViewer() {
               <option value="suspendido">Suspendidos</option>
             </select>
           </label>
-          <button className="ghost" onClick={() => void fetchSocios()} disabled={loading}>
-            {loading ? "Actualizando..." : "Actualizar"}
-          </button>
+          <div className="actions-row">
+            <button className="ghost" onClick={() => void fetchSocios()} disabled={loading}>
+              {loading ? "Actualizando..." : "Actualizar"}
+            </button>
+            <button
+              className="ghost"
+              onClick={() => void handleExportarExcel()}
+              disabled={exportando}
+              title="Descargar Excel con socios y auditoria"
+            >
+              {exportando ? "Generando..." : "Exportar Excel"}
+            </button>
+          </div>
         </div>
       </header>
 

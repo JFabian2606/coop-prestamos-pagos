@@ -21,6 +21,11 @@
   align-items: flex-end;
 }
 
+.actions-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .select {
   display: flex;
   flex-direction: column;

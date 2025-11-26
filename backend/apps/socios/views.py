@@ -1,4 +1,12 @@
+import io
+import json
+from datetime import datetime
+
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from openpyxl import Workbook
+from openpyxl.utils import get_column_letter
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from rest_framework import permissions, status
 from rest_framework.response import Response
@@ -152,3 +160,127 @@ class SocioEstadoUpdateView(APIView):
             metadata={'motivo': serializer.validated_data.get('motivo') or ''},
         )
         return Response(SocioSerializer(socio).data)
+
+
+class SocioExportView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    @extend_schema(
+        tags=['Socios'],
+        summary='Exportar socios y auditoria a Excel',
+        description=(
+            'Genera un archivo Excel con los socios (filtrables por estado) '
+            'y el historial de auditoria de cambios, filtrable por rango de fechas y accion.'
+        ),
+        responses={200: OpenApiResponse(description='Excel exportado')},
+    )
+    def get(self, request):
+        estados_param = request.query_params.get('estado')
+        estados = {e.strip() for e in estados_param.split(',')} if estados_param else set()
+        accion = request.query_params.get('accion') or None
+        desde_param = request.query_params.get('desde')
+        hasta_param = request.query_params.get('hasta')
+
+        def parse_dt(value: str):
+            try:
+                parsed = datetime.fromisoformat(value)
+                return parsed if parsed.tzinfo else timezone.make_aware(parsed)
+            except Exception:
+                return None
+
+        desde = parse_dt(desde_param) if desde_param else None
+        hasta = parse_dt(hasta_param) if hasta_param else None
+
+        socios_qs = Socio.objects.select_related('usuario').order_by('nombre_completo')
+        if estados:
+            socios_qs = socios_qs.filter(estado__in=estados)
+
+        audit_qs = SocioAuditLog.objects.select_related('socio', 'performed_by').order_by('-created_at')
+        if accion:
+            audit_qs = audit_qs.filter(action=accion)
+        if desde:
+            audit_qs = audit_qs.filter(created_at__gte=desde)
+        if hasta:
+            audit_qs = audit_qs.filter(created_at__lte=hasta)
+
+        wb = Workbook()
+
+        # Resumen / filtros aplicados
+        ws_meta = wb.active
+        ws_meta.title = "Resumen"
+        now = timezone.localtime()
+        ws_meta.append(["Reporte generado"])
+        ws_meta.append(["Generado por", getattr(request.user, 'email', '')])
+        ws_meta.append(["Fecha/Hora", now.strftime("%Y-%m-%d %H:%M:%S %Z")])
+        ws_meta.append(["Filtros", ""])
+        ws_meta.append(["  Estado", ", ".join(sorted(estados)) if estados else "Todos"])
+        ws_meta.append(["  Accion (auditoria)", accion or "Todas"])
+        ws_meta.append(["  Desde", desde.strftime("%Y-%m-%d %H:%M:%S") if desde else ""])
+        ws_meta.append(["  Hasta", hasta.strftime("%Y-%m-%d %H:%M:%S") if hasta else ""])
+
+        # Hoja de socios
+        ws_socios = wb.create_sheet("Socios")
+        socios_headers = [
+            "ID", "Nombre", "Documento", "Estado", "Email usuario",
+            "Telefono", "Direccion", "Fecha alta", "Creado", "Actualizado",
+            "Usuario ID",
+        ]
+        ws_socios.append(socios_headers)
+        for socio in socios_qs:
+            ws_socios.append([
+                str(socio.id),
+                socio.nombre_completo,
+                socio.documento or "",
+                socio.estado,
+                socio.usuario.email if socio.usuario else "",
+                socio.telefono or "",
+                socio.direccion or "",
+                socio.fecha_alta.isoformat() if socio.fecha_alta else "",
+                socio.created_at.isoformat(),
+                socio.updated_at.isoformat(),
+                str(socio.usuario.id) if socio.usuario else "",
+            ])
+        for idx in range(1, len(socios_headers) + 1):
+            ws_socios.column_dimensions[get_column_letter(idx)].width = 18
+
+        # Hoja de auditoria
+        ws_audit = wb.create_sheet("Auditoria")
+        audit_headers = [
+            "ID", "Socio ID", "Socio", "Email", "Accion",
+            "Estado anterior", "Estado nuevo", "Campos modificados",
+            "Datos previos", "Datos nuevos", "Metadata",
+            "Ejecutado por", "Fecha",
+        ]
+        ws_audit.append(audit_headers)
+        for entry in audit_qs:
+            socio = entry.socio
+            ws_audit.append([
+                entry.id,
+                str(socio.id) if socio else "",
+                socio.nombre_completo if socio else "",
+                socio.usuario.email if socio and socio.usuario else "",
+                entry.action,
+                entry.estado_anterior,
+                entry.estado_nuevo,
+                ", ".join(entry.campos_modificados or []),
+                json.dumps(entry.datos_previos or {}, ensure_ascii=False),
+                json.dumps(entry.datos_nuevos or {}, ensure_ascii=False),
+                json.dumps(entry.metadata or {}, ensure_ascii=False),
+                entry.performed_by.email if entry.performed_by else "",
+                entry.created_at.isoformat(),
+            ])
+        for idx in range(1, len(audit_headers) + 1):
+            ws_audit.column_dimensions[get_column_letter(idx)].width = 20
+
+        # Preparar respuesta
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        filename = f"socios_auditoria_{now.strftime('%Y%m%d_%H%M%S')}.xlsx"
+
+        response = HttpResponse(
+            output.getvalue(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
