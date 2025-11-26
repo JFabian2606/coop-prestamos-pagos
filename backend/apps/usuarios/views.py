@@ -148,11 +148,11 @@ def login(request):
     }, status=status.HTTP_200_OK)
 
 
-@api_view(['POST'])
+@api_view(['POST', 'GET'])
 @permission_classes([permissions.IsAuthenticated])
 def logout(request):
     """
-    Cierra la sesión del usuario actual.
+    Cierra la sesión del usuario actual (acepta POST o GET para mayor compatibilidad).
     """
     from django.contrib.auth import logout as django_logout
     django_logout(request)

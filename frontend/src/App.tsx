@@ -9,7 +9,7 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Verificar si hay sesión activa
+    // Verificar si hay sesion activa
     const verificarSesion = async () => {
       try {
         const response = await api.get("auth/usuario-actual/");
@@ -23,6 +23,22 @@ function App() {
 
     verificarSesion();
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      await api.post("auth/logout/");
+    } catch (_err) {
+      // Algunos proxies cambian POST a GET al redirigir (http -> https), probamos GET como respaldo
+      try {
+        await api.get("auth/logout/");
+      } catch (fallbackErr) {
+        console.error("Error al cerrar sesion (fallback):", fallbackErr);
+      }
+    } finally {
+      setUsuario(null);
+      window.location.reload();
+    }
+  };
 
   if (loading) {
     return <div>Cargando...</div>;
@@ -41,25 +57,14 @@ function App() {
       <header className="dashboard__header">
         <div>
           <p className="eyebrow">Panel seguro</p>
-          <h1>Administración de socios</h1>
+          <h1>Administracion de socios</h1>
           <p className="subtitle">
-            Sesión iniciada como <strong>{usuario.email}</strong>. Todas las operaciones quedan auditadas.
+            Sesion iniciada como <strong>{usuario.email}</strong>. Todas las operaciones quedan auditadas.
           </p>
         </div>
         <div className="dashboard__cta">
-          <button 
-            className="danger" 
-            onClick={async () => {
-              try {
-                await api.post("auth/logout/");
-                window.location.reload();
-              } catch (err) {
-                console.error("Error al cerrar sesión:", err);
-                window.location.reload();
-              }
-            }}
-          >
-            Cerrar sesión
+          <button className="danger" onClick={handleLogout}>
+            Cerrar sesion
           </button>
         </div>
       </header>
