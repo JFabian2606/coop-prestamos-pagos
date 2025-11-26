@@ -11,14 +11,11 @@
   align-items: center;
   gap: 2rem;
   margin-bottom: 2rem;
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background: rgba(236, 241, 250, 0.8);
-  backdrop-filter: blur(6px);
-  padding: 1rem 1.5rem;
-  border-radius: 20px;
-  box-shadow: 0 12px 30px rgba(12, 20, 48, 0.08);
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  position: static;
+  box-shadow: none;
 }
 
 .dashboard__cta {
@@ -54,19 +51,20 @@ button {
   padding: 0.65rem 1.5rem;
   font-weight: 600;
   cursor: pointer;
-  background: #111b47;
-  color: white;
-  transition: opacity 0.2s ease;
+  background: #43a59d;
+  color: #ffffff;
+  transition: opacity 0.2s ease, transform 0.1s ease;
 }
 
 button:hover {
-  opacity: 0.9;
+  opacity: 0.92;
+  transform: translateY(-1px);
 }
 
 button.ghost {
   background: transparent;
-  border: 1px solid #d0d5dd;
-  color: #111b47;
+  border: 1px solid #43a59d;
+  color: #43a59d;
 }
 
 button.danger {
