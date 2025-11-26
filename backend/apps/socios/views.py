@@ -6,6 +6,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from openpyxl import Workbook
+from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from rest_framework import permissions, status
@@ -20,6 +21,24 @@ from .serializers import (
     SocioEstadoSerializer,
     SocioSerializer,
 )
+
+HEADER_FONT = Font(bold=True, color="111827")
+HEADER_FILL = PatternFill("solid", fgColor="E4E7EC")
+
+
+def style_header_row(ws, row_idx: int = 1):
+    """Apply a simple header style to the given row."""
+    for cell in ws[row_idx]:
+        cell.font = HEADER_FONT
+        cell.fill = HEADER_FILL
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+
+
+def wrap_columns(ws, col_letters: list[str]):
+    """Enable wrap_text for the provided columns (skip header)."""
+    for col in col_letters:
+        for cell in ws[col][1:]:
+            cell.alignment = Alignment(wrap_text=True, vertical="top")
 
 
 class MeView(APIView):
@@ -217,6 +236,8 @@ class SocioExportView(APIView):
         ws_meta.append(["  Accion (auditoria)", accion or "Todas"])
         ws_meta.append(["  Desde", desde.strftime("%Y-%m-%d %H:%M:%S") if desde else ""])
         ws_meta.append(["  Hasta", hasta.strftime("%Y-%m-%d %H:%M:%S") if hasta else ""])
+        for cell in ws_meta["A"]:
+            cell.font = Font(bold=True)
 
         # Hoja de socios
         ws_socios = wb.create_sheet("Socios")
@@ -240,6 +261,9 @@ class SocioExportView(APIView):
                 socio.updated_at.isoformat(),
                 str(socio.usuario.id) if socio.usuario else "",
             ])
+        style_header_row(ws_socios)
+        ws_socios.freeze_panes = "A2"
+        ws_socios.auto_filter.ref = f"A1:{get_column_letter(len(socios_headers))}{ws_socios.max_row}"
         for idx in range(1, len(socios_headers) + 1):
             ws_socios.column_dimensions[get_column_letter(idx)].width = 18
 
@@ -269,6 +293,10 @@ class SocioExportView(APIView):
                 entry.performed_by.email if entry.performed_by else "",
                 entry.created_at.isoformat(),
             ])
+        style_header_row(ws_audit)
+        ws_audit.freeze_panes = "A2"
+        ws_audit.auto_filter.ref = f"A1:{get_column_letter(len(audit_headers))}{ws_audit.max_row}"
+        wrap_columns(ws_audit, ["H", "I", "J", "K"])
         for idx in range(1, len(audit_headers) + 1):
             ws_audit.column_dimensions[get_column_letter(idx)].width = 20
 
