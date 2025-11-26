@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
+from django.views.decorators.csrf import csrf_exempt
 from apps.usuarios.models import Rol
 from apps.socios.models import Socio
 from datetime import date
