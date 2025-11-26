@@ -18,7 +18,8 @@
 .socios-panel__actions {
   display: flex;
   gap: 1rem;
-  align-items: flex-end;
+  align-items: center;
+  padding-top: 0.4rem;
 }
 
 .search-input {
