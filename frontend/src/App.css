@@ -8,9 +8,17 @@
 .dashboard__header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   gap: 2rem;
   margin-bottom: 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: rgba(236, 241, 250, 0.8);
+  backdrop-filter: blur(6px);
+  padding: 1rem 1.5rem;
+  border-radius: 20px;
+  box-shadow: 0 12px 30px rgba(12, 20, 48, 0.08);
 }
 
 .dashboard__cta {
@@ -34,6 +42,10 @@
 .dashboard h1 {
   margin: 0;
   font-size: 2.4rem;
+}
+
+.dashboard__header .subtitle {
+  margin: 0.35rem 0 0;
 }
 
 button {
@@ -64,6 +76,7 @@ button.danger {
 @media (max-width: 960px) {
   .dashboard__header {
     flex-direction: column;
+    align-items: flex-start;
   }
 
   .dashboard__cta {
