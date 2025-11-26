@@ -21,6 +21,28 @@
   align-items: flex-end;
 }
 
+.search-input {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 240px;
+  color: #475467;
+}
+
+.search-input input {
+  border-radius: 12px;
+  border: 1px solid #d0d5dd;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search-input input:focus {
+  outline: none;
+  border-color: #43a59d;
+  box-shadow: 0 0 0 3px rgba(67, 165, 157, 0.25);
+}
+
 .actions-row {
   display: flex;
   gap: 0.5rem;

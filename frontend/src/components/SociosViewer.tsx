@@ -47,6 +47,7 @@ export default function SociosViewer() {
   const [estadoLoading, setEstadoLoading] = useState<string | null>(null);
   const [accionError, setAccionError] = useState<string | null>(null);
   const [accionOk, setAccionOk] = useState<string | null>(null);
+  const [busqueda, setBusqueda] = useState("");
   const [exportando, setExportando] = useState(false);
   const [editModalAbierta, setEditModalAbierta] = useState(false);
   const [editando, setEditando] = useState(false);
@@ -132,9 +133,25 @@ export default function SociosViewer() {
   }, [seleccionado]);
 
   const sociosFiltrados = useMemo(() => {
-    if (filtro === "todos") return socios;
-    return socios.filter((s) => s.estado === filtro);
-  }, [filtro, socios]);
+    const term = busqueda.trim().toLowerCase();
+    let resultado = socios;
+    if (filtro !== "todos") {
+      resultado = resultado.filter((s) => s.estado === filtro);
+    }
+    if (term) {
+      resultado = resultado.filter((s) => {
+        const doc = s.documento?.toLowerCase() ?? "";
+        const email = s.email?.toLowerCase() ?? "";
+        return (
+          s.nombre_completo.toLowerCase().includes(term) ||
+          doc.includes(term) ||
+          email.includes(term) ||
+          s.id.toLowerCase().includes(term)
+        );
+      });
+    }
+    return resultado;
+  }, [filtro, socios, busqueda]);
 
   const socioActivo = useMemo(() => {
     if (seleccionado) {
@@ -348,6 +365,15 @@ export default function SociosViewer() {
           </p>
         </div>
         <div className="socios-panel__actions">
+          <label className="search-input">
+            <span>Buscar</span>
+            <input
+              type="search"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              placeholder="Nombre, documento, email o ID"
+            />
+          </label>
           <label className="select">
             <span>Filtrar por estado</span>
             <select value={filtro} onChange={(e) => setFiltro(e.target.value as any)}>

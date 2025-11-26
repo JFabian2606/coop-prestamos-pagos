@@ -5,6 +5,7 @@ from datetime import datetime
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.db.models import Q
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
@@ -70,8 +71,18 @@ class SocioListView(APIView):
         summary='Listado de socios',
         description='Devuelve todos los socios registrados. Solo administradores.',
     )
-    def get(self, _request):
+    def get(self, request):
         queryset = Socio.objects.select_related('usuario').order_by('nombre_completo')
+
+        q = (request.query_params.get('q') or '').strip()
+        if q:
+            queryset = queryset.filter(
+                Q(nombre_completo__icontains=q)
+                | Q(documento__icontains=q)
+                | Q(usuario__email__icontains=q)
+                | Q(id__icontains=q)
+            )
+
         return Response(SocioSerializer(queryset, many=True).data)
 
 
