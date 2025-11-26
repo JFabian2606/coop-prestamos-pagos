@@ -221,7 +221,7 @@
   border-radius: 0.5rem;
   background: transparent;
   font-weight: 600;
-  color: #101828;
+  color: #43a59d;
   cursor: pointer;
 }
 
@@ -336,7 +336,7 @@
 
 .socios-detail dt {
   font-size: 0.8rem;
-  color: #475467;
+  color: #43a59d;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -351,7 +351,7 @@
 .socios-detail code {
   display: block;
   white-space: pre-wrap;
-  background: #0f172a;
+  background: #43a59d;
   color: #e0f2fe;
   padding: 0.5rem;
   border-radius: 0.5rem;
