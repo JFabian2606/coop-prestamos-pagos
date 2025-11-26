@@ -8,7 +8,8 @@
     justify-content: center;
     flex-direction: column;
     min-height: 100vh;
-    padding: 24px 12px;
+    width: 100vw;
+    padding: 0;
 }
 
 .auth-page *{

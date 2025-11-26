@@ -45,11 +45,7 @@ function App() {
   }
 
   if (!usuario) {
-    return (
-      <div style={{ maxWidth: 920, margin: "2rem auto" }}>
-        <LoginRegistro />
-      </div>
-    );
+    return <LoginRegistro />;
   }
 
   return (
