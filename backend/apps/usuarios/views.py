@@ -24,6 +24,8 @@ def registro(request):
     email = request.data.get('email')
     password = request.data.get('password')
     nombres = request.data.get('nombres') or request.data.get('nombreCompleto')
+    documento = request.data.get('documento') or email  # usa email como fallback
+    fecha_alta = request.data.get('fecha_alta') or date.today()
     
     if not email or not password:
         return Response(
@@ -34,6 +36,12 @@ def registro(request):
     if not nombres:
         return Response(
             {'error': 'Nombres son obligatorios'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    if not documento:
+        return Response(
+            {'error': 'Documento es obligatorio'},
             status=status.HTTP_400_BAD_REQUEST
         )
     
@@ -63,8 +71,15 @@ def registro(request):
             Socio.objects.create(
                 usuario=usuario,
                 nombre_completo=nombres,
+                documento=documento,
                 estado=Socio.ESTADO_ACTIVO,
-                fecha_alta=date.today(),
+                fecha_alta=fecha_alta,
+            )
+        else:
+            Socio.objects.filter(pk=usuario.socio.pk).update(
+                nombre_completo=nombres,
+                documento=documento,
+                fecha_alta=fecha_alta,
             )
         
         return Response({
@@ -157,4 +172,3 @@ def usuario_actual(request):
         'rol': user.rol.nombre if user.rol else None,
         'activo': user.activo,
     }, status=status.HTTP_200_OK)
-

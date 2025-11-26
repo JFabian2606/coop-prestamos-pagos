@@ -34,7 +34,7 @@ def crear_socio_automatico(sender, instance, created, **kwargs):
             Socio.objects.create(
                 usuario=instance,
                 nombre_completo=instance.nombres,  # Usar nombre_completo del modelo Socio
+                documento=getattr(instance, "email", None) or str(instance.id),
                 estado=Socio.ESTADO_ACTIVO,
                 fecha_alta=date.today(),  # Fecha actual como default
             )
-

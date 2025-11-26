@@ -12,6 +12,7 @@ export default function LoginRegistro() {
   const [correo, setCorreo] = useState<string>("");
   const [contrasena, setContrasena] = useState<string>("");
   const [nombreCompleto, setNombreCompleto] = useState<string>("");
+  const [documento, setDocumento] = useState<string>("");
 
   const contenedorClase = useMemo(
     () => `container ${modoVista === "registrar" ? "active" : ""}`,
@@ -44,6 +45,8 @@ export default function LoginRegistro() {
         email: correo,
         password: contrasena,
         nombres: nombreCompleto,
+        documento: documento,
+        fecha_alta: new Date().toISOString().slice(0, 10), // yyyy-mm-dd
       });
       
       console.log("Registro exitoso:", response.data);
@@ -84,12 +87,21 @@ export default function LoginRegistro() {
 
           <input
             type="text"
-            placeholder="Nombre completo"
-            name="nombreCompleto"
-            value={nombreCompleto}
-            onChange={(e) => setNombreCompleto(e.target.value)}
+          placeholder="Nombre completo"
+          name="nombreCompleto"
+          value={nombreCompleto}
+          onChange={(e) => setNombreCompleto(e.target.value)}
+          required
+          autoComplete="name"
+        />
+          <input
+            type="text"
+            placeholder="Documento"
+            name="documento"
+            value={documento}
+            onChange={(e) => setDocumento(e.target.value)}
             required
-            autoComplete="name"
+            autoComplete="off"
           />
           <input
             type="email"
@@ -196,4 +208,3 @@ export default function LoginRegistro() {
     </div>
   );
 }
-
