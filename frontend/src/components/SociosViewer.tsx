@@ -1,5 +1,6 @@
-import { AxiosError, isAxiosError } from "axios";
+﻿import { AxiosError, isAxiosError } from "axios";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { FormEvent, MouseEvent } from "react";
 import { api } from "../api";
 import "../styles/SociosViewer.css";
 
@@ -22,12 +23,41 @@ const estadoLabels: Record<SocioDto["estado"], string> = {
   suspendido: "Suspendido",
 };
 
+const estadoTransitions: Record<SocioDto["estado"], SocioDto["estado"][]> = {
+  activo: ["inactivo", "suspendido"],
+  inactivo: ["activo"],
+  suspendido: ["activo"],
+};
+
+type EditFormState = {
+  nombre_completo: string;
+  documento: string;
+  telefono: string;
+  direccion: string;
+  datos_fiscales: string;
+};
+
 export default function SociosViewer() {
   const [socios, setSocios] = useState<SocioDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filtro, setFiltro] = useState<"todos" | SocioDto["estado"]>("todos");
   const [seleccionado, setSeleccionado] = useState<string | null>(null);
+  const [estadoMenuPara, setEstadoMenuPara] = useState<string | null>(null);
+  const [estadoLoading, setEstadoLoading] = useState<string | null>(null);
+  const [accionError, setAccionError] = useState<string | null>(null);
+  const [accionOk, setAccionOk] = useState<string | null>(null);
+  const [editModalAbierta, setEditModalAbierta] = useState(false);
+  const [editando, setEditando] = useState(false);
+  const [formEdicion, setFormEdicion] = useState<EditFormState>({
+    nombre_completo: "",
+    documento: "",
+    telefono: "",
+    direccion: "",
+    datos_fiscales: "",
+  });
+  const [formError, setFormError] = useState<string | null>(null);
+  const [deleteEnProgreso, setDeleteEnProgreso] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const fetchSocios = useCallback(async () => {
@@ -38,6 +68,8 @@ export default function SociosViewer() {
     abortRef.current = controller;
     setLoading(true);
     setError(null);
+    setAccionError(null);
+    setAccionOk(null);
     try {
       const { data } = await api.get<SocioDto[]>("socios", { signal: controller.signal });
       setSocios(data);
@@ -88,6 +120,16 @@ export default function SociosViewer() {
     };
   }, [fetchSocios]);
 
+  useEffect(() => {
+    const closeMenus = () => setEstadoMenuPara(null);
+    document.addEventListener("click", closeMenus);
+    return () => document.removeEventListener("click", closeMenus);
+  }, []);
+
+  useEffect(() => {
+    setEstadoMenuPara(null);
+  }, [seleccionado]);
+
   const sociosFiltrados = useMemo(() => {
     if (filtro === "todos") return socios;
     return socios.filter((s) => s.estado === filtro);
@@ -99,6 +141,167 @@ export default function SociosViewer() {
     }
     return null;
   }, [seleccionado, socios]);
+
+  const getErrorMessage = (err: unknown, fallback: string) => {
+    if (isAxiosError(err)) {
+      const data = err.response?.data as any;
+      return (
+        data?.detail ||
+        data?.estado?.[0] ||
+        data?.nombre_completo?.[0] ||
+        data?.documento?.[0] ||
+        data?.non_field_errors?.[0] ||
+        fallback
+      );
+    }
+    return fallback;
+  };
+
+  const upsertSocio = (actualizado: SocioDto) => {
+    setSocios((prev) => prev.map((s) => (s.id === actualizado.id ? actualizado : s)));
+  };
+
+  const handleEstadoChange = async (socioId: string, nuevoEstado: SocioDto["estado"]) => {
+    setEstadoLoading(socioId);
+    setAccionError(null);
+    setAccionOk(null);
+    try {
+      const { data } = await api.patch<SocioDto>(`socios/${socioId}/estado/`, { estado: nuevoEstado });
+      upsertSocio(data);
+      setSeleccionado(data.id);
+      setAccionOk(`Estado actualizado a ${estadoLabels[nuevoEstado]}`);
+    } catch (err) {
+      setAccionError(getErrorMessage(err, "No se pudo cambiar el estado."));
+    } finally {
+      setEstadoLoading(null);
+      setEstadoMenuPara(null);
+    }
+  };
+
+  const abrirEdicion = () => {
+    if (!socioActivo) return;
+    setFormEdicion({
+      nombre_completo: socioActivo.nombre_completo ?? "",
+      documento: socioActivo.documento ?? "",
+      telefono: socioActivo.telefono ?? "",
+      direccion: socioActivo.direccion ?? "",
+      datos_fiscales: JSON.stringify(socioActivo.datos_fiscales ?? {}, null, 2),
+    });
+    setFormError(null);
+    setAccionError(null);
+    setAccionOk(null);
+    setEditModalAbierta(true);
+  };
+
+  const handleEditarSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!socioActivo) return;
+
+    if (!formEdicion.nombre_completo.trim()) {
+      setFormError("El nombre es obligatorio.");
+      return;
+    }
+
+    let datosFiscalesParsed: Record<string, any> = {};
+    try {
+      datosFiscalesParsed = formEdicion.datos_fiscales.trim()
+        ? JSON.parse(formEdicion.datos_fiscales)
+        : {};
+    } catch (_err) {
+      setFormError("Datos fiscales debe ser un JSON válido.");
+      return;
+    }
+
+    setEditando(true);
+    setFormError(null);
+    setAccionError(null);
+    setAccionOk(null);
+
+    try {
+      const payload = {
+        nombre_completo: formEdicion.nombre_completo.trim(),
+        documento: formEdicion.documento.trim() || null,
+        telefono: formEdicion.telefono.trim() || null,
+        direccion: formEdicion.direccion.trim() || null,
+        datos_fiscales: datosFiscalesParsed,
+      };
+      const { data } = await api.put<SocioDto>(`socios/${socioActivo.id}/`, payload);
+      upsertSocio(data);
+      setSeleccionado(data.id);
+      setAccionOk("Datos del socio actualizados.");
+      setEditModalAbierta(false);
+    } catch (err) {
+      setFormError(getErrorMessage(err, "No se pudo actualizar el socio."));
+    } finally {
+      setEditando(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!socioActivo) return;
+    const confirmar = window.confirm(
+      `¿Dar de baja (inactivar) al socio "${socioActivo.nombre_completo}"?`
+    );
+    if (!confirmar) return;
+
+    const socioId = socioActivo.id;
+    setDeleteEnProgreso(socioId);
+    setAccionError(null);
+    setAccionOk(null);
+
+    try {
+      const { data } = await api.delete<SocioDto>(`socios/${socioId}/`);
+      upsertSocio(data);
+      setSeleccionado(data.id);
+      setAccionOk("Socio inactivado (baja lógica).");
+    } catch (err) {
+      setAccionError(getErrorMessage(err, "No se pudo dar de baja al socio."));
+    } finally {
+      setDeleteEnProgreso(null);
+    }
+  };
+
+  const EstadoPill = ({ socio }: { socio: SocioDto }) => {
+    const opciones = estadoTransitions[socio.estado];
+    const isOpen = estadoMenuPara === socio.id;
+    const isLoading = estadoLoading === socio.id;
+
+    const handleClick = (event: MouseEvent) => {
+      event.stopPropagation();
+      setEstadoMenuPara((prev) => (prev === socio.id ? null : socio.id));
+    };
+
+    return (
+      <div className="estado-control" onClick={(e) => e.stopPropagation()}>
+        <button
+          type="button"
+          className={`estado-pill estado-pill--${socio.estado} estado-pill--action`}
+          onClick={handleClick}
+          disabled={isLoading}
+        >
+          {isLoading ? "Guardando..." : estadoLabels[socio.estado]}
+          <span className="estado-pill__caret">▾</span>
+        </button>
+        {isOpen && (
+          <div className="estado-menu" onClick={(e) => e.stopPropagation()}>
+            <p className="estado-menu__label">Cambiar a</p>
+            {opciones.map((estado) => (
+              <button
+                key={estado}
+                type="button"
+                className="estado-option"
+                onClick={() => void handleEstadoChange(socio.id, estado)}
+                disabled={isLoading}
+              >
+                <span className={`estado-dot estado-dot--${estado}`} />
+                {estadoLabels[estado]}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <section className="socios-panel">
@@ -127,6 +330,8 @@ export default function SociosViewer() {
       </header>
 
       {error && <div className="alert error">{error}</div>}
+      {accionError && <div className="alert error">{accionError}</div>}
+      {accionOk && <div className="alert success">{accionOk}</div>}
 
       <div className="socios-layout">
         <div className="socios-table">
@@ -152,7 +357,7 @@ export default function SociosViewer() {
                 </span>
                 <span>{socio.documento ?? "-"}</span>
                 <span>{socio.telefono ?? "-"}</span>
-                <span className={`estado-pill estado-pill--${socio.estado}`}>{estadoLabels[socio.estado]}</span>
+                <EstadoPill socio={socio} />
               </button>
             ))}
           </div>
@@ -163,6 +368,20 @@ export default function SociosViewer() {
           {socioActivo && (
             <>
               <h3>{socioActivo.nombre_completo}</h3>
+              <div className="socios-detail__actions">
+                <button type="button" className="ghost icon-button" onClick={abrirEdicion}>
+                  <i className="bx bxs-pencil" style={{ color: "#43a59d" }} aria-hidden />
+                  <span>Editar datos</span>
+                </button>
+                <button
+                  type="button"
+                  className="ghost danger-ghost"
+                  onClick={() => void handleDelete()}
+                  disabled={deleteEnProgreso === socioActivo.id}
+                >
+                  {deleteEnProgreso === socioActivo.id ? "Procesando..." : "Dar de baja"}
+                </button>
+              </div>
               <dl>
                 <dt>Documento</dt>
                 <dd>{socioActivo.documento || "No registrado"}</dd>
@@ -172,9 +391,7 @@ export default function SociosViewer() {
                 <dd>{socioActivo.direccion || "No registrada"}</dd>
                 <dt>Estado</dt>
                 <dd>
-                  <span className={`estado-pill estado-pill--${socioActivo.estado}`}>
-                    {estadoLabels[socioActivo.estado]}
-                  </span>
+                  <EstadoPill socio={socioActivo} />
                 </dd>
                 <dt>Datos fiscales</dt>
                 <dd>
@@ -187,6 +404,77 @@ export default function SociosViewer() {
           )}
         </aside>
       </div>
+
+      {editModalAbierta && socioActivo && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true">
+          <div className="modal">
+            <div className="modal__header">
+              <h4>Editar socio</h4>
+              <button
+                type="button"
+                className="ghost close-button"
+                onClick={() => setEditModalAbierta(false)}
+                aria-label="Cerrar"
+              >
+                ×
+              </button>
+            </div>
+            <form className="modal__body" onSubmit={handleEditarSubmit}>
+              {formError && <div className="alert error">{formError}</div>}
+              <label>
+                <span>Nombre completo</span>
+                <input
+                  type="text"
+                  value={formEdicion.nombre_completo}
+                  onChange={(e) => setFormEdicion((prev) => ({ ...prev, nombre_completo: e.target.value }))}
+                  required
+                />
+              </label>
+              <label>
+                <span>Documento</span>
+                <input
+                  type="text"
+                  value={formEdicion.documento}
+                  onChange={(e) => setFormEdicion((prev) => ({ ...prev, documento: e.target.value }))}
+                />
+              </label>
+              <label>
+                <span>Telefono</span>
+                <input
+                  type="text"
+                  value={formEdicion.telefono}
+                  onChange={(e) => setFormEdicion((prev) => ({ ...prev, telefono: e.target.value }))}
+                />
+              </label>
+              <label>
+                <span>Direccion</span>
+                <input
+                  type="text"
+                  value={formEdicion.direccion}
+                  onChange={(e) => setFormEdicion((prev) => ({ ...prev, direccion: e.target.value }))}
+                />
+              </label>
+              <label>
+                <span>Datos fiscales (JSON)</span>
+                <textarea
+                  rows={5}
+                  value={formEdicion.datos_fiscales}
+                  onChange={(e) => setFormEdicion((prev) => ({ ...prev, datos_fiscales: e.target.value }))}
+                />
+              </label>
+              <div className="modal__footer">
+                <button type="button" className="ghost" onClick={() => setEditModalAbierta(false)} disabled={editando}>
+                  Cancelar
+                </button>
+                <button type="submit" disabled={editando}>
+                  {editando ? "Guardando..." : "Guardar cambios"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
+

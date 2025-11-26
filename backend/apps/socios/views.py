@@ -91,6 +91,32 @@ class SocioAdminDetailView(APIView):
         )
         return Response(SocioSerializer(socio).data)
 
+    @extend_schema(
+        tags=['Socios'],
+        responses={
+            200: SocioSerializer,
+            404: OpenApiResponse(description='Socio no encontrado'),
+        },
+        summary='Baja lógica de socio',
+        description='Marca al socio como inactivo (baja lógica). Solo administradores.',
+    )
+    def delete(self, _request, socio_id):
+        socio = self.get_object(socio_id)
+        before = snapshot_socio(socio)
+        if socio.estado != Socio.ESTADO_INACTIVO:
+            socio.estado = Socio.ESTADO_INACTIVO
+            socio.save(update_fields=['estado', 'updated_at'])
+            after = snapshot_socio(socio)
+            register_audit_entry(
+                socio=socio,
+                user=getattr(_request, 'user', None),
+                action=SocioAuditLog.Actions.STATE_CHANGE,
+                before=before,
+                after=after,
+                metadata={'motivo': 'baja_logica'},
+            )
+        return Response(SocioSerializer(socio).data, status=status.HTTP_200_OK)
+
 
 class SocioEstadoUpdateView(APIView):
     permission_classes = [permissions.IsAdminUser]
@@ -126,4 +152,3 @@ class SocioEstadoUpdateView(APIView):
             metadata={'motivo': serializer.validated_data.get('motivo') or ''},
         )
         return Response(SocioSerializer(socio).data)
-

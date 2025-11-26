@@ -46,6 +46,11 @@
   color: #b42318;
 }
 
+.alert.success {
+  background: #ecfdf3;
+  color: #027a48;
+}
+
 .socios-layout {
   display: grid;
   grid-template-columns: 2fr 1fr;
@@ -117,6 +122,22 @@
   text-transform: capitalize;
 }
 
+.estado-pill--action {
+  cursor: pointer;
+  gap: 0.35rem;
+  border: 1px solid transparent;
+}
+
+.estado-pill--action:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.estado-pill__caret {
+  font-size: 0.65rem;
+  color: #475467;
+}
+
 .estado-pill--activo {
   background: rgba(2, 122, 72, 0.12);
   color: #027a48;
@@ -132,6 +153,69 @@
   color: #b42318;
 }
 
+.estado-control {
+  position: relative;
+  display: inline-flex;
+}
+
+.estado-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  background: white;
+  border: 1px solid #e4e7ec;
+  border-radius: 0.75rem;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
+  padding: 0.4rem;
+  min-width: 180px;
+  z-index: 10;
+}
+
+.estado-menu__label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #667085;
+  margin: 0.25rem 0 0.5rem 0.5rem;
+}
+
+.estado-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.65rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: transparent;
+  font-weight: 600;
+  color: #101828;
+  cursor: pointer;
+}
+
+.estado-option:hover {
+  background: #f8fafc;
+}
+
+.estado-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.estado-dot--activo {
+  background: #027a48;
+}
+
+.estado-dot--inactivo {
+  background: #475467;
+}
+
+.estado-dot--suspendido {
+  background: #b42318;
+}
+
 .socios-detail {
   border: 1px solid #e4e7ec;
   border-radius: 1rem;
@@ -141,6 +225,35 @@
 
 .socios-detail h3 {
   margin-top: 0;
+}
+
+.socios-detail__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.95rem;
+}
+
+.icon-button i {
+  font-size: 1.05rem;
+}
+
+.danger-ghost {
+  border: 1px solid #f04438;
+  color: #b42318;
+  background: rgba(244, 68, 56, 0.08);
+}
+
+.danger-ghost:hover {
+  background: rgba(244, 68, 56, 0.15);
 }
 
 .socios-detail dl {
@@ -176,6 +289,72 @@
 .muted {
   padding: 1rem;
   color: #667085;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 20;
+}
+
+.modal {
+  width: min(520px, 100%);
+  background: #fff;
+  border-radius: 1rem;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+}
+
+.modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.1rem 1.3rem 0.75rem;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.modal__body {
+  padding: 1rem 1.3rem 1.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.modal__body label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  color: #475467;
+}
+
+.modal__body input,
+.modal__body textarea {
+  border: 1px solid #d0d5dd;
+  border-radius: 0.65rem;
+  padding: 0.65rem 0.75rem;
+  font: inherit;
+  background: #fff;
+}
+
+.modal__body textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.close-button {
+  padding: 0.35rem 0.65rem;
 }
 
 @media (max-width: 960px) {
