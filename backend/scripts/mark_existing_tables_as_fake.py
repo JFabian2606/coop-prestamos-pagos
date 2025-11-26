@@ -140,8 +140,15 @@ if __name__ == "__main__":
         mark_migration_as_fake("sessions", "0001_initial")
 
     # socios
-    if table_exists("socio"):
-        print("OK. socio exists - marking socios migration as fake")
+    socio_table = table_exists("socio")
+    socio_audit_table = table_exists("socios_socioauditlog")
+    if socio_table and socio_audit_table:
+        print("OK. socio and socios_socioauditlog exist - marking socios migration as fake")
         mark_migration_as_fake("socios", "0001_initial")
+    else:
+        print(
+            "Skipping fake for socios: "
+            f"socio_table={socio_table}, socio_audit_table={socio_audit_table} (migrations will create missing tables)"
+        )
 
     print("OK. Done. Existing tables are now marked as migrated.")
