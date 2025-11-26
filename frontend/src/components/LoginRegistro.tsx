@@ -62,7 +62,8 @@ export default function LoginRegistro() {
   };
 
   return (
-    <div className={contenedorClase} id="contenedorAutenticacion">
+    <div className="auth-page">
+      <div className={contenedorClase} id="contenedorAutenticacion">
       {/* Panel de Registro */}
       <div className="form-container sign-up">
         <form onSubmit={manejarEnvioRegistro} aria-label="Formulario de registro">
@@ -206,5 +207,6 @@ export default function LoginRegistro() {
         </div>
       </div>
     </div>
+  </div>
   );
 }
