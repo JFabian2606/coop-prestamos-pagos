@@ -3,6 +3,26 @@ import "./App.css";
 import { api, ensureCsrfCookie } from "./api";
 import LoginRegistro from "./components/LoginRegistro";
 import SociosViewer from "./components/SociosViewer";
+import logo from "./assets/logo-cooprestamos-vector.svg";
+
+const Loader = () => (
+  <div className="loader">
+    <div className="loader__card" role="status" aria-live="polite">
+      <div className="loader__logo">
+        <img src={logo} alt="Logo Cooprestamos" />
+      </div>
+      <p className="loader__name">COOPRESTAMOS</p>
+      <p className="loader__status">
+        Cargando
+        <span className="loader__dots" aria-hidden="true">
+          <span className="loader__dot">.</span>
+          <span className="loader__dot">.</span>
+          <span className="loader__dot">.</span>
+        </span>
+      </p>
+    </div>
+  </div>
+);
 
 function App() {
   const [usuario, setUsuario] = useState<any>(null);
@@ -42,7 +62,7 @@ function App() {
   };
 
   if (loading) {
-    return <div>Cargando...</div>;
+    return <Loader />;
   }
 
   if (!usuario) {
