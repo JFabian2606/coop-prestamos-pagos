@@ -3,7 +3,7 @@ import "./App.css";
 import { api, ensureCsrfCookie } from "./api";
 import LoginRegistro from "./components/LoginRegistro";
 import SociosViewer from "./components/SociosViewer";
-import logo from "./assets/logo-cooprestamos-vector.svg";
+import logo from "./assets/solo-logo-cooprestamos-vector.svg";
 
 const Loader = () => (
   <div className="loader">
