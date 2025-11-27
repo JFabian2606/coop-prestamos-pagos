@@ -12,15 +12,16 @@ class RolAdmin(admin.ModelAdmin):
 @admin.register(Usuario)
 class UsuarioAdmin(BaseUserAdmin):
     """Admin personalizado para Usuario"""
-    list_display = ('email', 'nombres', 'rol', 'activo', 'is_staff', 'created_at')
-    list_filter = ('activo', 'is_staff', 'is_superuser', 'rol', 'created_at')
+    list_display = ('email', 'nombres', 'rol', 'activo', 'email_verificado', 'is_staff', 'created_at')
+    list_filter = ('activo', 'email_verificado', 'is_staff', 'is_superuser', 'rol', 'created_at')
     search_fields = ('email', 'nombres')
     ordering = ('email',)
     
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         ('Información Personal', {'fields': ('nombres',)}),
-        ('Permisos', {'fields': ('activo', 'is_staff', 'is_superuser', 'rol', 'groups', 'user_permissions')}),
+        ('Estado de cuenta', {'fields': ('activo', 'email_verificado', 'email_verificado_en')}),
+        ('Permisos', {'fields': ('is_staff', 'is_superuser', 'rol', 'groups', 'user_permissions')}),
         ('Fechas', {'fields': ('last_login', 'created_at')}),
     )
     
@@ -31,5 +32,5 @@ class UsuarioAdmin(BaseUserAdmin):
         }),
     )
     
-    readonly_fields = ('created_at', 'last_login')
+    readonly_fields = ('created_at', 'last_login', 'email_verificado_en')
 

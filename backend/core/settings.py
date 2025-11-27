@@ -237,3 +237,8 @@ SPECTACULAR_SETTINGS = {
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
 }
+
+# Email
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'no-reply@coop.local')
+EMAIL_VERIFICATION_MAX_AGE = env_int('EMAIL_VERIFICATION_MAX_AGE', 60 * 60 * 24)  # 24h por defecto

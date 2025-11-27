@@ -59,6 +59,8 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     password_hash = models.CharField(max_length=255, blank=True)  # Para compatibilidad con Supabase
     nombres = models.CharField(max_length=255)
     activo = models.BooleanField(default=True)
+    email_verificado = models.BooleanField(default=True)
+    email_verificado_en = models.DateTimeField(null=True, blank=True)
     rol = models.ForeignKey(
         Rol,
         on_delete=models.SET_NULL,
@@ -93,10 +95,10 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     
     def get_full_name(self):
         return self.nombres
-    
+   
     def get_short_name(self):
         return self.nombres.split()[0] if self.nombres else self.email
-    
+   
     def save(self, *args, **kwargs):
         # Sincronizar activo con is_active
         self.is_active = self.activo
