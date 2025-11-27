@@ -5,7 +5,6 @@ from rest_framework import status, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import APIView
-import logging
 from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
 from django.conf import settings
@@ -26,10 +25,9 @@ from apps.usuarios.tokens import (
 )
 
 User = get_user_model()
-logger = logging.getLogger(__name__)
 
 
-def _enviar_correo_verificacion(usuario, request) -> bool:
+def _enviar_correo_verificacion(usuario, request):
     token = generar_token_verificacion(usuario)
     url = request.build_absolute_uri(reverse('confirmar-email')) + f'?token={token}'
     asunto = 'Confirma tu cuenta'
@@ -91,12 +89,7 @@ def _enviar_correo_verificacion(usuario, request) -> bool:
         [usuario.email],
     )
     mensaje.attach_alternative(html, "text/html")
-    try:
-        mensaje.send(fail_silently=False)
-        return True
-    except Exception:
-        logger.exception("No se pudo enviar correo de verificacion a %s", usuario.email)
-        return False
+    mensaje.send(fail_silently=False)
 
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
@@ -167,14 +160,13 @@ def registro(request):
                 documento=documento,
                 fecha_alta=fecha_alta,
             )
-        envio_ok = _enviar_correo_verificacion(usuario, request)
+        _enviar_correo_verificacion(usuario, request)
 
         return Response({
             'message': 'Usuario registrado exitosamente. Revisa tu email para activar la cuenta.',
             'usuario_id': str(usuario.id),
             'email': usuario.email,
             'requiere_verificacion': True,
-            'email_enviado': bool(envio_ok),
         }, status=status.HTTP_201_CREATED)
         
     except Exception as e:
@@ -234,13 +226,7 @@ def reenviar_verificacion(request):
     if user.email_verificado:
         return Response({'message': 'El email ya está verificado'}, status=status.HTTP_200_OK)
 
-    envio_ok = _enviar_correo_verificacion(user, request)
-    if not envio_ok:
-        return Response(
-            {'error': 'No se pudo enviar el correo de verificación. Intenta más tarde.'},
-            status=status.HTTP_503_SERVICE_UNAVAILABLE,
-        )
-
+    _enviar_correo_verificacion(user, request)
     return Response({'message': 'Correo de verificación enviado'}, status=status.HTTP_200_OK)
 
 
