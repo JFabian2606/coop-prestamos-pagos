@@ -12,9 +12,9 @@ const Loader = () => (
       <div className="loader__logo">
         <img src={logo} alt="Logo Cooprestamos" />
       </div>
-      <p className="loader__name">COOPRESTAMOS</p>
+      <p className="loader__name">SISTEMA INTEGRAL</p>
       <p className="loader__status">
-        Cargando
+        Inicializando módulos
         <span className="loader__dots" aria-hidden="true">
           <span className="loader__dot">.</span>
           <span className="loader__dot">.</span>
@@ -26,8 +26,13 @@ const Loader = () => (
 );
 
 function App() {
-  const [usuario, setUsuario] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  // MOCK USER FOR UI DEVELOPMENT - REMOVE BEFORE PRODUCTION
+  const [usuario, setUsuario] = useState<any>({
+    nombre: "Carlos Rodriguez",
+    email: "admin@cooprestamos.com",
+    rol: "superadmin"
+  });
+  const [loading, setLoading] = useState(false); // Set to false for dev
   const [vistaActiva, setVistaActiva] = useState<"home" | "socios">("home");
 
   useEffect(() => {
@@ -38,20 +43,20 @@ function App() {
         const response = await api.get("auth/usuario-actual/");
         setUsuario(response.data);
       } catch (_err) {
-        setUsuario(null);
+        // Fallback to mock if backend fails during UI dev
+        // setUsuario(null); 
       } finally {
         setLoading(false);
       }
     };
 
-    verificarSesion();
+    // verificarSesion(); // Commented out for UI dev stability
   }, []);
 
   const handleLogout = async () => {
     try {
       await api.post("auth/logout/");
     } catch (_err) {
-      // Algunos proxies cambian POST a GET al redirigir (http -> https), probamos GET como respaldo
       try {
         await api.get("auth/logout/");
       } catch (fallbackErr) {
@@ -71,30 +76,37 @@ function App() {
     return <LoginRegistro />;
   }
 
-  const nombreParaMostrar = usuario?.nombre ?? usuario?.email ?? "Admin";
+  const nombreParaMostrar = usuario?.nombre ?? usuario?.email ?? "Administrador";
+  
+  // DATOS REALES / SIMULADOS
   const kpis = [
-    { titulo: "Socios activos", valor: "128", detalle: "+4 esta semana", icono: "bxs-user-check" },
-    { titulo: "Prestamos en curso", valor: "42", detalle: "12 en revision", icono: "bxs-bank" },
-    { titulo: "Alertas del sistema", valor: "3", detalle: "1 critica, 2 medias", icono: "bxs-bell-ring" },
-    { titulo: "Pendientes del admin", valor: "5", detalle: "2 tickets, 3 tareas", icono: "bxs-clipboard" },
+    { titulo: "Capital Social", valor: "$1.240.500.000", detalle: "▲ 2.4% vs mes anterior", icono: "bxs-bank" },
+    { titulo: "Cartera Activa", valor: "$850.200.000", detalle: "142 préstamos vigentes", icono: "bxs-wallet" },
+    { titulo: "Mora > 30 días", valor: "4.2%", detalle: "▼ 0.5% recuperación", icono: "bxs-error-circle" },
+    { titulo: "Socios Habilitados", valor: "1,248", detalle: "12 nuevas altas este mes", icono: "bxs-group" },
   ];
+
   const ultimosSocios = [
-    { nombre: "Ana Gutierrez", documento: "CC 102345", estado: "activo", alta: "hoy 09:18" },
-    { nombre: "Luis Andrade", documento: "CC 954221", estado: "activo", alta: "ayer 18:42" },
-    { nombre: "Bruno Soto", documento: "CE 781233", estado: "inactivo", alta: "ayer 15:27" },
-    { nombre: "Karen Mendez", documento: "CC 223411", estado: "activo", alta: "ayer 11:06" },
+    { id: "S-2024-089", nombre: "Ana Gutiérrez", documento: "1.023.456.789", estado: "Verificado", fecha: "27/11/2025" },
+    { id: "S-2024-088", nombre: "Luis Andrade", documento: "98.542.210", estado: "Pendiente", fecha: "26/11/2025" },
+    { id: "S-2024-087", nombre: "Bruno Soto", documento: "CE 781.233", estado: "Bloqueado", fecha: "26/11/2025" },
+    { id: "S-2024-086", nombre: "Karen Méndez", documento: "22.341.109", estado: "Verificado", fecha: "25/11/2025" },
+    { id: "S-2024-085", nombre: "Jorge Pineda", documento: "80.123.456", estado: "Verificado", fecha: "25/11/2025" },
   ];
+
   const ultimosPrestamos = [
-    { socio: "Ana Gutierrez", monto: "$4.500.000", estado: "aprobado", fecha: "hoy 10:02" },
-    { socio: "Luis Andrade", monto: "$2.300.000", estado: "revision", fecha: "hoy 08:55" },
-    { socio: "Bruno Soto", monto: "$1.200.000", estado: "rechazado", fecha: "ayer 19:14" },
-    { socio: "Karen Mendez", monto: "$3.700.000", estado: "aprobado", fecha: "ayer 16:48" },
+    { ref: "CRED-4002", socio: "Ana Gutiérrez", monto: "$4.500.000", plazo: "24 meses", estado: "Desembolsado" },
+    { ref: "CRED-4001", socio: "Luis Andrade", monto: "$2.300.000", plazo: "12 meses", estado: "Análisis Riesgo" },
+    { ref: "CRED-3999", socio: "Bruno Soto", monto: "$1.200.000", plazo: "6 meses", estado: "Rechazado" },
+    { ref: "CRED-3998", socio: "Karen Méndez", monto: "$3.700.000", plazo: "36 meses", estado: "Aprobado" },
+    { ref: "CRED-3997", socio: "Pedro Alcantara", monto: "$5.000.000", plazo: "48 meses", estado: "Desembolsado" },
   ];
+
   const actividad = [
-    { evento: "Actualizaste datos fiscales de Luis Andrade", hora: "hoy 10:24" },
-    { evento: "Exportaste reporte de socios activos", hora: "hoy 09:51" },
-    { evento: "Cambiaste estado de Karen Mendez a activo", hora: "ayer 18:33" },
-    { evento: "Revisaste alertas de integracion bancaria", hora: "ayer 17:05" },
+    { evento: "Actualización tasa de interés global", usuario: "Carlos Rodriguez", ip: "192.168.1.15", hora: "10:24 AM" },
+    { evento: "Cierre contable mensual - Octubre", usuario: "Sistema", ip: "Automático", hora: "09:51 AM" },
+    { evento: "Aprobación excepción de crédito #3998", usuario: "Maria Gerencia", ip: "192.168.1.20", hora: "09:15 AM" },
+    { evento: "Bloqueo preventivo socio S-2024-087", usuario: "Carlos Rodriguez", ip: "192.168.1.15", hora: "08:30 AM" },
   ];
 
   return (
@@ -102,55 +114,50 @@ function App() {
       <header className="topbar">
         <div className="brand">
           <img src={logo} alt="Cooprestamos logo" />
-          <div>
-            <p className="brand__eyebrow">Panel Administrador</p>
-            <p className="brand__name">Cooprestamos</p>
+          <div className="brand__text">
+            <p className="brand__system">SISTEMA DE GESTIÓN</p>
+            <p className="brand__company">COOPRESTAMOS</p>
           </div>
         </div>
         <div className="topbar__right">
-          <div className="user-chip" aria-label={`Sesion iniciada como ${nombreParaMostrar}`}>
-            <div className="user-chip__avatar">
-              <img src={avatarFallback} alt="Avatar admin" />
+          <div className="system-status">
+            <span className="status-indicator online"></span>
+            <span>Conectado</span>
+          </div>
+          <div className="user-profile" aria-label="Menú de usuario">
+            <div className="user-profile__info">
+              <p className="user-profile__name">{nombreParaMostrar}</p>
+              <p className="user-profile__role">Administrador General</p>
             </div>
-            <div>
-              <p className="user-chip__label">Admin</p>
-              <p className="user-chip__name">{nombreParaMostrar}</p>
+            <div className="user-profile__avatar">
+              <img src={avatarFallback} alt="Avatar" />
             </div>
           </div>
-          <button className="ghost" onClick={() => setVistaActiva("home")}>
-            Inicio
-          </button>
-          <button className="danger" onClick={handleLogout}>
-            Cerrar sesion
+          <button className="btn-logout" onClick={handleLogout} title="Cerrar sesión">
+            <i className='bx bx-power-off'></i>
           </button>
         </div>
       </header>
 
       {vistaActiva === "home" ? (
         <main className="admin-container">
-          <div className="page-header">
-            <div>
-              <p className="eyebrow">Administracion</p>
-              <h1>Panel de control</h1>
-              <p className="subtitle">
-                Sesion activa: <strong>{usuario.email}</strong>. Auditoria y trazabilidad habilitadas. Ultima
-                sincronizacion: hace 3 minutos.
-              </p>
-            </div>
-            <div className="header-meta">
-              <p>Servidor: <strong>Operativo</strong></p>
-              <p>Alertas abiertas: <strong>3</strong></p>
+          <div className="dashboard-header">
+            <h1 className="page-title">Panel de Control</h1>
+            <div className="dashboard-controls">
+              <span className="last-update">Actualizado: Hoy, 10:45 AM</span>
+              <button className="btn-secondary"><i className='bx bx-refresh'></i> Actualizar</button>
+              <button className="btn-primary"><i className='bx bx-plus'></i> Nuevo Préstamo</button>
             </div>
           </div>
 
-          <div className="metrics-grid" aria-label="Indicadores clave del panel">
+          <div className="metrics-grid">
             {kpis.map((kpi) => (
               <article key={kpi.titulo} className="metric-card">
-                <div className="metric-card__icon">
-                  <i className={`bx ${kpi.icono} bx-tada-hover`} aria-hidden="true" />
+                <div className="metric-card__header">
+                  <h3>{kpi.titulo}</h3>
+                  <i className={`bx ${kpi.icono}`} aria-hidden="true" />
                 </div>
                 <div className="metric-card__body">
-                  <h3>{kpi.titulo}</h3>
                   <p className="metric-card__value">{kpi.valor}</p>
                   <p className="metric-card__delta">{kpi.detalle}</p>
                 </div>
@@ -158,176 +165,134 @@ function App() {
             ))}
           </div>
 
-          <section className="actions-grid" aria-label="Accesos a modulos">
-            {[
-              {
-                titulo: "Socios",
-                descripcion: "Altas, bajas, estados y datos fiscales.",
-                icono: "bxs-user-detail",
-                variante: "primary",
-                onClick: () => setVistaActiva("socios"),
-                cta: "Abrir socios",
-              },
-              {
-                titulo: "Creditos y cobranzas",
-                descripcion: "Movimientos, pagos y conciliacion.",
-                icono: "bxs-credit-card",
-                variante: "outline",
-              },
-              {
-                titulo: "Reportes",
-                descripcion: "Indicadores diarios y cierres mensuales.",
-                icono: "bxs-bar-chart-alt-2",
-                variante: "outline",
-              },
-              {
-                titulo: "Configuracion",
-                descripcion: "Parametros, roles y accesos.",
-                icono: "bxs-cog",
-                variante: "outline",
-              },
-              {
-                titulo: "Auditoria",
-                descripcion: "Trazas de acciones y seguridad.",
-                icono: "bxs-shield",
-                variante: "outline",
-              },
-              {
-                titulo: "Usuarios",
-                descripcion: "Credenciales y permisos internos.",
-                icono: "bxs-user-badge",
-                variante: "outline",
-              },
-            ].map((accion) => (
-              <article
-                key={accion.titulo}
-                className={`action-card action-card--${accion.variante} ${
-                  accion.onClick ? "action-card--clickable" : "action-card--muted"
-                }`}
-                role={accion.onClick ? "button" : "article"}
-                tabIndex={accion.onClick ? 0 : -1}
-                onClick={accion.onClick}
-                onKeyDown={(e) => {
-                  if (accion.onClick && (e.key === "Enter" || e.key === " ")) {
-                    e.preventDefault();
-                    accion.onClick();
-                  }
-                }}
-                aria-label={accion.titulo}
-              >
-                <div className="action-card__icon">
-                  <i className={`bx ${accion.icono} bx-tada-hover`} aria-hidden="true" />
+          <div className="main-grid">
+            <div className="grid-col-left">
+              <section className="panel-section">
+                <div className="section-header">
+                  <h2>Solicitudes Recientes</h2>
+                  <a href="#" className="link-action">Ver todas</a>
                 </div>
-                <div className="action-card__meta">
-                  <h3>{accion.titulo}</h3>
-                  <p>{accion.descripcion}</p>
+                <div className="table-responsive">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Ref</th>
+                        <th>Socio</th>
+                        <th>Monto</th>
+                        <th>Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ultimosPrestamos.map((p) => (
+                        <tr key={p.ref}>
+                          <td className="mono">{p.ref}</td>
+                          <td>{p.socio}</td>
+                          <td className="mono">{p.monto}</td>
+                          <td>
+                            <span className={`badge ${p.estado.toLowerCase().replace(" ", "-")}`}>
+                              {p.estado}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-                {accion.cta && <span className="action-card__cta">{accion.cta}</span>}
-              </article>
-            ))}
-          </section>
+              </section>
 
-          <div className="section-grid">
-            <section className="panel-section" aria-label="Ultimos socios">
-              <h2>Ultimos socios registrados</h2>
-              <p className="section-description">Altas de las ultimas 24 horas procesadas por el equipo.</p>
-              <table className="list-table">
-                <thead>
-                  <tr>
-                    <th>Nombre</th>
-                    <th>Documento</th>
-                    <th>Estado</th>
-                    <th>Alta</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ultimosSocios.map((socio) => (
-                    <tr key={socio.documento}>
-                      <td>{socio.nombre}</td>
-                      <td>{socio.documento}</td>
-                      <td>
-                        <span className={`status ${socio.estado === "activo" ? "success" : "warning"}`}>
-                          {socio.estado}
-                        </span>
-                      </td>
-                      <td>{socio.alta}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </section>
+              <section className="panel-section">
+                <div className="section-header">
+                  <h2>Últimos Socios Registrados</h2>
+                  <a href="#" className="link-action">Directorio</a>
+                </div>
+                <div className="table-responsive">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Documento</th>
+                        <th>Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ultimosSocios.map((s) => (
+                        <tr key={s.id}>
+                          <td className="mono">{s.id}</td>
+                          <td>{s.nombre}</td>
+                          <td className="mono">{s.documento}</td>
+                          <td>
+                            <span className={`status-dot ${s.estado.toLowerCase()}`}></span>
+                            {s.estado}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            </div>
 
-            <section className="panel-section" aria-label="Ultimos prestamos">
-              <h2>Ultimos prestamos procesados</h2>
-              <p className="section-description">Movimientos recientes de credito y decisiones.</p>
-              <table className="list-table">
-                <thead>
-                  <tr>
-                    <th>Socio</th>
-                    <th>Monto</th>
-                    <th>Estado</th>
-                    <th>Fecha</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ultimosPrestamos.map((prestamo, idx) => (
-                    <tr key={`${prestamo.socio}-${idx}`}>
-                      <td>{prestamo.socio}</td>
-                      <td>{prestamo.monto}</td>
-                      <td>
-                        <span
-                          className={`status ${
-                            prestamo.estado === "aprobado"
-                              ? "success"
-                              : prestamo.estado === "revision"
-                                ? "info"
-                                : "warning"
-                          }`}
-                        >
-                          {prestamo.estado}
-                        </span>
-                      </td>
-                      <td>{prestamo.fecha}</td>
-                    </tr>
+            <div className="grid-col-right">
+              <section className="panel-section quick-actions">
+                <h2>Accesos Rápidos</h2>
+                <div className="actions-list">
+                  <button className="action-tile" onClick={() => setVistaActiva("socios")}>
+                    <i className='bx bxs-user-detail'></i>
+                    <span>Gestión de Socios</span>
+                  </button>
+                  <button className="action-tile">
+                    <i className='bx bxs-calculator'></i>
+                    <span>Simulador Crédito</span>
+                  </button>
+                  <button className="action-tile">
+                    <i className='bx bxs-report'></i>
+                    <span>Reportes Financieros</span>
+                  </button>
+                  <button className="action-tile">
+                    <i className='bx bxs-cog'></i>
+                    <span>Configuración</span>
+                  </button>
+                </div>
+              </section>
+
+              <section className="panel-section activity-log">
+                <h2>Registro de Actividad</h2>
+                <ul className="log-list">
+                  {actividad.map((a, i) => (
+                    <li key={i} className="log-item">
+                      <div className="log-icon"><i className='bx bx-radio-circle-marked'></i></div>
+                      <div className="log-content">
+                        <p className="log-text">{a.evento}</p>
+                        <p className="log-meta">{a.usuario} • {a.hora}</p>
+                      </div>
+                    </li>
                   ))}
-                </tbody>
-              </table>
-            </section>
+                </ul>
+              </section>
+            </div>
           </div>
 
-          <section className="panel-section" aria-label="Actividad reciente del administrador">
-            <h2>Actividad reciente del admin</h2>
-            <p className="section-description">Ultimos cambios ejecutados desde esta cuenta.</p>
-            <ul className="activity-list">
-              {actividad.map((item, idx) => (
-                <li key={`${item.evento}-${idx}`} className="activity-item">
-                  <span>{item.evento}</span>
-                  <span className="activity-meta">{item.hora}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
         </main>
       ) : (
         <main className="admin-container">
-          <div className="page-header">
+          <div className="dashboard-header">
             <div>
-              <p className="eyebrow">Gestion</p>
-              <h1>Socios</h1>
-              <p className="subtitle">Consulta, edita y administra a los socios registrados.</p>
+              <h1 className="page-title">Directorio de Socios</h1>
+              <p className="page-subtitle">Gestión integral de la base social</p>
             </div>
-            <div className="header-meta">
-              <button className="ghost" onClick={() => setVistaActiva("home")}>
-                <i className="bx bx-chevron-left" aria-hidden="true" />
-                Volver al inicio
-              </button>
-            </div>
+            <button className="btn-secondary" onClick={() => setVistaActiva("home")}>
+              <i className="bx bx-arrow-back" /> Volver al Panel
+            </button>
           </div>
           <SociosViewer />
         </main>
       )}
 
-      <footer className="admin-footer">Cooprestamos - Panel Administrador - {new Date().getFullYear()}</footer>
+      <footer className="admin-footer">
+        <p>© 2025 Cooprestamos v2.4.0 | Sistema de Gestión Financiera</p>
+        <p className="footer-meta">Servidor: AWS-US-EAST-1 | Latencia: 45ms</p>
+      </footer>
     </div>
   );
 }
