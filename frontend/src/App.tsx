@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import "./App.css";
-import { api, ensureCsrfCookie } from "./api";
+import { api } from "./api";
 import LoginRegistro from "./components/LoginRegistro";
 import SociosViewer from "./components/SociosViewer";
 import logo from "./assets/logo-cooprestamos-vector.svg";
@@ -37,6 +37,8 @@ function App() {
 
   useEffect(() => {
     // Verificar si hay sesion activa
+    // Verificar si hay sesion activa
+    /*
     const verificarSesion = async () => {
       try {
         await ensureCsrfCookie();
@@ -50,7 +52,9 @@ function App() {
       }
     };
 
-    // verificarSesion(); // Commented out for UI dev stability
+    verificarSesion(); 
+    */
+    setLoading(false); // Ensure loading is set to false immediately for mock
   }, []);
 
   const handleLogout = async () => {
@@ -77,7 +81,7 @@ function App() {
   }
 
   const nombreParaMostrar = usuario?.nombre ?? usuario?.email ?? "Administrador";
-  
+
   // DATOS REALES / SIMULADOS
   const kpis = [
     { titulo: "Capital Social", valor: "$1.240.500.000", detalle: "▲ 2.4% vs mes anterior", icono: "bxs-bank" },
