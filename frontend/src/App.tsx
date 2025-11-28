@@ -71,10 +71,10 @@ function App() {
 
   const nombreParaMostrar = usuario?.nombre ?? usuario?.email ?? "Admin";
   const kpis = [
-    { titulo: "Socios activos", valor: "128", detalle: "+4 esta semana", icono: "bxs-user-check" },
-    { titulo: "Prestamos en curso", valor: "42", detalle: "12 en revision", icono: "bxs-bank" },
-    { titulo: "Alertas del sistema", valor: "3", detalle: "1 critica, 2 medias", icono: "bxs-bell-ring" },
-    { titulo: "Pendientes del admin", valor: "5", detalle: "2 tickets, 3 tareas", icono: "bxs-clipboard" },
+    { titulo: "Socios activos", valor: "128", detalle: "+4 esta semana", icono: "bx-user-check" },
+    { titulo: "Prestamos en curso", valor: "42", detalle: "12 en revision", icono: "bx-bank" },
+    { titulo: "Alertas del sistema", valor: "3", detalle: "1 critica, 2 medias", icono: "bx-bell" },
+    { titulo: "Pendientes del admin", valor: "5", detalle: "2 tickets, 3 tareas", icono: "bx-clipboard" },
   ];
   const ultimosSocios = [
     { nombre: "Ana Gutierrez", documento: "CC 102345", estado: "activo", alta: "hoy 09:18" },
@@ -161,7 +161,7 @@ function App() {
               {
                 titulo: "Socios",
                 descripcion: "Altas, bajas, estados y datos fiscales.",
-                icono: "bxs-user-detail",
+                icono: "bx-id-card",
                 variante: "primary",
                 onClick: () => setVistaActiva("socios"),
                 cta: "Abrir socios",
@@ -169,31 +169,31 @@ function App() {
               {
                 titulo: "Creditos y cobranzas",
                 descripcion: "Movimientos, pagos y conciliacion.",
-                icono: "bxs-credit-card",
+                icono: "bx-credit-card",
                 variante: "outline",
               },
               {
                 titulo: "Reportes",
                 descripcion: "Indicadores diarios y cierres mensuales.",
-                icono: "bxs-bar-chart-alt-2",
+                icono: "bx-bar-chart-alt-2",
                 variante: "outline",
               },
               {
                 titulo: "Configuracion",
                 descripcion: "Parametros, roles y accesos.",
-                icono: "bxs-cog",
+                icono: "bx-cog",
                 variante: "outline",
               },
               {
                 titulo: "Auditoria",
                 descripcion: "Trazas de acciones y seguridad.",
-                icono: "bxs-shield",
+                icono: "bx-shield-alt-2",
                 variante: "outline",
               },
               {
                 titulo: "Usuarios",
                 descripcion: "Credenciales y permisos internos.",
-                icono: "bxs-user-badge",
+                icono: "bx-user-circle",
                 variante: "outline",
               },
             ].map((accion) => (
