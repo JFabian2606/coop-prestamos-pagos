@@ -124,7 +124,6 @@ cd backend
 python -m venv .venv
 source .venv/Scripts/activate
 pip install -r requirements.txt
-python manage.py migrate
 python manage.py runserver
 
 ---
@@ -207,4 +206,15 @@ Los diagramas y modelos de base de datos se encuentran en la carpeta:
 
 - Integrar frontend con API REST
 
-- Pruebas unitarias (pytest, jest)
+Pruebas unitarias (pytest, jest)
+
+---
+
+## API socios (novedad)
+
+- `PUT /api/socios/{id}/` actualiza datos editables y rechaza cualquier campo protegido (id, estado).
+- `PATCH /api/socios/{id}/estado/` valida permisos de administrador y transiciones permitidas: Activo -> Inactivo/Suspendido, Inactivo/Suspendido -> Activo.
+- Auditoría (`SocioAuditLog`) registra usuario, timestamp, estado anterior/nuevo y campos modificados para cada cambio.
+- Documentación interactiva en `/api/docs/` (esquema JSON en `/api/schema/`).
+- Ejecutar pruebas: `cd backend && .venv\Scripts\python.exe manage.py test apps.socios`.
+- Panel React simple: iniciar `npm run dev` dentro de `frontend` y autenticarte con Supabase para ver la tabla en `SociosViewer`.

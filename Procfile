@@ -1,1 +1,1 @@
-web: gunicorn core.wsgi:application --chdir backend
+web: cd backend && python scripts/mark_existing_tables_as_fake.py 2>/dev/null || true && python manage.py migrate --fake-initial 2>/dev/null || python manage.py migrate || true && gunicorn core.wsgi:application --bind 0.0.0.0:$PORT

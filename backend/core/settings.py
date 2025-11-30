@@ -11,6 +11,21 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+import sys
+
+from dotenv import load_dotenv
+load_dotenv()
+
+
+def env_int(name: str, default: int) -> int:
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -27,7 +42,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-desarrollo-local-cambiar-en-produccion")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*").split(",")
 
@@ -43,28 +58,65 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'rest_framework',
+    'drf_spectacular',
+    'apps.usuarios',  # Debe ir antes de apps.socios
+    'apps.socios',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
 ]
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-]
+# CORS: Permitir orígenes desde variables de entorno o usar defaults
+CORS_ORIGINS_ENV = os.environ.get('CORS_ALLOWED_ORIGINS', '')
+if CORS_ORIGINS_ENV:
+    CORS_ALLOWED_ORIGINS = [origin.strip() for origin in CORS_ORIGINS_ENV.split(',') if origin.strip()]
+else:
+    CORS_ALLOWED_ORIGINS = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://coop-prestamos-pagos-git-featu-e24d9d-fabians-projects-90211731.vercel.app",
+    ]
 
 # Permitir previews desde Vercel y Render
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://.*\.vercel\.app$",
     r"^https://.*\.onrender\.com$",
 ]
+
+CSRF_TRUSTED_ORIGINS_ENV = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
+if CSRF_TRUSTED_ORIGINS_ENV:
+    CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in CSRF_TRUSTED_ORIGINS_ENV.split(',') if origin.strip()]
+else:
+    CSRF_TRUSTED_ORIGINS = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://*.vercel.app",
+        "https://*.onrender.com",
+        "https://coop-prestamos-pagos-git-featu-e24d9d-fabians-projects-90211731.vercel.app",
+    ]
+
+# Configuración CORS para cookies (necesario para SessionAuthentication)
+CORS_ALLOW_CREDENTIALS = True
+
+# Configuración de sesiones para autenticación
+# Cookies de sesión/CSRF: permitir uso cross-site (frontend en dominio distinto)
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_SECURE = True  # requiere HTTPS
+CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = 'None'
+CSRF_COOKIE_HTTPONLY = False
+
+# Configuración CORS para cookies
+CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = 'core.urls'
 
@@ -89,19 +141,41 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': os.environ.get('SUPABASE_USER'),
-        'PASSWORD': os.environ.get("SUPABASE_PASSWORD"),
-        'HOST': os.environ.get("SUPABASE_HOST"),
-        'PORT': '5432',
-        'OPTIONS': {
-            'sslmode': 'require',
-        },
+SUPABASE_HOST = os.environ.get("SUPABASE_HOST")
+SUPABASE_DB_NAME = os.environ.get("SUPABASE_DB_NAME", "postgres")
+SUPABASE_PORT = os.environ.get("SUPABASE_PORT", "5432")
+SUPABASE_POOL_MODE = os.environ.get("SUPABASE_POOL_MODE", "direct").lower()
+RUNNING_TESTS = 'test' in sys.argv
+DB_CONN_MAX_AGE = env_int("DB_CONN_MAX_AGE", 0 if SUPABASE_POOL_MODE == "transaction" else 60)
+DB_CONNECT_TIMEOUT = env_int("DB_CONNECT_TIMEOUT", 10)
+PG_APP_NAME = os.environ.get("PG_APP_NAME", "coop-backend")
+
+if not SUPABASE_HOST or RUNNING_TESTS:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': SUPABASE_DB_NAME,
+            'USER': os.environ.get('SUPABASE_USER'),
+            'PASSWORD': os.environ.get("SUPABASE_PASSWORD"),
+            'HOST': SUPABASE_HOST,
+            'PORT': SUPABASE_PORT,
+            'CONN_MAX_AGE': DB_CONN_MAX_AGE,
+            'OPTIONS': {
+                'sslmode': 'require',
+                'connect_timeout': DB_CONNECT_TIMEOUT,
+                'options': f"-c application_name={PG_APP_NAME}",
+            },
+        }
+    }
+
+DISABLE_SERVER_SIDE_CURSORS = SUPABASE_POOL_MODE in {'session', 'transaction'}
 
 
 # Password validation
@@ -145,3 +219,25 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Custom User Model - Usa la tabla 'usuario' de Supabase
+AUTH_USER_MODEL = 'usuarios.Usuario'
+
+# DRF configuration
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.SessionAuthentication',  # Autenticación propia
+        # 'apps.socios.auth.SupabaseAuthentication',  # Deshabilitado - usando auth propia
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Cooperativa - API socios',
+    'DESCRIPTION': 'Gestión de socios, pagos y monitoreo para el panel administrativo.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+}
