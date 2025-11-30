@@ -1,5 +1,6 @@
 from django.urls import path
-from .views import registro, login, logout, usuario_actual, csrf_token
+
+from .views import CustomPasswordResetView, csrf_token, login, logout, registro, usuario_actual
 
 urlpatterns = [
     path('registro/', registro, name='registro'),
@@ -7,5 +8,6 @@ urlpatterns = [
     path('logout/', logout, name='logout'),
     path('csrf/', csrf_token, name='csrf-token'),
     path('usuario-actual/', usuario_actual, name='usuario-actual'),
+    path('password_reset/', CustomPasswordResetView.as_view(), name='password_reset'),
 ]
 
