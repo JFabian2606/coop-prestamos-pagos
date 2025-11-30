@@ -118,7 +118,7 @@ function App() {
       variante: "outline",
     },
   ];
-  
+
   const nombreParaMostrar = usuario?.nombre ?? usuario?.email ?? "Admin";
   const kpis = [
     { titulo: "Socios activos", valor: "128", detalle: "+4 esta semana", icono: "bx-user-check" },
@@ -207,46 +207,7 @@ function App() {
           </div>
 
           <section className="actions-grid" aria-label="Accesos a modulos">
-            {[
-               {
-                 titulo: "Socios",
-                 descripcion: "Altas, bajas, estados y datos fiscales.",
-                 icono: "bx-id-card",
-                 variante: "primary",
-                 onClick: () => setVistaActiva("socios"),
-                 cta: "Abrir socios",
-               },
-              {
-                titulo: "Creditos y cobranzas",
-                descripcion: "Movimientos, pagos y conciliacion.",
-                icono: "bx-credit-card",
-                variante: "outline",
-              },
-              {
-                titulo: "Reportes",
-                descripcion: "Indicadores diarios y cierres mensuales.",
-                icono: "bx-bar-chart-alt-2",
-                variante: "outline",
-              },
-              {
-                titulo: "Configuracion",
-                descripcion: "Parametros, roles y accesos.",
-                icono: "bx-cog",
-                variante: "outline",
-              },
-              {
-                titulo: "Auditoria",
-                descripcion: "Trazas de acciones y seguridad.",
-                icono: "bx-shield-alt-2",
-                variante: "outline",
-              },
-              {
-                titulo: "Usuarios",
-                descripcion: "Credenciales y permisos internos.",
-                icono: "bx-user-circle",
-                variante: "outline",
-              },
-            ].map((accion) => (
+            {acciones.map((accion) => (
               <article
                 key={accion.titulo}
                 className={`action-card action-card--${accion.variante} ${
@@ -357,22 +318,22 @@ function App() {
           </section>
         </main>
       ) : (
-         <main className="admin-container">
-           <div className="page-header">
-             <div>
-               <p className="eyebrow">Gestion</p>
-               <h1>Socios</h1>
-               <p className="subtitle">Consulta, edita y administra a los socios registrados.</p>
-             </div>
-             <div className="header-meta">
-               <button className="ghost" onClick={() => setVistaActiva("home")}>
-                 <i className="bx bx-chevron-left" aria-hidden="true" />
-                 Volver al inicio
-               </button>
-             </div>
-           </div>
-           <SociosViewer />
-         </main>
+        <main className="admin-container">
+          <div className="page-header">
+            <div>
+              <p className="eyebrow">Gestion</p>
+              <h1>Socios</h1>
+              <p className="subtitle">Consulta, edita y administra a los socios registrados.</p>
+            </div>
+            <div className="header-meta">
+              <button className="ghost" onClick={() => setVistaActiva("home")}>
+                <i className="bx bx-chevron-left" aria-hidden="true" />
+                Volver al inicio
+              </button>
+            </div>
+          </div>
+          <SociosViewer />
+        </main>
       )}
 
       <footer className="admin-footer">Cooprestamos - Panel Administrador - {new Date().getFullYear()}</footer>
