@@ -31,7 +31,7 @@ export default function LoginRegistro() {
       console.log("Login exitoso:", response.data);
       window.location.reload();
     } catch (err: any) {
-      const errorMsg = err?.response?.data?.error || "Error al iniciar sesión";
+      const errorMsg = err?.response?.data?.error || "Error al iniciar sesion";
       alert(errorMsg);
     }
   };
@@ -49,7 +49,7 @@ export default function LoginRegistro() {
         fecha_alta: new Date().toISOString().slice(0, 10),
       });
       console.log("Registro exitoso:", response.data);
-      alert("¡Registro exitoso! Ahora puedes iniciar sesión.");
+      alert("Registro exitoso! Ahora puedes iniciar sesion.");
       setModoVista("iniciar");
       setCorreo(correo);
     } catch (err: any) {
@@ -104,7 +104,7 @@ export default function LoginRegistro() {
               />
               <input
                 type="tel"
-                placeholder="Teléfono"
+                placeholder="Telefono"
                 name="telefono"
                 value={telefono}
                 onChange={(e) => setTelefono(e.target.value)}
@@ -113,7 +113,7 @@ export default function LoginRegistro() {
               />
               <input
                 type="text"
-                placeholder="Dirección"
+                placeholder="Direccion"
                 name="direccion"
                 value={direccion}
                 onChange={(e) => setDireccion(e.target.value)}
@@ -122,7 +122,7 @@ export default function LoginRegistro() {
               />
               <input
                 type="email"
-                placeholder="Correo electrónico"
+                placeholder="Correo electronico"
                 name="correo"
                 value={correo}
                 onChange={(e) => setCorreo(e.target.value)}
@@ -131,7 +131,7 @@ export default function LoginRegistro() {
               />
               <input
                 type="password"
-                placeholder="Contraseña"
+                placeholder="Contrasena"
                 name="contrasena"
                 value={contrasena}
                 onChange={(e) => setContrasena(e.target.value)}
@@ -145,9 +145,9 @@ export default function LoginRegistro() {
           </form>
         </div>
 
-        {/* Panel de Inicio de Sesión */}
+        {/* Panel de Inicio de Sesion */}
         <div className="form-container sign-in">
-          <form onSubmit={manejarEnvioInicioSesion} aria-label="Formulario de inicio de sesión">
+          <form onSubmit={manejarEnvioInicioSesion} aria-label="Formulario de inicio de sesion">
             <img src={logo} alt="Coop Prestamos" className="form-title-logo" />
 
             <div className="social-icons" aria-label="Ingresar con redes">
@@ -165,11 +165,11 @@ export default function LoginRegistro() {
               </a>
             </div>
 
-            <span>o usa tu correo y contraseña</span>
+            <span>o usa tu correo y contrasena</span>
 
             <input
               type="email"
-              placeholder="Correo electrónico"
+              placeholder="Correo electronico"
               name="correo"
               value={correo}
               onChange={(e) => setCorreo(e.target.value)}
@@ -178,7 +178,7 @@ export default function LoginRegistro() {
             />
             <input
               type="password"
-              placeholder="Contraseña"
+              placeholder="Contrasena"
               name="contrasena"
               value={contrasena}
               onChange={(e) => setContrasena(e.target.value)}
@@ -187,7 +187,7 @@ export default function LoginRegistro() {
               minLength={6}
             />
 
-            <a href="#">¿Olvidaste tu contraseña?</a>
+            <a href="#">Olvidaste tu contrasena?</a>
             <button type="submit">Ingresar</button>
           </form>
         </div>
@@ -196,21 +196,21 @@ export default function LoginRegistro() {
         <div className="toggle-container" aria-hidden={true}>
           <div className="toggle">
             <div className="toggle-panel toggle-left">
-              <h1>¡Bienvenido de nuevo!</h1>
+              <h1>Bienvenido de nuevo!</h1>
               <p>Ingresa tus datos personales para usar todas las funciones.</p>
               <button
                 className="hidden"
                 id="btnIrIniciar"
                 type="button"
                 onClick={() => setModoVista("iniciar")}
-                aria-label="Ir a iniciar sesión"
+                aria-label="Ir a iniciar sesion"
               >
-                Iniciar sesión
+                Iniciar sesion
               </button>
             </div>
             <div className="toggle-panel toggle-right">
-              <h1>¡Hola!</h1>
-              <p>Regístrate con tus datos personales para empezar a ser parte de la familia COOPRESTAMOS.</p>
+              <h1>Hola!</h1>
+              <p>Registrate con tus datos personales para empezar a ser parte de la familia COOPRESTAMOS.</p>
               <button
                 className="hidden"
                 id="btnIrRegistrar"
