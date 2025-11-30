@@ -1,0 +1,10 @@
+test_diff_devuelve_cambios_previos_y_nuevos (apps.socios.tests.test_audit_utils.AuditUtilsTests.test_diff_devuelve_cambios_previos_y_nuevos) ... ok
+test_snapshot_socio_lee_campos_rastreables (apps.socios.tests.test_audit_utils.AuditUtilsTests.test_snapshot_socio_lee_campos_rastreables) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.001s
+
+OK
+Found 2 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).

@@ -79,14 +79,14 @@ function App() {
   };
 
   const acciones: Accion[] = [
-    // {
-    //   titulo: "Socios",
-    //   descripcion: "Altas, bajas, estados y datos fiscales.",
-    //   icono: "bx-id-card",
-    //   variante: "primary",
-    //   onClick: () => setVistaActiva("socios"),
-    //   cta: "Abrir socios",
-    // },
+     {
+       titulo: "Socios",
+       descripcion: "Altas, bajas, estados y datos fiscales.",
+       icono: "bx-id-card",
+       variante: "primary",
+       onClick: () => setVistaActiva("socios"),
+       cta: "Abrir socios",
+     },
     {
       titulo: "Creditos y cobranzas",
       descripcion: "Movimientos, pagos y conciliacion.",

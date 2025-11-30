@@ -1,0 +1,11 @@
+test_extract_roles_combine_fuentes (apps.socios.tests.test_auth_utils.SupabaseAuthUtilsTests.test_extract_roles_combine_fuentes) ... ok
+test_should_be_admin_por_email (apps.socios.tests.test_auth_utils.SupabaseAuthUtilsTests.test_should_be_admin_por_email) ... ok
+test_should_be_admin_por_roles (apps.socios.tests.test_auth_utils.SupabaseAuthUtilsTests.test_should_be_admin_por_roles) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.001s
+
+OK
+Found 3 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
