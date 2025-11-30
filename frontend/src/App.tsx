@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import "./App.css";
 import { api, ensureCsrfCookie } from "./api";
 import LoginRegistro from "./components/LoginRegistro";
-// import SociosViewer from "./components/SociosViewer"; // Deshabilitado temporalmente
+import SociosViewer from "./components/SociosViewer";
 import logo from "./assets/logo-cooprestamos-vector.svg";
 import avatarFallback from "./assets/solo-logo-cooprestamos-vector.svg";
 
