@@ -11,23 +11,15 @@ User = get_user_model()
 
 class SocioAdminEndpointsTests(APITestCase):
     def setUp(self):
-        self.admin = User.objects.create_superuser(
-            email='admin@example.com',
-            password='secret123',
-            nombres='Admin Test',
+        self.admin = User.objects.create_user(
+            username='admin', email='admin@example.com', password='secret123', is_staff=True, is_superuser=True
         )
         self.no_admin = User.objects.create_user(
-            email='user@example.com',
-            password='secret123',
-            nombres='Usuario Regular',
+            username='user', email='user@example.com', password='secret123', is_staff=False
         )
-        socio_user = User.objects.create_user(
-            email='socio@example.com',
-            password='secret123',
-            nombres='Socio Demo',
-        )
+        socio_user = User.objects.create_user(username='socio', email='socio@example.com', password='secret123')
         self.socio = Socio.objects.create(
-            usuario=socio_user,
+            user=socio_user,
             nombre_completo='Socio Demo',
             documento='DOC-1',
             telefono='555-1111',
