@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import "./App.css";
 import { api, ensureCsrfCookie } from "./api";
 import LoginRegistro from "./components/LoginRegistro";
-import SociosViewer from "./components/SociosViewer";
+// import SociosViewer from "./components/SociosViewer"; // Deshabilitado temporalmente
 import logo from "./assets/logo-cooprestamos-vector.svg";
 import avatarFallback from "./assets/solo-logo-cooprestamos-vector.svg";
 
@@ -158,14 +158,14 @@ function App() {
 
           <section className="actions-grid" aria-label="Accesos a modulos">
             {[
-              {
-                titulo: "Socios",
-                descripcion: "Altas, bajas, estados y datos fiscales.",
-                icono: "bx-id-card",
-                variante: "primary",
-                onClick: () => setVistaActiva("socios"),
-                cta: "Abrir socios",
-              },
+              // {
+              //   titulo: "Socios",
+              //   descripcion: "Altas, bajas, estados y datos fiscales.",
+              //   icono: "bx-id-card",
+              //   variante: "primary",
+              //   onClick: () => setVistaActiva("socios"),
+              //   cta: "Abrir socios",
+              // },
               {
                 titulo: "Creditos y cobranzas",
                 descripcion: "Movimientos, pagos y conciliacion.",
@@ -307,22 +307,24 @@ function App() {
           </section>
         </main>
       ) : (
-        <main className="admin-container">
-          <div className="page-header">
-            <div>
-              <p className="eyebrow">Gestion</p>
-              <h1>Socios</h1>
-              <p className="subtitle">Consulta, edita y administra a los socios registrados.</p>
-            </div>
-            <div className="header-meta">
-              <button className="ghost" onClick={() => setVistaActiva("home")}>
-                <i className="bx bx-chevron-left" aria-hidden="true" />
-                Volver al inicio
-              </button>
-            </div>
-          </div>
-          <SociosViewer />
-        </main>
+        // Vista de socios deshabilitada temporalmente:
+        // <main className="admin-container">
+        //   <div className="page-header">
+        //     <div>
+        //       <p className="eyebrow">Gestion</p>
+        //       <h1>Socios</h1>
+        //       <p className="subtitle">Consulta, edita y administra a los socios registrados.</p>
+        //     </div>
+        //     <div className="header-meta">
+        //       <button className="ghost" onClick={() => setVistaActiva("home")}>
+        //         <i className="bx bx-chevron-left" aria-hidden="true" />
+        //         Volver al inicio
+        //       </button>
+        //     </div>
+        //   </div>
+        //   <SociosViewer />
+        // </main>
+        null
       )}
 
       <footer className="admin-footer">Cooprestamos - Panel Administrador - {new Date().getFullYear()}</footer>
