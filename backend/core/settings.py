@@ -79,8 +79,6 @@ else:
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "https://coop-prestamos-pagos-git-featu-e24d9d-fabians-projects-90211731.vercel.app",
-        "https://cooprestamos.vercel.app",
-        "https://coop-prestamos-pagos-geav1xsw4-fabians-projects-90211731.vercel.app",
     ]
 
 # Permitir previews desde Vercel y Render
@@ -99,8 +97,6 @@ else:
         "https://*.vercel.app",
         "https://*.onrender.com",
         "https://coop-prestamos-pagos-git-featu-e24d9d-fabians-projects-90211731.vercel.app",
-        "https://cooprestamos.vercel.app",
-        "https://coop-prestamos-pagos-geav1xsw4-fabians-projects-90211731.vercel.app",
     ]
 
 # Configuración CORS para cookies (necesario para SessionAuthentication)
@@ -214,18 +210,6 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / "staticfiles"
-
-# Email / password reset
-EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "no-reply@coop.local")
-EMAIL_HOST = os.environ.get("EMAIL_HOST")
-EMAIL_PORT = env_int("EMAIL_PORT", 587)
-EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
-EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
-EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True").lower() == "true"
-EMAIL_USE_SSL = os.environ.get("EMAIL_USE_SSL", "False").lower() == "true"
-PASSWORD_RESET_TIMEOUT = env_int("PASSWORD_RESET_TIMEOUT", 60 * 60 * 24)  # 24 horas
-FRONTEND_RESET_URL = os.environ.get("FRONTEND_RESET_URL")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

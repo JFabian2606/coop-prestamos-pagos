@@ -34,8 +34,6 @@ urlpatterns = [
     path("healthz", healthz),
     path("api/ping/", api_ping),
     path("api/auth/", include("apps.usuarios.urls")),  # Autenticación propia
-    # Password reset y utilidades built-in de Django
-    path("api/auth/", include("django.contrib.auth.urls")),
     path("api/", include("apps.socios.urls")),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
