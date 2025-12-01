@@ -300,27 +300,27 @@ export default function HistorialCrediticio() {
               )}
             </section>
 
-            <section className="panel-section timeline sticky-panel">
+            <section className="panel-section payments-panel sticky-panel">
               <div className="section-heading">
                 <h3>Pagos registrados</h3>
                 <p className="section-description">Detalle de abonos aplicados por rango de fechas.</p>
               </div>
               {pagosPlano.length === 0 && <p className="muted">Sin pagos para los filtros aplicados.</p>}
-              <ul className="timeline-list">
+              <div className="payments-list">
                 {pagosPlano.map((pago) => (
-                  <li key={pago.id} className="timeline-item">
-                    <div className={`dot ${estadoClass[pago.prestamoEstado]}`} />
-                    <div>
-                      <p className="timeline-title">
-                        {currency.format(Number(pago.monto))} · {pago.metodo || "Método no indicado"}
-                      </p>
-                      <p className="timeline-meta">
-                        {pago.fecha_pago} · Préstamo #{pago.prestamoId.slice(0, 8)}
-                      </p>
+                  <article key={pago.id} className="payment-item">
+                    <div className="payment-header">
+                      <span className="payment-amount">{currency.format(Number(pago.monto))}</span>
+                      <span className="payment-method">{pago.metodo || "Método no indicado"}</span>
                     </div>
-                  </li>
+                    <div className="payment-meta">
+                      <span className={`dot ${estadoClass[pago.prestamoEstado]}`} />
+                      <span>{pago.fecha_pago}</span>
+                      <span className="payment-ref">Préstamo #{pago.prestamoId.slice(0, 8)}</span>
+                    </div>
+                  </article>
                 ))}
-              </ul>
+              </div>
             </section>
           </div>
         </>
