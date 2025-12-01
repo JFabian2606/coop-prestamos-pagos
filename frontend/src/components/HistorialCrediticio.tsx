@@ -79,6 +79,7 @@ export default function HistorialCrediticio() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState("");
+  const [socioSearch, setSocioSearch] = useState("");
 
   useEffect(() => {
     const cargarSocios = async () => {
@@ -165,15 +166,33 @@ export default function HistorialCrediticio() {
         </div>
         <div className="filters-bar">
           <label className="filter-field">
-            <span>Socio</span>
-            <select value={socioId} onChange={(e) => setSocioId(e.target.value)}>
-              <option value="all">Todos los socios</option>
+            <span>Buscar socio</span>
+            <input
+              type="search"
+              placeholder="Nombre, documento o ID"
+              value={socioSearch}
+              list="socio-suggestions"
+              onChange={(e) => {
+                const term = e.target.value;
+                setSocioSearch(term);
+                const lower = term.trim().toLowerCase();
+                const match = socios.find(
+                  (s) =>
+                    s.nombre_completo.toLowerCase().includes(lower) ||
+                    (s.documento ?? "").toLowerCase().includes(lower) ||
+                    s.id.toLowerCase().includes(lower)
+                );
+                setSocioId(match ? match.id : "all");
+              }}
+            />
+            <datalist id="socio-suggestions">
               {socios.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.nombre_completo} ({s.documento ?? "sin doc"})
-                </option>
+                <option
+                  key={s.id}
+                  value={`${s.nombre_completo} (${s.documento ?? "sin doc"}) - ${s.id.slice(0, 8)}`}
+                />
               ))}
-            </select>
+            </datalist>
           </label>
           <label className="filter-field">
             <span>Estado del préstamo</span>
@@ -193,10 +212,10 @@ export default function HistorialCrediticio() {
             <input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} />
           </label>
           <label className="filter-field filter-full">
-            <span>Buscar</span>
+            <span>Buscar socio</span>
             <input
               type="search"
-              placeholder="Descripción, estado o referencia"
+              placeholder="Nombre, documento o ID"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
             />
