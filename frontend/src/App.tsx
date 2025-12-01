@@ -89,10 +89,10 @@ function App() {
        cta: "Abrir socios",
      },
     {
-      titulo: "Creditos y cobranzas",
+      titulo: "Historial crediticio",
       descripcion: "Movimientos, pagos y conciliacion.",
       icono: "bx-credit-card",
-      variante: "outline",
+      variante: "primary",
       onClick: () => setVistaActiva("historial"),
       cta: "Ver historial",
     },
