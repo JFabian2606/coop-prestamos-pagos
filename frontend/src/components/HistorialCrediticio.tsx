@@ -167,11 +167,8 @@ export default function HistorialCrediticio() {
     <section className="historial-panel">
       <header className="historial-header">
         <div>
-          <p className="eyebrow">Control de riesgo</p>
-          <h2>Historial crediticio</h2>
-          <p className="subtitle">
-            Consulta préstamos previos y pagos registrados antes de aprobar un nuevo desembolso.
-          </p>
+          <h1 className="page-title">Historial crediticio</h1>
+          <p className="subtitle">Control de riesgo • Consulta préstamos previos y pagos antes de autorizar.</p>
         </div>
         <div className="filters-bar">
           <label className="filter-field">
@@ -232,26 +229,23 @@ export default function HistorialCrediticio() {
             <article className="summary-card">
               <p className="summary-label">Préstamos totales</p>
               <p className="summary-value">{data.resumen.prestamos_totales}</p>
-              <p className="summary-meta">Activos: {data.resumen.prestamos_activos}</p>
-            </article>
-            <article className="summary-card">
-              <p className="summary-label">Pagados</p>
-              <p className="summary-value">{data.resumen.prestamos_pagados}</p>
-              <p className="summary-meta">Pagos registrados: {data.resumen.pagos_registrados}</p>
+              <p className="summary-meta">
+                Activos: {data.resumen.prestamos_activos} · Pagados: {data.resumen.prestamos_pagados}
+              </p>
             </article>
             <article className="summary-card warning">
               <p className="summary-label">Morosos</p>
-              <p className="summary-value">{data.resumen.prestamos_morosos}</p>
+              <p className="summary-value accent">{data.resumen.prestamos_morosos}</p>
               <p className="summary-meta">Revisión prioritaria</p>
             </article>
-            <article className="summary-card dark">
+            <article className="summary-card success strong">
               <p className="summary-label">Saldo pendiente</p>
-              <p className="summary-value">{currency.format(Number(data.resumen.saldo_pendiente_total))}</p>
+              <p className="summary-value accent">{currency.format(Number(data.resumen.saldo_pendiente_total))}</p>
               <p className="summary-meta">Incluye cuotas vencidas</p>
             </article>
-            <article className="summary-card danger">
+            <article className="summary-card danger strong">
               <p className="summary-label">Monto en mora</p>
-              <p className="summary-value">{currency.format(Number(data.resumen.monto_en_mora_total))}</p>
+              <p className="summary-value accent">{currency.format(Number(data.resumen.monto_en_mora_total))}</p>
               <p className="summary-meta">Préstamos en mora: {data.resumen.prestamos_en_mora}</p>
             </article>
             <article className="summary-card">
@@ -282,12 +276,12 @@ export default function HistorialCrediticio() {
                         <th>Monto</th>
                         <th>Desembolso</th>
                         <th>Vencimiento</th>
-                        <th>Pagado</th>
-                        <th>Saldo</th>
-                        <th>Monto en mora</th>
-                        <th>Días mora</th>
-                        <th>Cuotas vencidas</th>
-                        <th>Pagos</th>
+                        <th className="align-right">Pagado</th>
+                        <th className="align-right">Saldo</th>
+                        <th className="align-right">Monto en mora</th>
+                        <th className="align-right">Días mora</th>
+                        <th className="align-right">Cuotas vencidas</th>
+                        <th className="align-right">Pagos</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -298,15 +292,15 @@ export default function HistorialCrediticio() {
                               {estadoLabels[prestamo.estado]}
                             </span>
                           </td>
-                          <td>{currency.format(Number(prestamo.monto))}</td>
+                          <td className="align-right">{currency.format(Number(prestamo.monto))}</td>
                           <td>{prestamo.fecha_desembolso}</td>
                           <td>{prestamo.fecha_vencimiento ?? "—"}</td>
-                          <td>{currency.format(Number(prestamo.total_pagado))}</td>
-                          <td>{currency.format(Number(prestamo.saldo_pendiente))}</td>
-                          <td>{currency.format(Number(prestamo.monto_en_mora))}</td>
-                          <td>{prestamo.dias_en_mora}</td>
-                          <td>{prestamo.cuotas_vencidas}</td>
-                          <td>{prestamo.pagos.length}</td>
+                          <td className="align-right">{currency.format(Number(prestamo.total_pagado))}</td>
+                          <td className="align-right">{currency.format(Number(prestamo.saldo_pendiente))}</td>
+                          <td className="align-right">{currency.format(Number(prestamo.monto_en_mora))}</td>
+                          <td className="align-right">{prestamo.dias_en_mora}</td>
+                          <td className="align-right">{prestamo.cuotas_vencidas}</td>
+                          <td className="align-right">{prestamo.pagos.length}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -315,7 +309,7 @@ export default function HistorialCrediticio() {
               )}
             </section>
 
-            <section className="panel-section timeline">
+            <section className="panel-section timeline sticky-panel">
               <div className="section-heading">
                 <h3>Pagos registrados</h3>
                 <p className="section-description">Detalle de abonos aplicados por rango de fechas.</p>

@@ -2,27 +2,33 @@
   background: #ffffff;
   border: 1px solid var(--border);
   border-radius: 16px;
-  padding: 1.5rem;
+  padding: 2rem;
   box-shadow: 0 12px 28px rgba(31, 41, 51, 0.08);
 }
 
 .historial-header {
   display: flex;
   justify-content: space-between;
-  gap: 1.25rem;
+  gap: 1.5rem;
   align-items: flex-start;
   flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.page-title {
+  margin: 0 0 0.4rem;
 }
 
 .filters-bar {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 0.75rem;
   background: #f6f9f8;
   border: 1px solid var(--border);
-  padding: 0.9rem;
+  padding: 1rem;
   border-radius: 12px;
-  min-width: 380px;
+  min-width: 420px;
+  margin-top: 0.5rem;
 }
 
 .filter-field {
@@ -50,9 +56,15 @@
 
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
   gap: 0.75rem;
-  margin: 1.4rem 0 1rem;
+  margin: 1.5rem 0 1.25rem;
+}
+
+@media (min-width: 900px) {
+  .summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .summary-card {
@@ -60,6 +72,7 @@
   border-radius: 12px;
   padding: 0.9rem 1rem;
   background: #f8fafc;
+  min-height: 110px;
 }
 
 .summary-card.warning {
@@ -79,6 +92,16 @@
   color: #7f1d1d;
 }
 
+.summary-card.success {
+  background: #e4f2ed;
+  border-color: #bcded0;
+  color: #1c5d46;
+}
+
+.summary-card.strong .summary-value {
+  font-size: 1.6rem;
+}
+
 .summary-label {
   margin: 0;
   font-size: 0.85rem;
@@ -94,6 +117,10 @@
   font-size: 1.4rem;
   font-weight: 800;
   color: var(--text);
+}
+
+.summary-value.accent {
+  font-size: 1.6rem;
 }
 
 .summary-card.dark .summary-value {
@@ -112,10 +139,13 @@
 .summary-card.danger .summary-meta {
   color: #b42318;
 }
+.summary-card.success .summary-meta {
+  color: #2f7c76;
+}
 
 .historial-grid {
   display: grid;
-  grid-template-columns: 1.4fr 1fr;
+  grid-template-columns: 1.4fr 0.9fr;
   gap: 1rem;
 }
 
@@ -141,6 +171,17 @@
 .loan-table td {
   padding: 0.65rem 0.75rem;
   border-bottom: 1px solid #eef2f7;
+}
+
+.loan-table th.align-right {
+  text-align: right;
+}
+.loan-table td.align-right {
+  text-align: right;
+}
+
+.align-right {
+  text-align: right;
 }
 
 .badge {
@@ -181,6 +222,12 @@
 
 .timeline {
   height: 100%;
+}
+
+.sticky-panel {
+  align-self: flex-start;
+  position: sticky;
+  top: 110px;
 }
 
 .timeline-list {
