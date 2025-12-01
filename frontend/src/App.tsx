@@ -8,6 +8,12 @@ import type { SocioDto } from "./components/SociosViewer";
 import logo from "./assets/logo-cooprestamos-vector.svg";
 import avatarFallback from "./assets/solo-logo-cooprestamos-vector.svg";
 
+const currency = new Intl.NumberFormat("es-CO", {
+  style: "currency",
+  currency: "COP",
+  maximumFractionDigits: 0,
+});
+
 const Loader = () => (
   <div className="loader">
     <div className="loader__card" role="status" aria-live="polite">
