@@ -21,7 +21,7 @@
 
 .filters-bar {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(4, minmax(200px, 1fr));
   gap: 0.75rem;
   background: #f6f9f8;
   border: 1px solid var(--border);
@@ -29,6 +29,10 @@
   border-radius: 12px;
   min-width: 420px;
   margin-top: 0.5rem;
+}
+
+.filter-full {
+  grid-column: 1 / -1;
 }
 
 .filter-field {
@@ -46,12 +50,19 @@
   padding: 0.55rem 0.65rem;
   background: #fff;
   font: inherit;
+  min-height: 44px;
 }
 
 .dual-input {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.4rem;
+}
+
+@media (max-width: 1024px) {
+  .filters-bar {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
 }
 
 .summary-grid {
