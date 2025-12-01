@@ -251,8 +251,8 @@ export default function HistorialCrediticio() {
             </article>
           </div>
 
-          <div className="historial-grid">
-            <section className="panel-section loan-table">
+          <div className="single-column">
+            <section className="panel-section loan-table full-width">
               <div className="section-heading">
                 <h3>Préstamos previos</h3>
                 <p className="section-description">Estados y montos históricos del socio seleccionado.</p>
@@ -300,7 +300,7 @@ export default function HistorialCrediticio() {
               )}
             </section>
 
-            <section className="panel-section payments-panel sticky-panel">
+            <section className="panel-section payments-panel full-width">
               <div className="section-heading">
                 <h3>Pagos registrados</h3>
                 <p className="section-description">Detalle de abonos aplicados por rango de fechas.</p>
