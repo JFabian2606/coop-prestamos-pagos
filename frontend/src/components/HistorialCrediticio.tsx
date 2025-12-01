@@ -44,7 +44,7 @@ type ResumenHistorial = {
 };
 
 type HistorialResponse = {
-  socio: SocioDto;
+  socio: SocioDto | null;
   prestamos: PrestamoDto[];
   resumen: ResumenHistorial;
 };
@@ -75,7 +75,6 @@ export default function HistorialCrediticio() {
   const [estadoFiltro, setEstadoFiltro] = useState<"todos" | PrestamoDto["estado"]>("todos");
   const [desde, setDesde] = useState("");
   const [hasta, setHasta] = useState("");
-  const [busquedaSocio, setBusquedaSocio] = useState("");
   const [data, setData] = useState<HistorialResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,32 +92,35 @@ export default function HistorialCrediticio() {
     void cargarSocios();
   }, []);
 
+  const fetchHistorial = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params: Record<string, string> = {};
+      if (estadoFiltro !== "todos") params.estado = estadoFiltro;
+      if (desde) params.desde = desde;
+      if (hasta) params.hasta = hasta;
+      const endpoint = socioId === "all" ? "socios/historial/" : `socios/${socioId}/historial/`;
+      const { data: resp } = await api.get<HistorialResponse>(endpoint, { params });
+      setData(resp);
+    } catch (err) {
+      console.error(err);
+      setError("No se pudo cargar el historial crediticio.");
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchHistorial = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const params: Record<string, string> = {};
-        if (estadoFiltro !== "todos") params.estado = estadoFiltro;
-        if (desde) params.desde = desde;
-        if (hasta) params.hasta = hasta;
-        const endpoint = socioId === "all" ? "socios/historial/" : `socios/${socioId}/historial/`;
-        const { data: resp } = await api.get<HistorialResponse>(endpoint, { params });
-        setData(resp);
-      } catch (err) {
-        console.error(err);
-        setError("No se pudo cargar el historial crediticio.");
-        setData(null);
-      } finally {
-        setLoading(false);
-      }
-    };
     void fetchHistorial();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socioId, estadoFiltro, desde, hasta]);
 
   const pagosPlano = useMemo(() => {
     if (!data) return [];
-    const items: Array<PagoDto & { prestamoEstado: PrestamoDto["estado"]; prestamoId: string; descripcion: string }> = [];
+    const items: Array<PagoDto & { prestamoEstado: PrestamoDto["estado"]; prestamoId: string; descripcion: string }> =
+      [];
     data.prestamos.forEach((prestamo) => {
       prestamo.pagos.forEach((pago) => {
         items.push({
@@ -137,20 +139,34 @@ export default function HistorialCrediticio() {
     return data.prestamos;
   }, [data]);
 
-  const handleBusquedaSocio = (term: string) => {
-    setBusquedaSocio(term);
-    const lower = term.trim().toLowerCase();
-    if (!lower) {
-      setSocioId("all");
-      return;
+  const handleExport = async () => {
+    try {
+      const params: Record<string, string> = {};
+      if (estadoFiltro !== "todos") params.estado = estadoFiltro;
+      if (desde) params.desde = desde;
+      if (hasta) params.hasta = hasta;
+      const endpoint =
+        socioId === "all" ? "socios/historial/export/" : `socios/${socioId}/historial/export/`;
+      const { data: resp } = await api.get<ArrayBuffer>(endpoint, {
+        params,
+        responseType: "arraybuffer",
+      });
+      const blob = new Blob([resp], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const stamp = new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14);
+      link.href = url;
+      link.download = socioId === "all"
+        ? `historial_crediticio_${stamp}.xlsx`
+        : `historial_crediticio_${socioId.slice(0, 8)}_${stamp}.xlsx`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("No se pudo exportar el historial", err);
+      setError("No se pudo exportar el historial.");
     }
-    const match = socios.find(
-      (s) =>
-        s.nombre_completo.toLowerCase().includes(lower) ||
-        (s.documento ?? "").toLowerCase().includes(lower) ||
-        s.id.toLowerCase().includes(lower)
-    );
-    setSocioId(match ? match.id : "all");
   };
 
   return (
@@ -189,24 +205,14 @@ export default function HistorialCrediticio() {
             <span>Hasta</span>
             <input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} />
           </label>
-          <label className="filter-field filter-full">
-            <span>Buscar socio</span>
-            <input
-              type="search"
-              placeholder="Nombre, documento o ID"
-              value={busquedaSocio}
-              onChange={(e) => handleBusquedaSocio(e.target.value)}
-              list="socio-suggestions"
-            />
-            <datalist id="socio-suggestions">
-              {socios.map((s) => (
-                <option
-                  key={s.id}
-                  value={`${s.nombre_completo} (${s.documento ?? "sin doc"}) - ${s.id.slice(0, 8)}`}
-                />
-              ))}
-            </datalist>
-          </label>
+          <div className="filter-actions">
+            <button className="ghost" onClick={() => void fetchHistorial()} disabled={loading}>
+              {loading ? "Actualizando..." : "Actualizar"}
+            </button>
+            <button onClick={() => handleExport()} disabled={!data}>
+              Exportar Excel
+            </button>
+          </div>
         </div>
       </header>
 

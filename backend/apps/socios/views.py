@@ -1,6 +1,6 @@
 import io
 import json
-from datetime import datetime
+from datetime import datetime, date
 
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -375,6 +375,141 @@ class SocioExportView(APIView):
         wb.save(output)
         output.seek(0)
         filename = f"socios_auditoria_{now.strftime('%Y%m%d_%H%M%S')}.xlsx"
+
+        response = HttpResponse(
+            output.getvalue(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
+
+class SocioHistorialExportView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    @extend_schema(
+        tags=['Socios'],
+        summary='Exportar historial crediticio',
+        description='Genera un XLSX con los préstamos y pagos del socio (o todos) aplicando los filtros.',
+        responses={200: OpenApiResponse(description='Excel exportado')},
+    )
+    def get(self, request, socio_id=None):
+        estados_param = request.query_params.get('estado') or ''
+        estados = {e.strip() for e in estados_param.split(',') if e.strip()}
+        estados_validos = set(Prestamo.Estados.values)
+        if estados and not estados.issubset(estados_validos):
+            desconocidos = estados - estados_validos
+            raise ValidationError({'estado': [f"Estado(s) desconocido(s): {', '.join(desconocidos)}"]})
+
+        def parse_date(param_name: str):
+            valor = request.query_params.get(param_name)
+            if not valor:
+                return None
+            try:
+                return datetime.fromisoformat(valor).date()
+            except Exception:
+                raise ValidationError({param_name: 'Usa formato ISO AAAA-MM-DD.'})
+
+        desde = parse_date('desde')
+        hasta = parse_date('hasta')
+
+        socio = None
+        if socio_id:
+            socio = get_object_or_404(Socio, pk=socio_id)
+
+        prestamos_qs = Prestamo.objects.select_related('socio', 'socio__usuario').prefetch_related('pagos')
+        if socio:
+            prestamos_qs = prestamos_qs.filter(socio=socio)
+        if estados:
+            prestamos_qs = prestamos_qs.filter(estado__in=estados)
+        if desde:
+            prestamos_qs = prestamos_qs.filter(fecha_desembolso__gte=desde)
+        if hasta:
+            prestamos_qs = prestamos_qs.filter(fecha_desembolso__lte=hasta)
+
+        wb = Workbook()
+
+        ws_meta = wb.active
+        ws_meta.title = "Resumen"
+        now = timezone.localtime()
+        ws_meta.append(["Reporte generado"])
+        ws_meta.append(["Generado por", getattr(request.user, 'email', '')])
+        ws_meta.append(["Fecha/Hora", now.strftime("%Y-%m-%d %H:%M:%S %Z")])
+        ws_meta.append(["Socio", socio.nombre_completo if socio else "Todos"])
+        ws_meta.append(["Filtros", ""])
+        ws_meta.append(["  Estado", ", ".join(sorted(estados)) if estados else "Todos"])
+        ws_meta.append(["  Desde", desde.strftime("%Y-%m-%d") if desde else ""])
+        ws_meta.append(["  Hasta", hasta.strftime("%Y-%m-%d") if hasta else ""])
+        for cell in ws_meta["A"]:
+            cell.font = Font(bold=True)
+
+        # Hoja de prestamos
+        ws_prestamos = wb.create_sheet("Prestamos")
+        headers_prestamos = [
+            "ID", "Socio", "Documento", "Estado",
+            "Monto", "Pagado", "Saldo", "Monto en mora",
+            "Días mora", "Cuotas vencidas",
+            "Desembolso", "Vencimiento", "Descripción",
+        ]
+        ws_prestamos.append(headers_prestamos)
+        for p in prestamos_qs:
+            total_pagado = sum((pg.monto for pg in p.pagos.all()), 0)
+            saldo = p.monto - total_pagado
+            saldo = saldo if saldo > 0 else 0
+            dias_mora = 0
+            if p.fecha_vencimiento:
+                hoy = date.today()
+                if p.fecha_vencimiento < hoy and saldo > 0:
+                    dias_mora = (hoy - p.fecha_vencimiento).days
+            cuotas_vencidas = max(1, (dias_mora + 29) // 30) if dias_mora > 0 else 0
+            monto_mora = saldo if dias_mora > 0 else 0
+            socio_name = p.socio.nombre_completo if p.socio else ""
+            socio_doc = p.socio.documento if p.socio else ""
+
+            ws_prestamos.append([
+                str(p.id),
+                socio_name,
+                socio_doc,
+                p.estado,
+                float(p.monto),
+                float(total_pagado),
+                float(saldo),
+                float(monto_mora),
+                dias_mora,
+                cuotas_vencidas,
+                p.fecha_desembolso.isoformat(),
+                p.fecha_vencimiento.isoformat() if p.fecha_vencimiento else "",
+                p.descripcion,
+            ])
+        style_header_row(ws_prestamos)
+        ws_prestamos.freeze_panes = "A2"
+
+        # Hoja de pagos
+        ws_pagos = wb.create_sheet("Pagos")
+        headers_pagos = ["ID", "Préstamo ID", "Socio", "Monto", "Método", "Fecha", "Referencia"]
+        ws_pagos.append(headers_pagos)
+        for p in prestamos_qs:
+            for pago in p.pagos.all():
+                ws_pagos.append([
+                  pago.id,
+                  str(p.id),
+                  p.socio.nombre_completo if p.socio else "",
+                  float(pago.monto),
+                  pago.metodo,
+                  pago.fecha_pago.isoformat(),
+                  pago.referencia,
+                ])
+        style_header_row(ws_pagos)
+        ws_pagos.freeze_panes = "A2"
+
+        # Preparar respuesta
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        filename_base = "historial_crediticio"
+        if socio:
+            filename_base = f"historial_{socio.id}"
+        filename = f"{filename_base}_{now.strftime('%Y%m%d_%H%M%S')}.xlsx"
 
         response = HttpResponse(
             output.getvalue(),

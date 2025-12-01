@@ -3,6 +3,7 @@ from .views import (
     MeView,
     ProfileUpsertView,
     SocioHistorialView,
+    SocioHistorialExportView,
     SocioAdminDetailView,
     SocioExportView,
     SocioEstadoUpdateView,
@@ -17,5 +18,7 @@ urlpatterns = [
     path('socios/<uuid:socio_id>/estado/', SocioEstadoUpdateView.as_view(), name='socios-estado'),
     path('socios/historial/', SocioHistorialView.as_view(), name='socios-historial-global'),
     path('socios/<uuid:socio_id>/historial/', SocioHistorialView.as_view(), name='socios-historial'),
+    path('socios/historial/export/', SocioHistorialExportView.as_view(), name='socios-historial-export-global'),
+    path('socios/<uuid:socio_id>/historial/export/', SocioHistorialExportView.as_view(), name='socios-historial-export'),
     path('socios/export/', SocioExportView.as_view(), name='socios-export'),
 ]
