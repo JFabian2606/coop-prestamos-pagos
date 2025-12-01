@@ -207,15 +207,6 @@ export default function HistorialCrediticio() {
             <span>Hasta</span>
             <input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} />
           </label>
-          <label className="filter-field">
-            <span>Buscar</span>
-            <input
-              type="search"
-              placeholder="Descripción, estado, referencia..."
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-            />
-          </label>
         </div>
       </header>
 
