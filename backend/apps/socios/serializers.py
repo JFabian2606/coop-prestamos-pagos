@@ -91,6 +91,8 @@ class PrestamoSerializer(serializers.ModelSerializer):
     monto_en_mora = serializers.SerializerMethodField()
     dias_en_mora = serializers.SerializerMethodField()
     cuotas_vencidas = serializers.SerializerMethodField()
+    socio_nombre = serializers.SerializerMethodField()
+    socio_documento = serializers.SerializerMethodField()
 
     class Meta:
         model = Prestamo
@@ -109,6 +111,8 @@ class PrestamoSerializer(serializers.ModelSerializer):
             'monto_en_mora',
             'dias_en_mora',
             'cuotas_vencidas',
+            'socio_nombre',
+            'socio_documento',
         )
 
     def get_pagos(self, obj: Prestamo):
@@ -157,6 +161,12 @@ class PrestamoSerializer(serializers.ModelSerializer):
         if dias <= 0:
             return 0
         return max(1, math.ceil(dias / 30))
+
+    def get_socio_nombre(self, obj: Prestamo) -> str:
+        return obj.socio.nombre_completo if obj.socio else ""
+
+    def get_socio_documento(self, obj: Prestamo) -> str:
+        return obj.socio.documento if obj.socio else ""
 
 
 class HistorialCrediticioSerializer(serializers.Serializer):

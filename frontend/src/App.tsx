@@ -4,6 +4,7 @@ import { api, ensureCsrfCookie } from "./api";
 import LoginRegistro from "./components/LoginRegistro";
 import HistorialCrediticio from "./components/HistorialCrediticio";
 import SociosViewer from "./components/SociosViewer";
+import type { SocioDto } from "./components/SociosViewer";
 import logo from "./assets/logo-cooprestamos-vector.svg";
 import avatarFallback from "./assets/solo-logo-cooprestamos-vector.svg";
 
@@ -30,6 +31,9 @@ function App() {
   const [usuario, setUsuario] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [vistaActiva, setVistaActiva] = useState<"home" | "socios" | "historial">("home");
+  const [ultimosSocios, setUltimosSocios] = useState<SocioDto[]>([]);
+  const [ultimosPrestamos, setUltimosPrestamos] = useState<any[]>([]);
+  const [actividadReciente, setActividadReciente] = useState<any[]>([]);
 
   useEffect(() => {
     const verificarSesion = async () => {
@@ -45,6 +49,29 @@ function App() {
     };
 
     void verificarSesion();
+  }, []);
+
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        const { data: socios } = await api.get<SocioDto[]>("socios");
+        const ordenados = [...socios].sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+        setUltimosSocios(ordenados.slice(0, 4));
+
+        const { data: historial } = await api.get<any>("socios/historial/");
+        const prestamos = (historial?.prestamos ?? []).sort(
+          (a: any, b: any) => new Date(b.fecha_desembolso).getTime() - new Date(a.fecha_desembolso).getTime()
+        );
+        setUltimosPrestamos(prestamos.slice(0, 4));
+
+        setActividadReciente([]); // No hay endpoint aún para actividad admin
+      } catch (err) {
+        console.error("No se pudo cargar panel", err);
+      }
+    };
+    void fetchDashboard();
   }, []);
 
   const handleLogout = async () => {
@@ -129,24 +156,23 @@ function App() {
     { titulo: "Alertas del sistema", valor: "3", detalle: "1 critica, 2 medias", icono: "bx-bell" },
     { titulo: "Pendientes del admin", valor: "5", detalle: "2 tickets, 3 tareas", icono: "bx-clipboard" },
   ];
-  const ultimosSocios = [
-    { nombre: "Ana Gutierrez", documento: "CC 102345", estado: "activo", alta: "hoy 09:18" },
-    { nombre: "Luis Andrade", documento: "CC 954221", estado: "activo", alta: "ayer 18:42" },
-    { nombre: "Bruno Soto", documento: "CE 781233", estado: "inactivo", alta: "ayer 15:27" },
-    { nombre: "Karen Mendez", documento: "CC 223411", estado: "activo", alta: "ayer 11:06" },
-  ];
-  const ultimosPrestamos = [
-    { socio: "Ana Gutierrez", monto: "$4.500.000", estado: "aprobado", fecha: "hoy 10:02" },
-    { socio: "Luis Andrade", monto: "$2.300.000", estado: "revision", fecha: "hoy 08:55" },
-    { socio: "Bruno Soto", monto: "$1.200.000", estado: "rechazado", fecha: "ayer 19:14" },
-    { socio: "Karen Mendez", monto: "$3.700.000", estado: "aprobado", fecha: "ayer 16:48" },
-  ];
-  const actividad = [
-    { evento: "Actualizaste datos fiscales de Luis Andrade", hora: "hoy 10:24" },
-    { evento: "Exportaste reporte de socios activos", hora: "hoy 09:51" },
-    { evento: "Cambiaste estado de Karen Mendez a activo", hora: "ayer 18:33" },
-    { evento: "Revisaste alertas de integracion bancaria", hora: "ayer 17:05" },
-  ];
+  const formatFechaRelativa = (fechaIso: string) => {
+    const fecha = new Date(fechaIso);
+    const ahora = new Date();
+    const diffMs = ahora.getTime() - fecha.getTime();
+    const diffHoras = Math.floor(diffMs / (1000 * 60 * 60));
+    if (diffHoras < 24) {
+      return `hoy ${fecha.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+    }
+    return `ayer ${fecha.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+  };
+
+  const badgeEstadoPrestamo = (estado: string) => {
+    if (estado === "pagado" || estado === "aprobado") return "success";
+    if (estado === "moroso" || estado === "rechazado") return "warning";
+    if (estado === "activo" || estado === "revision") return "info";
+    return "info";
+  };
 
   return (
     <div className="admin-shell">
@@ -254,15 +280,15 @@ function App() {
                 </thead>
                 <tbody>
                   {ultimosSocios.map((socio) => (
-                    <tr key={socio.documento}>
-                      <td>{socio.nombre}</td>
-                      <td>{socio.documento}</td>
+                    <tr key={socio.id}>
+                      <td>{socio.nombre_completo}</td>
+                      <td>{socio.documento ?? "-"}</td>
                       <td>
                         <span className={`status ${socio.estado === "activo" ? "success" : "warning"}`}>
                           {socio.estado}
                         </span>
                       </td>
-                      <td>{socio.alta}</td>
+                      <td>{formatFechaRelativa(socio.created_at)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -282,24 +308,14 @@ function App() {
                   </tr>
                 </thead>
                 <tbody>
-                  {ultimosPrestamos.map((prestamo, idx) => (
-                    <tr key={`${prestamo.socio}-${idx}`}>
-                      <td>{prestamo.socio}</td>
-                      <td>{prestamo.monto}</td>
+                  {ultimosPrestamos.map((prestamo) => (
+                    <tr key={prestamo.id}>
+                      <td>{prestamo.socio_nombre || "-"}</td>
+                      <td>{currency.format(Number(prestamo.monto))}</td>
                       <td>
-                        <span
-                          className={`status ${
-                            prestamo.estado === "aprobado"
-                              ? "success"
-                              : prestamo.estado === "revision"
-                                ? "info"
-                                : "warning"
-                          }`}
-                        >
-                          {prestamo.estado}
-                        </span>
+                        <span className={`status ${badgeEstadoPrestamo(prestamo.estado)}`}>{prestamo.estado}</span>
                       </td>
-                      <td>{prestamo.fecha}</td>
+                      <td>{prestamo.fecha_desembolso}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -311,7 +327,8 @@ function App() {
             <h2>Actividad reciente del admin</h2>
             <p className="section-description">Ultimos cambios ejecutados desde esta cuenta.</p>
             <ul className="activity-list">
-              {actividad.map((item, idx) => (
+              {actividadReciente.length === 0 && <li className="activity-item">Sin actividad reciente.</li>}
+              {actividadReciente.map((item, idx) => (
                 <li key={`${item.evento}-${idx}`} className="activity-item">
                   <span>{item.evento}</span>
                   <span className="activity-meta">{item.hora}</span>
