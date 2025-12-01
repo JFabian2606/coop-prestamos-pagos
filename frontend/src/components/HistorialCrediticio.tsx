@@ -79,7 +79,6 @@ export default function HistorialCrediticio() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState("");
-  const [filtroSocio, setFiltroSocio] = useState("");
 
   useEffect(() => {
     const cargarSocios = async () => {
@@ -157,12 +156,6 @@ export default function HistorialCrediticio() {
     });
   }, [data, busqueda]);
 
-  const sociosFiltrados = useMemo(() => {
-    const term = filtroSocio.trim().toLowerCase();
-    if (!term) return socios;
-    return socios.filter((s) => s.nombre_completo.toLowerCase().includes(term) || (s.documento ?? "").includes(term));
-  }, [socios, filtroSocio]);
-
   return (
     <section className="historial-panel">
       <header className="historial-header">
@@ -173,22 +166,14 @@ export default function HistorialCrediticio() {
         <div className="filters-bar">
           <label className="filter-field">
             <span>Socio</span>
-            <div className="dual-input">
-              <input
-                type="search"
-                placeholder="Buscar socio"
-                value={filtroSocio}
-                onChange={(e) => setFiltroSocio(e.target.value)}
-              />
-              <select value={socioId} onChange={(e) => setSocioId(e.target.value)}>
-                <option value="all">Todos los socios</option>
-                {sociosFiltrados.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.nombre_completo} ({s.documento ?? "sin doc"})
-                  </option>
-                ))}
-              </select>
-            </div>
+            <select value={socioId} onChange={(e) => setSocioId(e.target.value)}>
+              <option value="all">Todos los socios</option>
+              {socios.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.nombre_completo} ({s.documento ?? "sin doc"})
+                </option>
+              ))}
+            </select>
           </label>
           <label className="filter-field">
             <span>Estado del préstamo</span>
