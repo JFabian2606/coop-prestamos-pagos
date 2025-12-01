@@ -78,7 +78,6 @@ export default function HistorialCrediticio() {
   const [data, setData] = useState<HistorialResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [busqueda, setBusqueda] = useState("");
   const [filtroSocio, setFiltroSocio] = useState("");
 
   useEffect(() => {
@@ -119,7 +118,6 @@ export default function HistorialCrediticio() {
 
   const pagosPlano = useMemo(() => {
     if (!data) return [];
-    const term = busqueda.trim().toLowerCase();
     const items: Array<PagoDto & { prestamoEstado: PrestamoDto["estado"]; prestamoId: string; descripcion: string }> = [];
     data.prestamos.forEach((prestamo) => {
       prestamo.pagos.forEach((pago) => {
@@ -131,31 +129,13 @@ export default function HistorialCrediticio() {
         });
       });
     });
-    const filtered = term
-      ? items.filter((p) => {
-          return (
-            p.metodo.toLowerCase().includes(term) ||
-            p.referencia.toLowerCase().includes(term) ||
-            p.descripcion.toLowerCase().includes(term) ||
-            p.prestamoId.toLowerCase().includes(term)
-          );
-        })
-      : items;
-    return filtered.sort((a, b) => b.fecha_pago.localeCompare(a.fecha_pago));
-  }, [data, busqueda]);
+    return items.sort((a, b) => b.fecha_pago.localeCompare(a.fecha_pago));
+  }, [data]);
 
   const prestamosFiltrados = useMemo(() => {
     if (!data) return [];
-    const term = busqueda.trim().toLowerCase();
-    if (!term) return data.prestamos;
-    return data.prestamos.filter((prestamo) => {
-      return (
-        prestamo.descripcion.toLowerCase().includes(term) ||
-        prestamo.estado.toLowerCase().includes(term) ||
-        prestamo.id.toLowerCase().includes(term)
-      );
-    });
-  }, [data, busqueda]);
+    return data.prestamos;
+  }, [data]);
 
   const sociosFiltrados = useMemo(() => {
     const term = filtroSocio.trim().toLowerCase();
