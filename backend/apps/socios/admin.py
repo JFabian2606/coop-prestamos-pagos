@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Socio, SocioAuditLog
+from .models import Pago, Prestamo, Socio, SocioAuditLog
 
 
 @admin.register(Socio)
@@ -14,3 +14,17 @@ class SocioAuditLogAdmin(admin.ModelAdmin):
     list_display = ("id", "socio", "action", "estado_anterior", "estado_nuevo", "performed_by", "created_at")
     search_fields = ("socio__nombre_completo", "socio__documento", "performed_by__email")
     list_filter = ("action", "estado_nuevo")
+
+
+@admin.register(Prestamo)
+class PrestamoAdmin(admin.ModelAdmin):
+    list_display = ("id", "socio", "monto", "estado", "fecha_desembolso", "fecha_vencimiento", "updated_at")
+    search_fields = ("id", "socio__nombre_completo", "socio__documento")
+    list_filter = ("estado",)
+
+
+@admin.register(Pago)
+class PagoAdmin(admin.ModelAdmin):
+    list_display = ("id", "prestamo", "monto", "fecha_pago", "metodo", "referencia")
+    search_fields = ("prestamo__id", "prestamo__socio__nombre_completo")
+    list_filter = ("metodo",)

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import "./App.css";
 import { api, ensureCsrfCookie } from "./api";
 import LoginRegistro from "./components/LoginRegistro";
+import HistorialCrediticio from "./components/HistorialCrediticio";
 import SociosViewer from "./components/SociosViewer";
 import logo from "./assets/logo-cooprestamos-vector.svg";
 import avatarFallback from "./assets/solo-logo-cooprestamos-vector.svg";
@@ -28,7 +29,7 @@ const Loader = () => (
 function App() {
   const [usuario, setUsuario] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [vistaActiva, setVistaActiva] = useState<"home" | "socios">("home");
+  const [vistaActiva, setVistaActiva] = useState<"home" | "socios" | "historial">("home");
 
   useEffect(() => {
     const verificarSesion = async () => {
@@ -92,6 +93,8 @@ function App() {
       descripcion: "Movimientos, pagos y conciliacion.",
       icono: "bx-credit-card",
       variante: "outline",
+      onClick: () => setVistaActiva("historial"),
+      cta: "Ver historial",
     },
     {
       titulo: "Reportes",
@@ -317,7 +320,7 @@ function App() {
             </ul>
           </section>
         </main>
-      ) : (
+      ) : vistaActiva === "socios" ? (
         <main className="admin-container">
           <div className="page-header">
             <div>
@@ -333,6 +336,25 @@ function App() {
             </div>
           </div>
           <SociosViewer />
+        </main>
+      ) : (
+        <main className="admin-container">
+          <div className="page-header">
+            <div>
+              <p className="eyebrow">Riesgo</p>
+              <h1>Historial crediticio</h1>
+              <p className="subtitle">
+                Consulta préstamos anteriores y pagos antes de autorizar un nuevo crédito.
+              </p>
+            </div>
+            <div className="header-meta">
+              <button className="ghost" onClick={() => setVistaActiva("home")}>
+                <i className="bx bx-chevron-left" aria-hidden="true" />
+                Volver al inicio
+              </button>
+            </div>
+          </div>
+          <HistorialCrediticio />
         </main>
       )}
 

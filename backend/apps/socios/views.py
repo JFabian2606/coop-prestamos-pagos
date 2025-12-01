@@ -11,12 +11,14 @@ from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from rest_framework import permissions, status
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .audit import snapshot_socio, register_audit_entry
-from .models import Socio, SocioAuditLog
+from .models import Prestamo, Socio, SocioAuditLog
 from .serializers import (
+    HistorialCrediticioSerializer,
     ProfileCreateSerializer,
     SocioAdminUpdateSerializer,
     SocioEstadoSerializer,
@@ -190,6 +192,62 @@ class SocioEstadoUpdateView(APIView):
             metadata={'motivo': serializer.validated_data.get('motivo') or ''},
         )
         return Response(SocioSerializer(socio).data)
+
+
+class SocioHistorialView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    @extend_schema(
+        tags=['Socios'],
+        responses={200: HistorialCrediticioSerializer},
+        summary='Historial crediticio de un socio',
+        description='Devuelve los préstamos previos del socio y sus pagos, filtrables por estado y rango de fechas.',
+    )
+    def get(self, request, socio_id):
+        socio = get_object_or_404(Socio, pk=socio_id)
+
+        estados_param = request.query_params.get('estado') or ''
+        estados = {e.strip() for e in estados_param.split(',') if e.strip()}
+        estados_validos = set(Prestamo.Estados.values)
+        if estados and not estados.issubset(estados_validos):
+            desconocidos = estados - estados_validos
+            raise ValidationError({'estado': [f"Estado(s) desconocido(s): {', '.join(desconocidos)}"]})
+
+        def parse_date(param_name: str):
+            valor = request.query_params.get(param_name)
+            if not valor:
+                return None
+            try:
+                return datetime.fromisoformat(valor).date()
+            except Exception:
+                raise ValidationError({param_name: 'Usa formato ISO AAAA-MM-DD.'})
+
+        desde = parse_date('desde')
+        hasta = parse_date('hasta')
+
+        prestamos_qs = Prestamo.objects.filter(socio=socio).prefetch_related('pagos').order_by('-fecha_desembolso')
+        if estados:
+            prestamos_qs = prestamos_qs.filter(estado__in=estados)
+        if desde:
+            prestamos_qs = prestamos_qs.filter(fecha_desembolso__gte=desde)
+        if hasta:
+            prestamos_qs = prestamos_qs.filter(fecha_desembolso__lte=hasta)
+
+        prestamos = []
+        for prestamo in prestamos_qs:
+            pagos_qs = prestamo.pagos.all()
+            if desde:
+                pagos_qs = pagos_qs.filter(fecha_pago__gte=desde)
+            if hasta:
+                pagos_qs = pagos_qs.filter(fecha_pago__lte=hasta)
+            prestamo._pagos_filtrados = list(pagos_qs)
+            prestamos.append(prestamo)
+
+        serializer = HistorialCrediticioSerializer({
+            'socio': socio,
+            'prestamos': prestamos,
+        })
+        return Response(serializer.data)
 
 
 class SocioExportView(APIView):
