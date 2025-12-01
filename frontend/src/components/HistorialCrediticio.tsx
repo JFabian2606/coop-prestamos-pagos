@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api";
-import { SocioDto } from "./SociosViewer";
+import type { SocioDto } from "./SociosViewer";
 import "../styles/HistorialCrediticio.css";
 
 type PagoDto = {
