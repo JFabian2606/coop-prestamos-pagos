@@ -15,6 +15,7 @@ urlpatterns = [
     path('socios', SocioListView.as_view(), name='socios-list'),
     path('socios/<uuid:socio_id>/', SocioAdminDetailView.as_view(), name='socios-detail'),
     path('socios/<uuid:socio_id>/estado/', SocioEstadoUpdateView.as_view(), name='socios-estado'),
+    path('socios/historial/', SocioHistorialView.as_view(), name='socios-historial-global'),
     path('socios/<uuid:socio_id>/historial/', SocioHistorialView.as_view(), name='socios-historial'),
     path('socios/export/', SocioExportView.as_view(), name='socios-export'),
 ]

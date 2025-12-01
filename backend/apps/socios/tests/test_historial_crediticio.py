@@ -153,6 +153,12 @@ class HistorialCrediticioTests(APITestCase):
         self.assertEqual(len(prestamos), 2)  # activo + pagado (moroso fuera de rango)
         pagos_count = sum(len(p['pagos']) for p in prestamos)
         self.assertEqual(pagos_count, 3)  # solo pagos dentro del rango
+        # Metr��icas nuevas presentes
+        resumen = response.data['resumen']
+        self.assertIn('monto_en_mora_total', resumen)
+        self.assertIn('dias_en_mora_max', resumen)
+        self.assertIn('dias_en_mora_promedio', resumen)
+        self.assertIn('cuotas_vencidas_total', resumen)
 
     def test_valida_estado_desconocido(self):
         url = reverse('socios-historial', kwargs={'socio_id': str(self.socio.id)})

@@ -24,6 +24,9 @@ type PrestamoDto = {
   pagos: PagoDto[];
   total_pagado: string;
   saldo_pendiente: string;
+  monto_en_mora: string;
+  dias_en_mora: number;
+  cuotas_vencidas: number;
 };
 
 type ResumenHistorial = {
@@ -33,6 +36,11 @@ type ResumenHistorial = {
   prestamos_pagados: number;
   pagos_registrados: number;
   saldo_pendiente_total: string;
+  monto_en_mora_total: string;
+  dias_en_mora_max: number;
+  dias_en_mora_promedio: number;
+  cuotas_vencidas_total: number;
+  prestamos_en_mora: number;
 };
 
 type HistorialResponse = {
@@ -63,22 +71,21 @@ const currency = new Intl.NumberFormat("es-CO", {
 
 export default function HistorialCrediticio() {
   const [socios, setSocios] = useState<SocioDto[]>([]);
-  const [socioId, setSocioId] = useState<string>("");
+  const [socioId, setSocioId] = useState<string>("all");
   const [estadoFiltro, setEstadoFiltro] = useState<"todos" | PrestamoDto["estado"]>("todos");
   const [desde, setDesde] = useState("");
   const [hasta, setHasta] = useState("");
   const [data, setData] = useState<HistorialResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [busqueda, setBusqueda] = useState("");
+  const [filtroSocio, setFiltroSocio] = useState("");
 
   useEffect(() => {
     const cargarSocios = async () => {
       try {
         const { data: resp } = await api.get<SocioDto[]>("socios");
         setSocios(resp);
-        if (resp.length > 0) {
-          setSocioId(resp[0].id);
-        }
       } catch (err) {
         console.error(err);
         setError("No se pudo cargar la lista de socios.");
@@ -88,7 +95,6 @@ export default function HistorialCrediticio() {
   }, []);
 
   useEffect(() => {
-    if (!socioId) return;
     const fetchHistorial = async () => {
       setLoading(true);
       setError(null);
@@ -97,7 +103,8 @@ export default function HistorialCrediticio() {
         if (estadoFiltro !== "todos") params.estado = estadoFiltro;
         if (desde) params.desde = desde;
         if (hasta) params.hasta = hasta;
-        const { data: resp } = await api.get<HistorialResponse>(`socios/${socioId}/historial/`, { params });
+        const endpoint = socioId === "all" ? "socios/historial/" : `socios/${socioId}/historial/`;
+        const { data: resp } = await api.get<HistorialResponse>(endpoint, { params });
         setData(resp);
       } catch (err) {
         console.error(err);
@@ -112,18 +119,49 @@ export default function HistorialCrediticio() {
 
   const pagosPlano = useMemo(() => {
     if (!data) return [];
-    const items: Array<PagoDto & { prestamoEstado: PrestamoDto["estado"]; prestamoId: string }> = [];
+    const term = busqueda.trim().toLowerCase();
+    const items: Array<PagoDto & { prestamoEstado: PrestamoDto["estado"]; prestamoId: string; descripcion: string }> = [];
     data.prestamos.forEach((prestamo) => {
       prestamo.pagos.forEach((pago) => {
         items.push({
           ...pago,
           prestamoEstado: prestamo.estado,
           prestamoId: prestamo.id,
+          descripcion: prestamo.descripcion,
         });
       });
     });
-    return items.sort((a, b) => b.fecha_pago.localeCompare(a.fecha_pago));
-  }, [data]);
+    const filtered = term
+      ? items.filter((p) => {
+          return (
+            p.metodo.toLowerCase().includes(term) ||
+            p.referencia.toLowerCase().includes(term) ||
+            p.descripcion.toLowerCase().includes(term) ||
+            p.prestamoId.toLowerCase().includes(term)
+          );
+        })
+      : items;
+    return filtered.sort((a, b) => b.fecha_pago.localeCompare(a.fecha_pago));
+  }, [data, busqueda]);
+
+  const prestamosFiltrados = useMemo(() => {
+    if (!data) return [];
+    const term = busqueda.trim().toLowerCase();
+    if (!term) return data.prestamos;
+    return data.prestamos.filter((prestamo) => {
+      return (
+        prestamo.descripcion.toLowerCase().includes(term) ||
+        prestamo.estado.toLowerCase().includes(term) ||
+        prestamo.id.toLowerCase().includes(term)
+      );
+    });
+  }, [data, busqueda]);
+
+  const sociosFiltrados = useMemo(() => {
+    const term = filtroSocio.trim().toLowerCase();
+    if (!term) return socios;
+    return socios.filter((s) => s.nombre_completo.toLowerCase().includes(term) || (s.documento ?? "").includes(term));
+  }, [socios, filtroSocio]);
 
   return (
     <section className="historial-panel">
@@ -138,13 +176,22 @@ export default function HistorialCrediticio() {
         <div className="filters-bar">
           <label className="filter-field">
             <span>Socio</span>
-            <select value={socioId} onChange={(e) => setSocioId(e.target.value)}>
-              {socios.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.nombre_completo} ({s.documento ?? "sin doc"})
-                </option>
-              ))}
-            </select>
+            <div className="dual-input">
+              <input
+                type="search"
+                placeholder="Buscar socio"
+                value={filtroSocio}
+                onChange={(e) => setFiltroSocio(e.target.value)}
+              />
+              <select value={socioId} onChange={(e) => setSocioId(e.target.value)}>
+                <option value="all">Todos los socios</option>
+                {sociosFiltrados.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.nombre_completo} ({s.documento ?? "sin doc"})
+                  </option>
+                ))}
+              </select>
+            </div>
           </label>
           <label className="filter-field">
             <span>Estado del préstamo</span>
@@ -162,6 +209,15 @@ export default function HistorialCrediticio() {
           <label className="filter-field">
             <span>Hasta</span>
             <input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} />
+          </label>
+          <label className="filter-field">
+            <span>Buscar</span>
+            <input
+              type="search"
+              placeholder="Descripción, estado, referencia..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+            />
           </label>
         </div>
       </header>
@@ -193,18 +249,31 @@ export default function HistorialCrediticio() {
               <p className="summary-value">{currency.format(Number(data.resumen.saldo_pendiente_total))}</p>
               <p className="summary-meta">Incluye cuotas vencidas</p>
             </article>
+            <article className="summary-card danger">
+              <p className="summary-label">Monto en mora</p>
+              <p className="summary-value">{currency.format(Number(data.resumen.monto_en_mora_total))}</p>
+              <p className="summary-meta">Préstamos en mora: {data.resumen.prestamos_en_mora}</p>
+            </article>
+            <article className="summary-card">
+              <p className="summary-label">Cuotas vencidas</p>
+              <p className="summary-value">{data.resumen.cuotas_vencidas_total}</p>
+              <p className="summary-meta">Días mora máx: {data.resumen.dias_en_mora_max}</p>
+            </article>
+            <article className="summary-card">
+              <p className="summary-label">Días en mora (promedio)</p>
+              <p className="summary-value">{data.resumen.dias_en_mora_promedio}</p>
+              <p className="summary-meta">Máximo: {data.resumen.dias_en_mora_max}</p>
+            </article>
           </div>
 
           <div className="historial-grid">
             <section className="panel-section loan-table">
               <div className="section-heading">
                 <h3>Préstamos previos</h3>
-                <p className="section-description">
-                  Estados y montos históricos del socio seleccionado.
-                </p>
+                <p className="section-description">Estados y montos históricos del socio seleccionado.</p>
               </div>
-              {data.prestamos.length === 0 && <p className="muted">No hay préstamos para los filtros aplicados.</p>}
-              {data.prestamos.length > 0 && (
+              {prestamosFiltrados.length === 0 && <p className="muted">No hay préstamos para los filtros aplicados.</p>}
+              {prestamosFiltrados.length > 0 && (
                 <div className="table-wrapper">
                   <table>
                     <thead>
@@ -215,11 +284,14 @@ export default function HistorialCrediticio() {
                         <th>Vencimiento</th>
                         <th>Pagado</th>
                         <th>Saldo</th>
+                        <th>Monto en mora</th>
+                        <th>Días mora</th>
+                        <th>Cuotas vencidas</th>
                         <th>Pagos</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {data.prestamos.map((prestamo) => (
+                      {prestamosFiltrados.map((prestamo) => (
                         <tr key={prestamo.id}>
                           <td>
                             <span className={`badge ${estadoClass[prestamo.estado]}`}>
@@ -231,6 +303,9 @@ export default function HistorialCrediticio() {
                           <td>{prestamo.fecha_vencimiento ?? "—"}</td>
                           <td>{currency.format(Number(prestamo.total_pagado))}</td>
                           <td>{currency.format(Number(prestamo.saldo_pendiente))}</td>
+                          <td>{currency.format(Number(prestamo.monto_en_mora))}</td>
+                          <td>{prestamo.dias_en_mora}</td>
+                          <td>{prestamo.cuotas_vencidas}</td>
                           <td>{prestamo.pagos.length}</td>
                         </tr>
                       ))}
@@ -252,7 +327,7 @@ export default function HistorialCrediticio() {
                     <div className={`dot ${estadoClass[pago.prestamoEstado]}`} />
                     <div>
                       <p className="timeline-title">
-                        {currency.format(Number(pago.monto))} • {pago.metodo || "Método no indicado"}
+                        {currency.format(Number(pago.monto))} · {pago.metodo || "Método no indicado"}
                       </p>
                       <p className="timeline-meta">
                         {pago.fecha_pago} · Préstamo #{pago.prestamoId.slice(0, 8)}

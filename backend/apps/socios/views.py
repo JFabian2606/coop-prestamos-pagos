@@ -203,8 +203,8 @@ class SocioHistorialView(APIView):
         summary='Historial crediticio de un socio',
         description='Devuelve los préstamos previos del socio y sus pagos, filtrables por estado y rango de fechas.',
     )
-    def get(self, request, socio_id):
-        socio = get_object_or_404(Socio, pk=socio_id)
+    def get(self, request, socio_id=None):
+        socio = get_object_or_404(Socio, pk=socio_id) if socio_id else None
 
         estados_param = request.query_params.get('estado') or ''
         estados = {e.strip() for e in estados_param.split(',') if e.strip()}
@@ -225,7 +225,8 @@ class SocioHistorialView(APIView):
         desde = parse_date('desde')
         hasta = parse_date('hasta')
 
-        prestamos_qs = Prestamo.objects.filter(socio=socio).prefetch_related('pagos').order_by('-fecha_desembolso')
+        prestamos_qs = Prestamo.objects.filter(socio=socio) if socio else Prestamo.objects.all()
+        prestamos_qs = prestamos_qs.prefetch_related('pagos').order_by('-fecha_desembolso')
         if estados:
             prestamos_qs = prestamos_qs.filter(estado__in=estados)
         if desde:
