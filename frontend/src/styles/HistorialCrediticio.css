@@ -346,3 +346,7 @@
   max-height: 420px;
   overflow-y: auto;
 }
+.filter-actions {
+  display: flex;
+  gap: 0.75rem;
+}
