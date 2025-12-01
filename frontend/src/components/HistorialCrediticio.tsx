@@ -75,11 +75,10 @@ export default function HistorialCrediticio() {
   const [estadoFiltro, setEstadoFiltro] = useState<"todos" | PrestamoDto["estado"]>("todos");
   const [desde, setDesde] = useState("");
   const [hasta, setHasta] = useState("");
+  const [busquedaSocio, setBusquedaSocio] = useState("");
   const [data, setData] = useState<HistorialResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [busqueda, setBusqueda] = useState("");
-  const [socioSearch, setSocioSearch] = useState("");
 
   useEffect(() => {
     const cargarSocios = async () => {
@@ -119,7 +118,6 @@ export default function HistorialCrediticio() {
 
   const pagosPlano = useMemo(() => {
     if (!data) return [];
-    const term = busqueda.trim().toLowerCase();
     const items: Array<PagoDto & { prestamoEstado: PrestamoDto["estado"]; prestamoId: string; descripcion: string }> = [];
     data.prestamos.forEach((prestamo) => {
       prestamo.pagos.forEach((pago) => {
@@ -131,68 +129,48 @@ export default function HistorialCrediticio() {
         });
       });
     });
-    const filtered = term
-      ? items.filter((p) => {
-          return (
-            p.metodo.toLowerCase().includes(term) ||
-            p.referencia.toLowerCase().includes(term) ||
-            p.descripcion.toLowerCase().includes(term) ||
-            p.prestamoId.toLowerCase().includes(term)
-          );
-        })
-      : items;
-    return filtered.sort((a, b) => b.fecha_pago.localeCompare(a.fecha_pago));
-  }, [data, busqueda]);
+    return items.sort((a, b) => b.fecha_pago.localeCompare(a.fecha_pago));
+  }, [data]);
 
   const prestamosFiltrados = useMemo(() => {
     if (!data) return [];
-    const term = busqueda.trim().toLowerCase();
-    if (!term) return data.prestamos;
-    return data.prestamos.filter((prestamo) => {
-      return (
-        prestamo.descripcion.toLowerCase().includes(term) ||
-        prestamo.estado.toLowerCase().includes(term) ||
-        prestamo.id.toLowerCase().includes(term)
-      );
-    });
-  }, [data, busqueda]);
+    return data.prestamos;
+  }, [data]);
+
+  const handleBusquedaSocio = (term: string) => {
+    setBusquedaSocio(term);
+    const lower = term.trim().toLowerCase();
+    if (!lower) {
+      setSocioId("all");
+      return;
+    }
+    const match = socios.find(
+      (s) =>
+        s.nombre_completo.toLowerCase().includes(lower) ||
+        (s.documento ?? "").toLowerCase().includes(lower) ||
+        s.id.toLowerCase().includes(lower)
+    );
+    setSocioId(match ? match.id : "all");
+  };
 
   return (
     <section className="historial-panel">
       <header className="historial-header">
         <div>
           <h1 className="page-title">Historial crediticio</h1>
-          <p className="subtitle">Control de riesgo • Consulta préstamos previos y pagos antes de autorizar.</p>
+          <p className="subtitle">Control de riesgo · Consulta préstamos previos y pagos antes de autorizar.</p>
         </div>
         <div className="filters-bar">
           <label className="filter-field">
-            <span>Buscar socio</span>
-            <input
-              type="search"
-              placeholder="Nombre, documento o ID"
-              value={socioSearch}
-              list="socio-suggestions"
-              onChange={(e) => {
-                const term = e.target.value;
-                setSocioSearch(term);
-                const lower = term.trim().toLowerCase();
-                const match = socios.find(
-                  (s) =>
-                    s.nombre_completo.toLowerCase().includes(lower) ||
-                    (s.documento ?? "").toLowerCase().includes(lower) ||
-                    s.id.toLowerCase().includes(lower)
-                );
-                setSocioId(match ? match.id : "all");
-              }}
-            />
-            <datalist id="socio-suggestions">
+            <span>Socio</span>
+            <select value={socioId} onChange={(e) => setSocioId(e.target.value)}>
+              <option value="all">Todos los socios</option>
               {socios.map((s) => (
-                <option
-                  key={s.id}
-                  value={`${s.nombre_completo} (${s.documento ?? "sin doc"}) - ${s.id.slice(0, 8)}`}
-                />
+                <option key={s.id} value={s.id}>
+                  {s.nombre_completo} ({s.documento ?? "sin doc"})
+                </option>
               ))}
-            </datalist>
+            </select>
           </label>
           <label className="filter-field">
             <span>Estado del préstamo</span>
@@ -216,9 +194,18 @@ export default function HistorialCrediticio() {
             <input
               type="search"
               placeholder="Nombre, documento o ID"
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
+              value={busquedaSocio}
+              onChange={(e) => handleBusquedaSocio(e.target.value)}
+              list="socio-suggestions"
             />
+            <datalist id="socio-suggestions">
+              {socios.map((s) => (
+                <option
+                  key={s.id}
+                  value={`${s.nombre_completo} (${s.documento ?? "sin doc"}) - ${s.id.slice(0, 8)}`}
+                />
+              ))}
+            </datalist>
           </label>
         </div>
       </header>
@@ -277,7 +264,7 @@ export default function HistorialCrediticio() {
                     <thead>
                       <tr>
                         <th>Estado</th>
-                        <th>Monto</th>
+                        <th className="align-right">Monto</th>
                         <th>Desembolso</th>
                         <th>Vencimiento</th>
                         <th className="align-right">Pagado</th>
