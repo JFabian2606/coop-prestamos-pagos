@@ -4,6 +4,7 @@ import { api, ensureCsrfCookie } from "./api";
 import LoginRegistro from "./components/LoginRegistro";
 import HistorialCrediticio from "./components/HistorialCrediticio";
 import SociosViewer from "./components/SociosViewer";
+import TiposPrestamo from "./components/TiposPrestamo";
 import type { SocioDto } from "./components/SociosViewer";
 import logo from "./assets/logo-cooprestamos-vector.svg";
 import avatarFallback from "./assets/solo-logo-cooprestamos-vector.svg";
@@ -36,7 +37,7 @@ const Loader = () => (
 function App() {
   const [usuario, setUsuario] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [vistaActiva, setVistaActiva] = useState<"home" | "socios" | "historial">("home");
+  const [vistaActiva, setVistaActiva] = useState<"home" | "socios" | "historial" | "tipos">("home");
   const [ultimosSocios, setUltimosSocios] = useState<SocioDto[]>([]);
   const [ultimosPrestamos, setUltimosPrestamos] = useState<any[]>([]);
   const [actividadReciente, setActividadReciente] = useState<any[]>([]);
@@ -122,6 +123,14 @@ function App() {
        onClick: () => setVistaActiva("socios"),
        cta: "Ver socios",
      },
+    {
+      titulo: "Tipos de prestamo",
+      descripcion: "Define tasas, plazos y requisitos por producto.",
+      icono: "bx-slider-alt",
+      variante: "outline",
+      onClick: () => setVistaActiva("tipos"),
+      cta: "Configurar",
+    },
     {
       titulo: "Historial crediticio",
       descripcion: "Movimientos, pagos y conciliacion.",
@@ -362,6 +371,23 @@ function App() {
             </div>
           </div>
           <SociosViewer />
+        </main>
+      ) : vistaActiva === "tipos" ? (
+        <main className="admin-container">
+          <div className="page-header">
+            <div>
+              <p className="eyebrow">Configuracion</p>
+              <h1>Tipos de prestamo</h1>
+              <p className="subtitle">Administra tasas, plazos y requisitos por producto.</p>
+            </div>
+            <div className="header-meta">
+              <button className="ghost" onClick={() => setVistaActiva("home")}>
+                <i className="bx bx-chevron-left" aria-hidden="true" />
+                Volver al inicio
+              </button>
+            </div>
+          </div>
+          <TiposPrestamo />
         </main>
       ) : (
         <main className="admin-container">

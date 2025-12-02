@@ -1,6 +1,7 @@
 import uuid
 from decimal import Decimal
 
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.contrib.auth import get_user_model
 
@@ -77,6 +78,27 @@ class SocioAuditLog(models.Model):
         return f"Auditoría {self.get_action_display()} {self.created_at:%Y-%m-%d %H:%M:%S}"
 
 
+class TipoPrestamo(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    nombre = models.CharField(max_length=80, unique=True)
+    descripcion = models.CharField(max_length=255, blank=True)
+    tasa_interes_anual = models.DecimalField(max_digits=5, decimal_places=2, validators=[MinValueValidator(0)])
+    plazo_meses = models.PositiveSmallIntegerField(validators=[MinValueValidator(1)])
+    requisitos = models.JSONField(default=list, blank=True)
+    activo = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['nombre']
+        db_table = 'tipo_prestamo'
+        verbose_name = 'Tipo de prestamo'
+        verbose_name_plural = 'Tipos de prestamo'
+
+    def __str__(self) -> str:
+        return f"{self.nombre} ({self.tasa_interes_anual}% - {self.plazo_meses}m)"
+
+
 class Prestamo(models.Model):
     class Estados(models.TextChoices):
         ACTIVO = 'activo', 'Activo'
@@ -86,6 +108,7 @@ class Prestamo(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     socio = models.ForeignKey(Socio, on_delete=models.CASCADE, related_name='prestamos')
+    tipo = models.ForeignKey(TipoPrestamo, on_delete=models.SET_NULL, null=True, blank=True, related_name='prestamos')
     monto = models.DecimalField(max_digits=14, decimal_places=2)
     tasa_interes = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     estado = models.CharField(max_length=15, choices=Estados.choices, default=Estados.ACTIVO)

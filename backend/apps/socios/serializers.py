@@ -4,7 +4,7 @@ from datetime import date
 
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Pago, Prestamo, Socio
+from .models import Pago, Prestamo, Socio, TipoPrestamo
 
 
 User = get_user_model()
@@ -84,6 +84,53 @@ class PagoSerializer(serializers.ModelSerializer):
         fields = ('id', 'monto', 'fecha_pago', 'metodo', 'referencia', 'created_at')
 
 
+class TipoPrestamoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipoPrestamo
+        fields = (
+            'id',
+            'nombre',
+            'descripcion',
+            'tasa_interes_anual',
+            'plazo_meses',
+            'requisitos',
+            'activo',
+            'created_at',
+            'updated_at',
+        )
+
+
+class TipoPrestamoUpsertSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipoPrestamo
+        fields = ('nombre', 'descripcion', 'tasa_interes_anual', 'plazo_meses', 'requisitos', 'activo')
+        extra_kwargs = {'activo': {'required': False}}
+
+    def validate_requisitos(self, value):
+        if value is None:
+            return []
+        if not isinstance(value, (list, tuple)):
+            raise serializers.ValidationError('Debe ser una lista de requisitos.')
+        requisitos_limpios: list[str] = []
+        for req in value:
+            if not isinstance(req, str):
+                raise serializers.ValidationError('Cada requisito debe ser texto.')
+            texto = req.strip()
+            if texto:
+                requisitos_limpios.append(texto)
+        return requisitos_limpios
+
+    def validate_plazo_meses(self, value):
+        if value is None or value < 1:
+            raise serializers.ValidationError('El plazo en meses debe ser mayor o igual a 1.')
+        return value
+
+    def validate_tasa_interes_anual(self, value):
+        if value is None or value < 0:
+            raise serializers.ValidationError('La tasa de interes anual no puede ser negativa.')
+        return value
+
+
 class PrestamoSerializer(serializers.ModelSerializer):
     pagos = serializers.SerializerMethodField()
     total_pagado = serializers.SerializerMethodField()
@@ -93,6 +140,7 @@ class PrestamoSerializer(serializers.ModelSerializer):
     cuotas_vencidas = serializers.SerializerMethodField()
     socio_nombre = serializers.SerializerMethodField()
     socio_documento = serializers.SerializerMethodField()
+    tipo = serializers.SerializerMethodField()
 
     class Meta:
         model = Prestamo
@@ -103,6 +151,7 @@ class PrestamoSerializer(serializers.ModelSerializer):
             'fecha_desembolso',
             'fecha_vencimiento',
             'descripcion',
+            'tipo',
             'created_at',
             'updated_at',
             'pagos',
@@ -167,6 +216,16 @@ class PrestamoSerializer(serializers.ModelSerializer):
 
     def get_socio_documento(self, obj: Prestamo) -> str:
         return obj.socio.documento if obj.socio else ""
+
+    def get_tipo(self, obj: Prestamo):
+        if not obj.tipo:
+            return None
+        return {
+            'id': str(obj.tipo.id),
+            'nombre': obj.tipo.nombre,
+            'tasa_interes_anual': f"{obj.tipo.tasa_interes_anual:.2f}",
+            'plazo_meses': obj.tipo.plazo_meses,
+        }
 
 
 class HistorialCrediticioSerializer(serializers.Serializer):

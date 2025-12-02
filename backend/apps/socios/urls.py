@@ -9,6 +9,8 @@ from .views import (
     SocioExportView,
     SocioEstadoUpdateView,
     SocioListView,
+    TipoPrestamoDetailView,
+    TipoPrestamoListCreateView,
 )
 
 urlpatterns = [
@@ -23,4 +25,6 @@ urlpatterns = [
     path('socios/<uuid:socio_id>/historial/export/', SocioHistorialExportView.as_view(), name='socios-historial-export'),
     path('socios/actividad-admin/', AdminActivityView.as_view(), name='socios-actividad-admin'),
     path('socios/export/', SocioExportView.as_view(), name='socios-export'),
+    path('tipos-prestamo', TipoPrestamoListCreateView.as_view(), name='tipos-prestamo-list'),
+    path('tipos-prestamo/<uuid:tipo_id>/', TipoPrestamoDetailView.as_view(), name='tipos-prestamo-detail'),
 ]
