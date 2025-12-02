@@ -1,6 +1,23 @@
-# 💼 COOPRESTAMOS – Sistema de Gestión de Préstamos y Pagos para Cooperativa
+<table>
+  <tr>
+    <td width="210" align="center" valign="middle">
+      <img src="docs/img/logo-cooprestamos-sin-fondo.png" alt="Logo COOPRESTAMOS" width="150">
+    </td>
+    <td valign="middle">
+      <h1 align="center">COOPRESTAMOS – Sistema de Gestión de Préstamos y Pagos para Cooperativa</h1>
+      <p align="center">
+        <img alt="Python" src="https://img.shields.io/badge/Python-3.12-informational">
+        <img alt="Django" src="https://img.shields.io/badge/Django-REST-success">
+        <img alt="React" src="https://img.shields.io/badge/React-Vite-blue">
+        <img alt="DB" src="https://img.shields.io/badge/DB-MySQL%2FMariaDB-yellow">
+      </p>
+    </td>
+  </tr>
+</table>
 
----
+<hr/>
+
+
 
 ## 👀 Visión del Proyecto
 Sistema integral para la gestión del ciclo completo de préstamos en una cooperativa, desde la solicitud hasta el cierre, incluyendo registro de pagos, control de morosidad y generación de reportes financieros.
@@ -29,30 +46,53 @@ Proyecto correspondiente a la asignatura **Desarrollo de Software 2**, orientado
 
 ## 📁 Estructura del Proyecto
 
-coop-prestamos-pagos/
+## coop-prestamos-pagos/
 │
+
 ├── backend/ # API Django (lógica, modelos y endpoints)
+
 │ ├── manage.py
+
 │ ├── core/
+
 │ ├── apps/
+
 │ └── requirements.txt
+
 │
+
 ├── frontend/ # Interfaz de usuario (React + Vite)
+
 │ ├── package.json
+
 │ ├── vite.config.ts
+
 │ └── src/
+
 │
+
 ├── entorno-desarrollo/ # Archivos técnicos
+
 │ ├── .env.example
+
 │ ├── docker-compose.yml
+
 │ └── scripts/
+
 │
+
 ├── docs/ # Documentación técnica y académica
+
 │ ├── base-de-datos/
+
 │ ├── casos-uso/
+
 │ └── manuales/
+
 │
+
 ├── .gitignore
+
 └── README.md
 
 ---
@@ -75,6 +115,9 @@ coop-prestamos-pagos/
 git clone https://github.com/JFabian2606/coop-prestamos-pagos.git
 cd coop-prestamos-pagos
 ```
+
+---
+
 ### 🐍 2. Backend (Django)
 
 cd backend
@@ -94,11 +137,17 @@ npm run dev
 
 ### 🧩 Variables de Entorno (.env)
 SECRET_KEY=tu_clave_secreta
+
 DEBUG=True
+
 DB_NAME=coop_prestamos
+
 DB_USER=root
+
 DB_PASSWORD=
+
 DB_HOST=localhost
+
 DB_PORT=3306
 
 ---
@@ -109,21 +158,22 @@ VITE_API_URL=http://127.0.0.1:8000/api/
 ---
 
 ### 📋 Organización del Backlog
-Épicas actuales
 
-Gestión de Socios → Registro, actualización e historial crediticio
+- Épicas actuales
 
-Configuración de Productos de Préstamo
+- Gestión de Socios → Registro, actualización e historial crediticio
 
-Configuración General del Sistema
+- Configuración de Productos de Préstamo
 
-Solicitud y aprobación de préstamos
+- Configuración General del Sistema
 
-Desembolsos
+- Solicitud y aprobación de préstamos
 
-Sistema de pagos y cobranza
+- Desembolsos
 
-Reportes y notificaciones
+- Sistema de pagos y cobranza
+
+- Reportes y notificaciones
 
 ### 🧰 Herramientas de apoyo
 
@@ -143,18 +193,18 @@ Los diagramas y modelos de base de datos se encuentran en la carpeta:
 
 ### 🏁 Estado actual
 
-✔️ Entorno de desarrollo configurado
-✔️ Estructura profesional del repositorio
-✔️ Conexión a base de datos
-🚧 En progreso: Módulo de Gestión de Socios
+- ✔️ Entorno de desarrollo configurado
+- ✔️ Estructura profesional del repositorio
+- ✔️ Conexión a base de datos
+- 🚧 En progreso: Módulo de Gestión de Socios
 
 ### 📅 Próximos pasos
 
-Terminar CRUD de Socios
+- Terminar CRUD de Socios
 
-Implementar autenticación
+- Implementar autenticación
 
-Integrar frontend con API REST
+- Integrar frontend con API REST
 
 Pruebas unitarias (pytest, jest)
 
