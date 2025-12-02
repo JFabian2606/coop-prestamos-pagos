@@ -199,14 +199,15 @@ export default function TiposPrestamo() {
   };
 
   return (
-    <section className="tipos-panel">
-      <header className="tipos-header">
+    <section className="socios-panel tipos-panel">
+      <header className="socios-panel__header">
         <div>
-          <p className="eyebrow">Panel de administracion</p>
           <h2>Tipos de prestamo</h2>
-          <p className="subtitle">Gestiona productos como personal, hipotecario o vehicular con sus tasas y requisitos.</p>
+          <p className="subtitle">
+            Gestiona productos como personal, hipotecario o vehicular con sus tasas, plazos y requisitos.
+          </p>
         </div>
-        <div className="tipos-actions">
+        <div className="socios-panel__actions">
           <label className="search-input">
             <span>Buscar</span>
             <input
@@ -238,107 +239,94 @@ export default function TiposPrestamo() {
       {error && <div className="alert error">{error}</div>}
       {ok && <div className="alert success">{ok}</div>}
 
-      <div className="tipos-layout">
-        <div className="tipos-table">
-          <div className="tipos-table__head">
+      <div className="socios-layout tipos-layout">
+        <div className="socios-table tipos-table">
+          <div className="socios-table__head">
             <span>Nombre</span>
             <span>Tasa anual</span>
             <span>Plazo</span>
             <span>Requisitos</span>
             <span>Estado</span>
           </div>
-          <div className="tipos-table__body">
-            {tiposFiltrados.length === 0 && (
-              <div className="tipos-empty">
-                {loading ? "Cargando tipos de prestamo..." : "No hay tipos configurados para este filtro."}
-              </div>
-            )}
+          <div className="socios-table__body">
+            {loading && <p className="muted">Cargando tipos de prestamo...</p>}
+            {!loading && tiposFiltrados.length === 0 && <p className="muted">No hay tipos para el filtro seleccionado.</p>}
             {tiposFiltrados.map((tipo) => (
               <button
                 key={tipo.id}
                 type="button"
-                className={`tipos-row ${seleccionado === tipo.id ? "active" : ""}`}
+                className={`socios-row ${seleccionado === tipo.id ? "active" : ""}`}
                 onClick={() => startEdit(tipo)}
               >
                 <span className="tipo-cell">
                   <strong>{tipo.nombre}</strong>
                   <small>{tipo.descripcion || "Sin descripcion"}</small>
                 </span>
-                <span className="tipo-meta">{Number(tipo.tasa_interes_anual).toFixed(2)}%</span>
-                <span className="tipo-meta">{tipo.plazo_meses} meses</span>
-                <div className="requisitos-chips">
-                  {tipo.requisitos.length === 0 && <span className="chip chip-neutral">Sin requisitos</span>}
-                  {tipo.requisitos.slice(0, 2).map((req, idx) => (
-                    <span key={idx} className="chip chip-outline">
-                      {req}
-                    </span>
-                  ))}
-                  {tipo.requisitos.length > 2 && (
-                    <span className="chip chip-outline">+{tipo.requisitos.length - 2}</span>
-                  )}
-                </div>
+                <span>{Number(tipo.tasa_interes_anual).toFixed(2)}%</span>
+                <span>{tipo.plazo_meses} meses</span>
+                <span className="requisitos-chip">
+                  {tipo.requisitos.length === 0 && "—"}
+                  {tipo.requisitos.length > 0 && tipo.requisitos.slice(0, 2).join(", ")}
+                  {tipo.requisitos.length > 2 && ` +${tipo.requisitos.length - 2}`}
+                </span>
                 <span className={badgeActivo(tipo.activo)}>{tipo.activo ? "Activo" : "Inactivo"}</span>
               </button>
             ))}
           </div>
         </div>
 
-        <div className="tipos-detail">
-          <div className="tipos-detail__header">
-            <div>
-              <p className="eyebrow">{form.id ? "Edicion" : "Nuevo registro"}</p>
-              <h3>{form.nombre || "Nuevo tipo de prestamo"}</h3>
-              <p className="subtitle">Completa los parametros que se usaran al originar nuevos creditos.</p>
-            </div>
-            {seleccionadoTipo && (
-              <span className={badgeActivo(seleccionadoTipo.activo)}>{seleccionadoTipo.activo ? "Activo" : "Inactivo"}</span>
-            )}
-          </div>
-
-          {seleccionadoTipo && (
-            <div className="tipos-detail__meta">
-              <div className="meta-card">
-                <i className="bx bx-purchase-tag icon-brand-hover" aria-hidden="true" />
-                <div>
-                  <p className="meta-label">Tasa anual</p>
-                  <p className="meta-value">{Number(seleccionadoTipo.tasa_interes_anual).toFixed(2)}%</p>
-                </div>
-              </div>
-              <div className="meta-card">
-                <i className="bx bx-time-five icon-brand-hover" aria-hidden="true" />
-                <div>
-                  <p className="meta-label">Plazo</p>
-                  <p className="meta-value">{seleccionadoTipo.plazo_meses} meses</p>
-                </div>
-              </div>
-            </div>
-          )}
-
+        <aside className="socios-detail tipos-detail">
           <form className="tipos-form" onSubmit={handleSubmit}>
-            <label className="form-field">
-              <span>Nombre *</span>
-              <input
-                type="text"
-                value={form.nombre}
-                onChange={(e) => setForm((prev) => ({ ...prev, nombre: e.target.value }))}
-                placeholder="Personal, Hipotecario, Vehicular..."
-                required
-              />
-            </label>
+            <div className="tipos-detail__header">
+              <div>
+                <h3>{form.nombre || "Nuevo tipo de prestamo"}</h3>
+                <p className="subtitle">Completa los parametros que se usaran al originar nuevos creditos.</p>
+              </div>
+              <span className={badgeActivo(form.activo)}>{form.activo ? "Activo" : "Inactivo"}</span>
+            </div>
 
-            <label className="form-field">
-              <span>Descripcion</span>
-              <textarea
-                value={form.descripcion}
-                onChange={(e) => setForm((prev) => ({ ...prev, descripcion: e.target.value }))}
-                placeholder="Ej: Libre inversion con descuento por nomina."
-                rows={3}
-              />
-            </label>
+            <div className="socios-detail__actions">
+              <button type="submit" className="ghost icon-button" disabled={guardando}>
+                <i className="bx bxs-save icon-brand-hover" aria-hidden="true" />
+                {guardando ? "Guardando..." : "Guardar cambios"}
+              </button>
+              {seleccionadoTipo && (
+                <button
+                  type="button"
+                  className={`ghost ${seleccionadoTipo.activo ? "danger-ghost" : ""}`}
+                  onClick={() => void toggleActivo(seleccionadoTipo)}
+                  disabled={guardando}
+                >
+                  <i className="bx bx-power-off icon-brand-hover" aria-hidden="true" />
+                  {seleccionadoTipo.activo ? "Desactivar" : "Activar"}
+                </button>
+              )}
+            </div>
 
-            <div className="form-grid">
-              <label className="form-field">
-                <span>Tasa interes anual (%) *</span>
+            <dl className="tipos-dl">
+              <dt>Nombre</dt>
+              <dd>
+                <input
+                  type="text"
+                  value={form.nombre}
+                  onChange={(e) => setForm((prev) => ({ ...prev, nombre: e.target.value }))}
+                  placeholder="Personal, Hipotecario, Vehicular..."
+                  required
+                />
+              </dd>
+
+              <dt>Descripcion</dt>
+              <dd>
+                <textarea
+                  value={form.descripcion}
+                  onChange={(e) => setForm((prev) => ({ ...prev, descripcion: e.target.value }))}
+                  placeholder="Ej: Libre inversion con descuento por nomina."
+                  rows={3}
+                />
+              </dd>
+
+              <dt>Tasa interes anual (%)</dt>
+              <dd>
                 <input
                   type="number"
                   step="0.01"
@@ -347,9 +335,10 @@ export default function TiposPrestamo() {
                   onChange={(e) => setForm((prev) => ({ ...prev, tasa_interes_anual: e.target.value }))}
                   required
                 />
-              </label>
-              <label className="form-field">
-                <span>Plazo (meses) *</span>
+              </dd>
+
+              <dt>Plazo (meses)</dt>
+              <dd>
                 <input
                   type="number"
                   min="1"
@@ -357,53 +346,41 @@ export default function TiposPrestamo() {
                   onChange={(e) => setForm((prev) => ({ ...prev, plazo_meses: e.target.value }))}
                   required
                 />
-              </label>
-            </div>
+              </dd>
 
-            <label className="form-field">
-              <span>Requisitos (uno por linea o coma)</span>
-              <textarea
-                value={form.requisitosTexto}
-                onChange={(e) => setForm((prev) => ({ ...prev, requisitosTexto: e.target.value }))}
-                placeholder={"Documento de identidad\nComprobante de ingresos\nAval de empresa"}
-                rows={4}
-              />
-            </label>
-
-            {form.id && (
-              <label className="checkbox inline">
-                <input
-                  type="checkbox"
-                  checked={form.activo}
-                  onChange={(e) => setForm((prev) => ({ ...prev, activo: e.target.checked }))}
+              <dt>Requisitos</dt>
+              <dd>
+                <textarea
+                  value={form.requisitosTexto}
+                  onChange={(e) => setForm((prev) => ({ ...prev, requisitosTexto: e.target.value }))}
+                  placeholder={"Documento de identidad\nComprobante de ingresos\nAval de empresa"}
+                  rows={4}
                 />
-                Tipo activo
-              </label>
-            )}
+              </dd>
 
-            <div className="form-actions">
-              {seleccionadoTipo && (
-                <button
-                  type="button"
-                  className="ghost"
-                  onClick={() => void toggleActivo(seleccionadoTipo)}
-                  disabled={guardando}
-                >
-                  <i className="bx bx-power-off" aria-hidden="true" />
-                  {seleccionadoTipo.activo ? "Desactivar" : "Activar"}
-                </button>
-              )}
-              <div className="form-actions__right">
-                <button type="button" className="ghost" onClick={resetForm}>
-                  Limpiar
-                </button>
-                <button type="submit" className="primary" disabled={guardando}>
-                  {guardando ? "Guardando..." : form.id ? "Guardar cambios" : "Crear tipo"}
-                </button>
-              </div>
+              <dt>Tipo activo</dt>
+              <dd>
+                <label className="checkbox inline">
+                  <input
+                    type="checkbox"
+                    checked={form.activo}
+                    onChange={(e) => setForm((prev) => ({ ...prev, activo: e.target.checked }))}
+                  />
+                  Activo
+                </label>
+              </dd>
+            </dl>
+
+            <div className="form-actions tipos-form__footer">
+              <button type="button" className="ghost" onClick={resetForm}>
+                Limpiar
+              </button>
+              <button type="submit" className="primary" disabled={guardando}>
+                {guardando ? "Guardando..." : form.id ? "Guardar cambios" : "Crear tipo"}
+              </button>
             </div>
           </form>
-        </div>
+        </aside>
       </div>
     </section>
   );
