@@ -10,20 +10,21 @@
 .tipos-header {
   display: flex;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 1.25rem;
   align-items: flex-start;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
 }
 
 .tipos-actions {
   display: flex;
-  gap: 0.75rem;
+  gap: 0.85rem;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .tipos-layout {
   display: grid;
-  grid-template-columns: 3fr 2fr;
+  grid-template-columns: 2fr 1fr;
   gap: 1rem;
 }
 
@@ -36,7 +37,7 @@
 
 .tipos-table__head {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 2fr 1fr 1.3fr;
+  grid-template-columns: 2fr 1fr 1fr 1.8fr 1fr;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
   font-size: 0.85rem;
@@ -46,7 +47,7 @@
 
 .tipos-table__body {
   background: white;
-  max-height: 480px;
+  max-height: 500px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -54,16 +55,24 @@
 
 .tipos-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 2fr 1fr 1.3fr;
+  grid-template-columns: 2fr 1fr 1fr 1.8fr 1fr;
   gap: 0.5rem;
   padding: 0.85rem 1rem;
+  border: none;
   border-bottom: 1px solid #f2f4f7;
   cursor: pointer;
-  transition: background 0.15s ease;
+  background: white;
+  text-align: left;
+  transition: background 0.12s ease, box-shadow 0.12s ease;
 }
 
 .tipos-row:hover {
   background: #f8fafc;
+}
+
+.tipos-row.active {
+  background: #eef2ff;
+  box-shadow: inset 0 0 0 1px #c7d2fe;
 }
 
 .tipos-empty {
@@ -72,14 +81,21 @@
   color: #475467;
 }
 
-.tipo-title {
-  font-weight: 600;
+.tipo-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
   color: #101828;
 }
 
-.tipo-desc {
-  color: #475467;
-  font-size: 0.9rem;
+.tipo-cell small {
+  color: #667085;
+  font-size: 0.85rem;
+}
+
+.tipo-meta {
+  color: #101828;
+  font-weight: 600;
 }
 
 .requisitos-chips {
@@ -105,46 +121,48 @@
   background: #f2f4f7;
 }
 
-.badge {
-  border-radius: 999px;
-  padding: 0.25rem 0.55rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  text-align: center;
-  border: 1px solid transparent;
-}
-
-.badge-success {
-  background: #ecfdf3;
-  color: #027a48;
-  border-color: #a6f4c5;
-}
-
-.badge-neutral {
-  background: #f2f4f7;
-  color: #344054;
-  border-color: #d0d5dd;
-}
-
-.row-actions {
-  display: flex;
-  gap: 0.35rem;
-}
-
-.tipos-form-card {
+.tipos-detail {
   border: 1px solid #e4e7ec;
   border-radius: 1rem;
-  padding: 1rem;
-  background: #fdfdfd;
+  padding: 1.25rem;
+  background: #f9fafb;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.85rem;
 }
 
-.tipos-form__header {
+.tipos-detail__header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.tipos-detail__meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.meta-card {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.85rem;
+  background: white;
+  border: 1px solid #e4e7ec;
+}
+
+.meta-label {
+  font-size: 0.8rem;
+  color: #667085;
+  margin: 0;
+}
+
+.meta-value {
+  margin: 0;
+  font-weight: 700;
+  color: #101828;
 }
 
 .tipos-form {
@@ -168,6 +186,7 @@
   padding: 0.65rem 0.9rem;
   font-size: 0.95rem;
   transition: border 0.2s ease, box-shadow 0.2s ease;
+  background: #fff;
 }
 
 .form-field input:focus,
@@ -196,7 +215,14 @@
 
 .form-actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.form-actions__right {
+  display: flex;
   gap: 0.5rem;
 }
 
@@ -212,7 +238,7 @@
 
   .tipos-table__head,
   .tipos-row {
-    grid-template-columns: 1.6fr 1fr 1fr 1.6fr 1fr 1.2fr;
+    grid-template-columns: 1.5fr 1fr 1fr 1.3fr 1fr;
   }
 }
 
@@ -223,18 +249,19 @@
   }
 
   .tipos-actions {
-    flex-wrap: wrap;
+    width: 100%;
   }
 
   .tipos-table__head,
   .tipos-row {
-    grid-template-columns: 1fr 0.8fr 0.8fr 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    row-gap: 0.35rem;
   }
 
-  .tipos-row > :nth-child(5),
-  .tipos-row > :nth-child(6),
-  .tipos-table__head > :nth-child(5),
-  .tipos-table__head > :nth-child(6) {
+  .tipos-table__head > :nth-child(3),
+  .tipos-table__head > :nth-child(4),
+  .tipos-row > :nth-child(3),
+  .tipos-row > :nth-child(4) {
     display: none;
   }
 }

@@ -25,6 +25,8 @@ type FormState = {
   activo: boolean;
 };
 
+type EstadoFiltro = "todos" | "activos" | "inactivos";
+
 const blankForm: FormState = {
   nombre: "",
   descripcion: "",
@@ -34,35 +36,49 @@ const blankForm: FormState = {
   activo: true,
 };
 
-const badgeActivo = (activo: boolean) => (activo ? "badge-success" : "badge-neutral");
+const badgeActivo = (activo: boolean) => (activo ? "estado-pill estado-pill--activo" : "estado-pill estado-pill--inactivo");
 
-const parseRequisitos = (texto: string) => {
-  return texto
+const parseRequisitos = (texto: string) =>
+  texto
     .split(/[\n,]/)
     .map((item) => item.trim())
     .filter((item) => item.length > 0);
-};
 
 export default function TiposPrestamo() {
   const [tipos, setTipos] = useState<TipoPrestamoDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [busqueda, setBusqueda] = useState("");
-  const [soloActivos, setSoloActivos] = useState(true);
+  const [estadoFiltro, setEstadoFiltro] = useState<EstadoFiltro>("activos");
+  const [seleccionado, setSeleccionado] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(blankForm);
-  const [editandoId, setEditandoId] = useState<string | null>(null);
+
+  const seleccionadoTipo = useMemo(() => {
+    if (!seleccionado) return null;
+    return tipos.find((t) => t.id === seleccionado) ?? null;
+  }, [seleccionado, tipos]);
 
   const fetchTipos = async () => {
     setLoading(true);
     setError(null);
     try {
       const params: Record<string, string> = {};
+      if (estadoFiltro === "activos") params.soloActivos = "true";
       if (busqueda.trim()) params.q = busqueda.trim();
-      if (soloActivos) params.soloActivos = "true";
       const { data } = await api.get<TipoPrestamoDto[]>("tipos-prestamo", { params });
       setTipos(data);
+      setSeleccionado((prev) => {
+        if (prev && data.some((t) => t.id === prev)) return prev;
+        return data[0]?.id ?? null;
+      });
+      if (data.length > 0) {
+        const actual = data.find((t) => t.id === (seleccionado ?? data[0].id)) ?? data[0];
+        startEdit(actual, { silent: true });
+      } else {
+        resetForm();
+      }
     } catch (err) {
       console.error(err);
       setError("No se pudo cargar los tipos de prestamo.");
@@ -75,28 +91,33 @@ export default function TiposPrestamo() {
   useEffect(() => {
     void fetchTipos();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [soloActivos, busqueda]);
+  }, [estadoFiltro, busqueda]);
 
   const tiposFiltrados = useMemo(() => {
     const term = busqueda.trim().toLowerCase();
-    if (!term) return tipos;
-    return tipos.filter((tipo) => {
-      return (
-        tipo.nombre.toLowerCase().includes(term) ||
-        (tipo.descripcion ?? "").toLowerCase().includes(term) ||
-        tipo.requisitos.some((req) => req.toLowerCase().includes(term))
-      );
-    });
-  }, [tipos, busqueda]);
+    let resultado = tipos;
+    if (estadoFiltro === "activos") resultado = resultado.filter((t) => t.activo);
+    if (estadoFiltro === "inactivos") resultado = resultado.filter((t) => !t.activo);
+    if (term) {
+      resultado = resultado.filter((tipo) => {
+        return (
+          tipo.nombre.toLowerCase().includes(term) ||
+          (tipo.descripcion ?? "").toLowerCase().includes(term) ||
+          tipo.requisitos.some((req) => req.toLowerCase().includes(term))
+        );
+      });
+    }
+    return resultado;
+  }, [tipos, busqueda, estadoFiltro]);
 
   const resetForm = () => {
     setForm(blankForm);
-    setEditandoId(null);
+    setSeleccionado(null);
     setOk(null);
     setError(null);
   };
 
-  const startEdit = (tipo: TipoPrestamoDto) => {
+  const startEdit = (tipo: TipoPrestamoDto, opts?: { silent?: boolean }) => {
     setForm({
       id: tipo.id,
       nombre: tipo.nombre,
@@ -106,9 +127,11 @@ export default function TiposPrestamo() {
       requisitosTexto: tipo.requisitos.join("\n"),
       activo: tipo.activo,
     });
-    setEditandoId(tipo.id);
-    setOk(null);
-    setError(null);
+    setSeleccionado(tipo.id);
+    if (!opts?.silent) {
+      setOk(null);
+      setError(null);
+    }
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -132,16 +155,16 @@ export default function TiposPrestamo() {
         activo: form.activo,
       };
 
-      if (editandoId) {
-        const { data } = await api.put<TipoPrestamoDto>(`tipos-prestamo/${editandoId}/`, payload);
+      if (form.id) {
+        const { data } = await api.put<TipoPrestamoDto>(`tipos-prestamo/${form.id}/`, payload);
         setOk("Tipo de prestamo actualizado.");
         setTipos((prev) => prev.map((t) => (t.id === data.id ? data : t)));
+        startEdit(data, { silent: true });
       } else {
         const { data } = await api.post<TipoPrestamoDto>("tipos-prestamo", payload);
         setOk("Tipo de prestamo creado.");
         setTipos((prev) => [data, ...prev]);
-        setEditandoId(data.id);
-        setForm((prev) => ({ ...prev, id: data.id }));
+        startEdit(data, { silent: true });
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "No se pudo guardar el tipo de prestamo.";
@@ -165,7 +188,7 @@ export default function TiposPrestamo() {
         data = resp.data;
       }
       setTipos((prev) => prev.map((t) => (t.id === data.id ? data : t)));
-      setForm((prev) => (prev.id === data.id ? { ...prev, activo: data.activo } : prev));
+      startEdit(data, { silent: true });
       setOk(data.activo ? "Tipo activado." : "Tipo desactivado.");
     } catch (err) {
       console.error(err);
@@ -179,9 +202,9 @@ export default function TiposPrestamo() {
     <section className="tipos-panel">
       <header className="tipos-header">
         <div>
-          <p className="eyebrow">Configuracion</p>
+          <p className="eyebrow">Panel de administracion</p>
           <h2>Tipos de prestamo</h2>
-          <p className="subtitle">Define tasas, plazos y requisitos para personal, hipotecario, vehicular o nuevos productos.</p>
+          <p className="subtitle">Gestiona productos como personal, hipotecario o vehicular con sus tasas y requisitos.</p>
         </div>
         <div className="tipos-actions">
           <label className="search-input">
@@ -193,20 +216,22 @@ export default function TiposPrestamo() {
               placeholder="Nombre, requisito o descripcion"
             />
           </label>
-          <label className="checkbox">
-            <input
-              type="checkbox"
-              checked={soloActivos}
-              onChange={(e) => setSoloActivos(e.target.checked)}
-            />
-            Mostrar solo activos
+          <label className="select">
+            <span>Filtrar por estado</span>
+            <select value={estadoFiltro} onChange={(e) => setEstadoFiltro(e.target.value as EstadoFiltro)}>
+              <option value="todos">Todos</option>
+              <option value="activos">Activos</option>
+              <option value="inactivos">Inactivos</option>
+            </select>
           </label>
-          <button className="ghost" onClick={() => void fetchTipos()} disabled={loading}>
-            {loading ? "Actualizando..." : "Actualizar"}
-          </button>
-          <button className="primary" onClick={resetForm}>
-            Nuevo tipo
-          </button>
+          <div className="actions-row">
+            <button className="ghost" onClick={() => void fetchTipos()} disabled={loading}>
+              {loading ? "Actualizando..." : "Actualizar"}
+            </button>
+            <button className="primary" onClick={resetForm}>
+              <i className="bx bx-plus-circle" aria-hidden="true" /> Nuevo tipo
+            </button>
+          </div>
         </div>
       </header>
 
@@ -216,12 +241,11 @@ export default function TiposPrestamo() {
       <div className="tipos-layout">
         <div className="tipos-table">
           <div className="tipos-table__head">
-            <span>Tipo</span>
+            <span>Nombre</span>
             <span>Tasa anual</span>
             <span>Plazo</span>
             <span>Requisitos</span>
             <span>Estado</span>
-            <span>Acciones</span>
           </div>
           <div className="tipos-table__body">
             {tiposFiltrados.length === 0 && (
@@ -230,56 +254,66 @@ export default function TiposPrestamo() {
               </div>
             )}
             {tiposFiltrados.map((tipo) => (
-              <div key={tipo.id} className="tipos-row" role="button" onClick={() => startEdit(tipo)}>
-                <div>
-                  <p className="tipo-title">{tipo.nombre}</p>
-                  <p className="tipo-desc">{tipo.descripcion || "Sin descripcion"}</p>
-                </div>
-                <span>{Number(tipo.tasa_interes_anual).toFixed(2)}%</span>
-                <span>{tipo.plazo_meses} meses</span>
+              <button
+                key={tipo.id}
+                type="button"
+                className={`tipos-row ${seleccionado === tipo.id ? "active" : ""}`}
+                onClick={() => startEdit(tipo)}
+              >
+                <span className="tipo-cell">
+                  <strong>{tipo.nombre}</strong>
+                  <small>{tipo.descripcion || "Sin descripcion"}</small>
+                </span>
+                <span className="tipo-meta">{Number(tipo.tasa_interes_anual).toFixed(2)}%</span>
+                <span className="tipo-meta">{tipo.plazo_meses} meses</span>
                 <div className="requisitos-chips">
                   {tipo.requisitos.length === 0 && <span className="chip chip-neutral">Sin requisitos</span>}
-                  {tipo.requisitos.slice(0, 3).map((req, idx) => (
+                  {tipo.requisitos.slice(0, 2).map((req, idx) => (
                     <span key={idx} className="chip chip-outline">
                       {req}
                     </span>
                   ))}
-                  {tipo.requisitos.length > 3 && (
-                    <span className="chip chip-outline">+{tipo.requisitos.length - 3}</span>
+                  {tipo.requisitos.length > 2 && (
+                    <span className="chip chip-outline">+{tipo.requisitos.length - 2}</span>
                   )}
                 </div>
-                <span className={`badge ${badgeActivo(tipo.activo)}`}>{tipo.activo ? "Activo" : "Inactivo"}</span>
-                <div className="row-actions">
-                  <button className="ghost small" onClick={(e) => { e.stopPropagation(); startEdit(tipo); }}>
-                    Editar
-                  </button>
-                  <button
-                    className="ghost small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      void toggleActivo(tipo);
-                    }}
-                    disabled={guardando}
-                  >
-                    {tipo.activo ? "Desactivar" : "Activar"}
-                  </button>
-                </div>
-              </div>
+                <span className={badgeActivo(tipo.activo)}>{tipo.activo ? "Activo" : "Inactivo"}</span>
+              </button>
             ))}
           </div>
         </div>
 
-        <div className="tipos-form-card">
-          <div className="tipos-form__header">
+        <div className="tipos-detail">
+          <div className="tipos-detail__header">
             <div>
-              <p className="eyebrow">{editandoId ? "Edicion" : "Nuevo registro"}</p>
-              <h3>{editandoId ? "Editar tipo de prestamo" : "Crear tipo de prestamo"}</h3>
+              <p className="eyebrow">{form.id ? "Edicion" : "Nuevo registro"}</p>
+              <h3>{form.nombre || "Nuevo tipo de prestamo"}</h3>
               <p className="subtitle">Completa los parametros que se usaran al originar nuevos creditos.</p>
             </div>
-            {editandoId && (
-              <span className={`badge ${badgeActivo(form.activo)}`}>{form.activo ? "Activo" : "Inactivo"}</span>
+            {seleccionadoTipo && (
+              <span className={badgeActivo(seleccionadoTipo.activo)}>{seleccionadoTipo.activo ? "Activo" : "Inactivo"}</span>
             )}
           </div>
+
+          {seleccionadoTipo && (
+            <div className="tipos-detail__meta">
+              <div className="meta-card">
+                <i className="bx bx-purchase-tag icon-brand-hover" aria-hidden="true" />
+                <div>
+                  <p className="meta-label">Tasa anual</p>
+                  <p className="meta-value">{Number(seleccionadoTipo.tasa_interes_anual).toFixed(2)}%</p>
+                </div>
+              </div>
+              <div className="meta-card">
+                <i className="bx bx-time-five icon-brand-hover" aria-hidden="true" />
+                <div>
+                  <p className="meta-label">Plazo</p>
+                  <p className="meta-value">{seleccionadoTipo.plazo_meses} meses</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <form className="tipos-form" onSubmit={handleSubmit}>
             <label className="form-field">
               <span>Nombre *</span>
@@ -331,14 +365,12 @@ export default function TiposPrestamo() {
               <textarea
                 value={form.requisitosTexto}
                 onChange={(e) => setForm((prev) => ({ ...prev, requisitosTexto: e.target.value }))}
-                placeholder="Documento de identidad
-Comprobante de ingresos
-Aval de empresa"
+                placeholder={"Documento de identidad\nComprobante de ingresos\nAval de empresa"}
                 rows={4}
               />
             </label>
 
-            {editandoId && (
+            {form.id && (
               <label className="checkbox inline">
                 <input
                   type="checkbox"
@@ -350,12 +382,25 @@ Aval de empresa"
             )}
 
             <div className="form-actions">
-              <button type="button" className="ghost" onClick={resetForm}>
-                Limpiar
-              </button>
-              <button type="submit" className="primary" disabled={guardando}>
-                {guardando ? "Guardando..." : editandoId ? "Guardar cambios" : "Crear tipo"}
-              </button>
+              {seleccionadoTipo && (
+                <button
+                  type="button"
+                  className="ghost"
+                  onClick={() => void toggleActivo(seleccionadoTipo)}
+                  disabled={guardando}
+                >
+                  <i className="bx bx-power-off" aria-hidden="true" />
+                  {seleccionadoTipo.activo ? "Desactivar" : "Activar"}
+                </button>
+              )}
+              <div className="form-actions__right">
+                <button type="button" className="ghost" onClick={resetForm}>
+                  Limpiar
+                </button>
+                <button type="submit" className="primary" disabled={guardando}>
+                  {guardando ? "Guardando..." : form.id ? "Guardar cambios" : "Crear tipo"}
+                </button>
+              </div>
             </div>
           </form>
         </div>
