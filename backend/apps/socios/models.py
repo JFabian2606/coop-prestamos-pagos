@@ -1,4 +1,6 @@
 import uuid
+from decimal import Decimal
+
 from django.db import models
 from django.contrib.auth import get_user_model
 
@@ -74,3 +76,55 @@ class SocioAuditLog(models.Model):
     def __str__(self):
         return f"Auditoría {self.get_action_display()} {self.created_at:%Y-%m-%d %H:%M:%S}"
 
+
+class Prestamo(models.Model):
+    class Estados(models.TextChoices):
+        ACTIVO = 'activo', 'Activo'
+        MOROSO = 'moroso', 'Moroso'
+        PAGADO = 'pagado', 'Pagado'
+        CANCELADO = 'cancelado', 'Cancelado'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    socio = models.ForeignKey(Socio, on_delete=models.CASCADE, related_name='prestamos')
+    monto = models.DecimalField(max_digits=14, decimal_places=2)
+    tasa_interes = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    estado = models.CharField(max_length=15, choices=Estados.choices, default=Estados.ACTIVO)
+    fecha_desembolso = models.DateField()
+    fecha_vencimiento = models.DateField(null=True, blank=True)
+    descripcion = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-fecha_desembolso', '-created_at']
+        db_table = 'prestamo'
+
+    def __str__(self) -> str:
+        return f"Préstamo {self.id} - {self.get_estado_display()}"
+
+    @property
+    def total_pagado(self) -> Decimal:
+        total = sum((p.monto for p in self.pagos.all()), Decimal('0'))
+        return total
+
+    @property
+    def saldo_pendiente(self) -> Decimal:
+        saldo = self.monto - self.total_pagado
+        return saldo if saldo > Decimal('0') else Decimal('0')
+
+
+class Pago(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    prestamo = models.ForeignKey(Prestamo, on_delete=models.CASCADE, related_name='pagos')
+    monto = models.DecimalField(max_digits=14, decimal_places=2)
+    fecha_pago = models.DateField()
+    metodo = models.CharField(max_length=50, blank=True)
+    referencia = models.CharField(max_length=50, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-fecha_pago', '-created_at']
+        db_table = 'pago'
+
+    def __str__(self) -> str:
+        return f"Pago {self.id} - {self.fecha_pago:%Y-%m-%d}"
