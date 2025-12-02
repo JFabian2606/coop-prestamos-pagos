@@ -120,7 +120,7 @@ function App() {
        icono: "bx-id-card",
        variante: "outline",
        onClick: () => setVistaActiva("socios"),
-       cta: "Abrir socios",
+       cta: "Ver socios",
      },
     {
       titulo: "Historial crediticio",
