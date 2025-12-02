@@ -517,3 +517,33 @@ class SocioHistorialExportView(APIView):
         )
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response
+
+
+class AdminActivityView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    @extend_schema(
+        tags=['Socios'],
+        summary='Actividad reciente del admin',
+        description='Últimas acciones del administrador autenticado sobre socios.',
+        responses={200: OpenApiResponse(description='Listado de actividad')},
+    )
+    def get(self, request):
+        usuario = request.user
+        qs = (
+            SocioAuditLog.objects.select_related('socio')
+            .filter(performed_by=usuario)
+            .order_by('-created_at')[:10]
+        )
+        data = [
+            {
+                "socio": log.socio.nombre_completo if log.socio else "",
+                "accion": log.get_action_display(),
+                "estado_anterior": log.estado_anterior,
+                "estado_nuevo": log.estado_nuevo,
+                "campos": log.campos_modificados,
+                "fecha": log.created_at.isoformat(),
+            }
+            for log in qs
+        ]
+        return Response(data)

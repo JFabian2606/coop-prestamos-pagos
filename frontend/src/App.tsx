@@ -72,7 +72,8 @@ function App() {
         );
         setUltimosPrestamos(prestamos.slice(0, 4));
 
-        setActividadReciente([]); // No hay endpoint aún para actividad admin
+        const { data: actividad } = await api.get<any[]>("socios/actividad-admin/");
+        setActividadReciente(actividad);
       } catch (err) {
         console.error("No se pudo cargar panel", err);
       }
@@ -335,9 +336,11 @@ function App() {
             <ul className="activity-list">
               {actividadReciente.length === 0 && <li className="activity-item">Sin actividad reciente.</li>}
               {actividadReciente.map((item, idx) => (
-                <li key={`${item.evento}-${idx}`} className="activity-item">
-                  <span>{item.evento}</span>
-                  <span className="activity-meta">{item.hora}</span>
+                <li key={`${item.accion}-${idx}`} className="activity-item">
+                  <span>
+                    {item.accion} {item.socio ? `sobre ${item.socio}` : ""}
+                  </span>
+                  <span className="activity-meta">{formatFechaRelativa(item.fecha)}</span>
                 </li>
               ))}
             </ul>

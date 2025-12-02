@@ -4,6 +4,7 @@ from .views import (
     ProfileUpsertView,
     SocioHistorialView,
     SocioHistorialExportView,
+    AdminActivityView,
     SocioAdminDetailView,
     SocioExportView,
     SocioEstadoUpdateView,
@@ -20,5 +21,6 @@ urlpatterns = [
     path('socios/<uuid:socio_id>/historial/', SocioHistorialView.as_view(), name='socios-historial'),
     path('socios/historial/export/', SocioHistorialExportView.as_view(), name='socios-historial-export-global'),
     path('socios/<uuid:socio_id>/historial/export/', SocioHistorialExportView.as_view(), name='socios-historial-export'),
+    path('socios/actividad-admin/', AdminActivityView.as_view(), name='socios-actividad-admin'),
     path('socios/export/', SocioExportView.as_view(), name='socios-export'),
 ]
