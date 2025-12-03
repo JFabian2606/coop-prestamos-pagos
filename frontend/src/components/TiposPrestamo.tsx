@@ -333,7 +333,7 @@ export default function TiposPrestamo() {
 
       {editModalAbierta && (
         <div className="modal-backdrop" role="dialog" aria-modal="true">
-          <div className="modal">
+          <div className="modal modal--tipos">
             <div className="modal__header">
               <h4>{form.id ? "Editar tipo de prestamo" : "Nuevo tipo de prestamo"}</h4>
               <button

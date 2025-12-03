@@ -87,6 +87,12 @@
   margin-top: 0.5rem;
 }
 
+.modal.modal--tipos {
+  width: min(520px, 95vw);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
 @media (max-width: 960px) {
   .tipos-layout {
     grid-template-columns: 1fr;
