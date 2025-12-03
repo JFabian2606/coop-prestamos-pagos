@@ -53,6 +53,8 @@ export default function TiposPrestamo() {
   const [seleccionado, setSeleccionado] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [editModalAbierta, setEditModalAbierta] = useState(false);
   const [form, setForm] = useState<FormState>(blankForm);
 
   const seleccionadoTipo = useMemo(() => {
@@ -136,6 +138,7 @@ export default function TiposPrestamo() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setFormError(null);
     setGuardando(true);
     setOk(null);
     setError(null);
@@ -168,9 +171,10 @@ export default function TiposPrestamo() {
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "No se pudo guardar el tipo de prestamo.";
-      setError(msg);
+      setFormError(msg);
     } finally {
       setGuardando(false);
+      setEditModalAbierta(false);
     }
   };
 
@@ -196,6 +200,13 @@ export default function TiposPrestamo() {
     } finally {
       setGuardando(false);
     }
+  };
+
+  const abrirEdicion = () => {
+    if (!seleccionadoTipo) return;
+    startEdit(seleccionadoTipo);
+    setFormError(null);
+    setEditModalAbierta(true);
   };
 
   return (
@@ -276,21 +287,19 @@ export default function TiposPrestamo() {
         </div>
 
         <aside className="socios-detail tipos-detail">
-          <form className="tipos-form" onSubmit={handleSubmit}>
-            <div className="tipos-detail__header">
-              <div>
-                <h3>{form.nombre || "Nuevo tipo de prestamo"}</h3>
-                <p className="subtitle">Completa los parametros que se usaran al originar nuevos creditos.</p>
+          {!seleccionadoTipo && <p className="muted">Selecciona un tipo de prestamo.</p>}
+          {seleccionadoTipo && (
+            <>
+              <div className="tipos-detail__header">
+                <h3>{seleccionadoTipo.nombre}</h3>
+                <span className={badgeActivo(seleccionadoTipo.activo)}>{seleccionadoTipo.activo ? "Activo" : "Inactivo"}</span>
               </div>
-              <span className={badgeActivo(form.activo)}>{form.activo ? "Activo" : "Inactivo"}</span>
-            </div>
-
-            <div className="socios-detail__actions">
-              <button type="submit" className="ghost icon-button" disabled={guardando}>
-                <i className="bx bxs-save icon-brand-hover" aria-hidden="true" />
-                {guardando ? "Guardando..." : "Guardar cambios"}
-              </button>
-              {seleccionadoTipo && (
+              <p className="subtitle">Completa los parametros que se usaran al originar nuevos creditos.</p>
+              <div className="socios-detail__actions">
+                <button type="button" className="ghost icon-button" onClick={abrirEdicion}>
+                  <i className="bx bxs-pencil icon-brand-hover" aria-hidden />
+                  <span>Editar datos</span>
+                </button>
                 <button
                   type="button"
                   className={`ghost ${seleccionadoTipo.activo ? "danger-ghost" : ""}`}
@@ -300,33 +309,63 @@ export default function TiposPrestamo() {
                   <i className="bx bx-power-off icon-brand-hover" aria-hidden="true" />
                   {seleccionadoTipo.activo ? "Desactivar" : "Activar"}
                 </button>
-              )}
-            </div>
+              </div>
+              <dl className="tipos-dl">
+                <dt>Descripcion</dt>
+                <dd>{seleccionadoTipo.descripcion || "Sin descripcion"}</dd>
+                <dt>Tasa interes anual (%)</dt>
+                <dd>{Number(seleccionadoTipo.tasa_interes_anual).toFixed(2)}%</dd>
+                <dt>Plazo (meses)</dt>
+                <dd>{seleccionadoTipo.plazo_meses}</dd>
+                <dt>Requisitos</dt>
+                <dd>
+                  {seleccionadoTipo.requisitos.length === 0
+                    ? "Sin requisitos"
+                    : seleccionadoTipo.requisitos.join(", ")}
+                </dd>
+                <dt>Actualizado</dt>
+                <dd>{new Date(seleccionadoTipo.updated_at).toLocaleString()}</dd>
+              </dl>
+            </>
+          )}
+        </aside>
+      </div>
 
-            <dl className="tipos-dl">
-              <dt>Nombre</dt>
-              <dd>
+      {editModalAbierta && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true">
+          <div className="modal">
+            <div className="modal__header">
+              <h4>{form.id ? "Editar tipo de prestamo" : "Nuevo tipo de prestamo"}</h4>
+              <button
+                type="button"
+                className="ghost close-button"
+                onClick={() => setEditModalAbierta(false)}
+                aria-label="Cerrar"
+              >
+                ×
+              </button>
+            </div>
+            <form className="modal__body" onSubmit={handleSubmit}>
+              {formError && <div className="alert error">{formError}</div>}
+              <label>
+                <span>Nombre</span>
                 <input
                   type="text"
                   value={form.nombre}
                   onChange={(e) => setForm((prev) => ({ ...prev, nombre: e.target.value }))}
-                  placeholder="Personal, Hipotecario, Vehicular..."
                   required
                 />
-              </dd>
-
-              <dt>Descripcion</dt>
-              <dd>
+              </label>
+              <label>
+                <span>Descripcion</span>
                 <textarea
                   value={form.descripcion}
                   onChange={(e) => setForm((prev) => ({ ...prev, descripcion: e.target.value }))}
-                  placeholder="Ej: Libre inversion con descuento por nomina."
                   rows={3}
                 />
-              </dd>
-
-              <dt>Tasa interes anual (%)</dt>
-              <dd>
+              </label>
+              <label>
+                <span>Tasa interes anual (%)</span>
                 <input
                   type="number"
                   step="0.01"
@@ -335,10 +374,9 @@ export default function TiposPrestamo() {
                   onChange={(e) => setForm((prev) => ({ ...prev, tasa_interes_anual: e.target.value }))}
                   required
                 />
-              </dd>
-
-              <dt>Plazo (meses)</dt>
-              <dd>
+              </label>
+              <label>
+                <span>Plazo (meses)</span>
                 <input
                   type="number"
                   min="1"
@@ -346,42 +384,36 @@ export default function TiposPrestamo() {
                   onChange={(e) => setForm((prev) => ({ ...prev, plazo_meses: e.target.value }))}
                   required
                 />
-              </dd>
-
-              <dt>Requisitos</dt>
-              <dd>
+              </label>
+              <label>
+                <span>Requisitos (uno por linea o coma)</span>
                 <textarea
                   value={form.requisitosTexto}
                   onChange={(e) => setForm((prev) => ({ ...prev, requisitosTexto: e.target.value }))}
                   placeholder={"Documento de identidad\nComprobante de ingresos\nAval de empresa"}
                   rows={4}
                 />
-              </dd>
-
-              <dt>Tipo activo</dt>
-              <dd>
-                <label className="checkbox inline">
-                  <input
-                    type="checkbox"
-                    checked={form.activo}
-                    onChange={(e) => setForm((prev) => ({ ...prev, activo: e.target.checked }))}
-                  />
-                  Activo
-                </label>
-              </dd>
-            </dl>
-
-            <div className="form-actions tipos-form__footer">
-              <button type="button" className="ghost" onClick={resetForm}>
-                Limpiar
-              </button>
-              <button type="submit" className="primary" disabled={guardando}>
-                {guardando ? "Guardando..." : form.id ? "Guardar cambios" : "Crear tipo"}
-              </button>
-            </div>
-          </form>
-        </aside>
-      </div>
+              </label>
+              <label className="checkbox inline">
+                <input
+                  type="checkbox"
+                  checked={form.activo}
+                  onChange={(e) => setForm((prev) => ({ ...prev, activo: e.target.checked }))}
+                />
+                Tipo activo
+              </label>
+              <div className="modal__footer">
+                <button type="button" className="ghost close-button" onClick={() => setEditModalAbierta(false)}>
+                  Cancelar
+                </button>
+                <button type="submit" className="primary" disabled={guardando}>
+                  {guardando ? "Guardando..." : "Guardar cambios"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
