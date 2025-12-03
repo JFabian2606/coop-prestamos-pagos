@@ -55,6 +55,7 @@ export default function TiposPrestamo() {
   const [ok, setOk] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [editModalAbierta, setEditModalAbierta] = useState(false);
+  const [estadoMenuOpen, setEstadoMenuOpen] = useState(false);
   const [form, setForm] = useState<FormState>(blankForm);
 
   const seleccionadoTipo = useMemo(() => {
@@ -94,6 +95,12 @@ export default function TiposPrestamo() {
     void fetchTipos();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [estadoFiltro, busqueda]);
+
+  useEffect(() => {
+    const closeMenus = () => setEstadoMenuOpen(false);
+    document.addEventListener("click", closeMenus);
+    return () => document.removeEventListener("click", closeMenus);
+  }, []);
 
   const tiposFiltrados = useMemo(() => {
     const term = busqueda.trim().toLowerCase();
