@@ -178,17 +178,18 @@ export default function TiposPrestamo() {
     }
   };
 
-  const toggleActivo = async (tipo: TipoPrestamoDto) => {
+  const toggleActivo = async (tipo: TipoPrestamoDto, activo?: boolean) => {
     setGuardando(true);
     setError(null);
     setOk(null);
     try {
       let data: TipoPrestamoDto;
-      if (tipo.activo) {
-        const resp = await api.delete<TipoPrestamoDto>(`tipos-prestamo/${tipo.id}/`);
+      const desired = typeof activo === "boolean" ? activo : !tipo.activo;
+      if (desired) {
+        const resp = await api.patch<TipoPrestamoDto>(`tipos-prestamo/${tipo.id}/`, { activo: true });
         data = resp.data;
       } else {
-        const resp = await api.patch<TipoPrestamoDto>(`tipos-prestamo/${tipo.id}/`, { activo: true });
+        const resp = await api.delete<TipoPrestamoDto>(`tipos-prestamo/${tipo.id}/`);
         data = resp.data;
       }
       setTipos((prev) => prev.map((t) => (t.id === data.id ? data : t)));
@@ -276,7 +277,7 @@ export default function TiposPrestamo() {
                 <span>{Number(tipo.tasa_interes_anual).toFixed(2)}%</span>
                 <span>{tipo.plazo_meses} meses</span>
                 <span className="requisitos-chip">
-                  {tipo.requisitos.length === 0 && "—"}
+                  {tipo.requisitos.length === 0 && "-"}
                   {tipo.requisitos.length > 0 && tipo.requisitos.slice(0, 2).join(", ")}
                   {tipo.requisitos.length > 2 && ` +${tipo.requisitos.length - 2}`}
                 </span>
@@ -292,22 +293,49 @@ export default function TiposPrestamo() {
             <>
               <div className="tipos-detail__header">
                 <h3>{seleccionadoTipo.nombre}</h3>
-                <span className={badgeActivo(seleccionadoTipo.activo)}>{seleccionadoTipo.activo ? "Activo" : "Inactivo"}</span>
+                <div className="estado-control">
+                  <button
+                    type="button"
+                    className={`estado-pill estado-pill--${seleccionadoTipo.activo ? "activo" : "inactivo"} estado-pill--action`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEstadoMenuOpen((prev) => !prev);
+                    }}
+                    disabled={guardando}
+                  >
+                    {seleccionadoTipo.activo ? "Activo" : "Inactivo"}
+                    <span className="estado-pill__caret">▼</span>
+                  </button>
+                  {estadoMenuOpen && (
+                    <div className="estado-menu" onClick={(e) => e.stopPropagation()}>
+                      <p className="estado-menu__label">Cambiar a</p>
+                      <button
+                        type="button"
+                        className="estado-option"
+                        onClick={() => void toggleActivo(seleccionadoTipo, true)}
+                        disabled={guardando || seleccionadoTipo.activo}
+                      >
+                        <span className="estado-dot estado-dot--activo" />
+                        Activo
+                      </button>
+                      <button
+                        type="button"
+                        className="estado-option"
+                        onClick={() => void toggleActivo(seleccionadoTipo, false)}
+                        disabled={guardando || !seleccionadoTipo.activo}
+                      >
+                        <span className="estado-dot estado-dot--inactivo" />
+                        Inactivo
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
               <p className="subtitle">Completa los parametros que se usaran al originar nuevos creditos.</p>
               <div className="socios-detail__actions">
                 <button type="button" className="ghost icon-button" onClick={abrirEdicion}>
                   <i className="bx bxs-pencil icon-brand-hover" aria-hidden />
                   <span>Editar datos</span>
-                </button>
-                <button
-                  type="button"
-                  className={`ghost ${seleccionadoTipo.activo ? "danger-ghost" : ""}`}
-                  onClick={() => void toggleActivo(seleccionadoTipo)}
-                  disabled={guardando}
-                >
-                  <i className="bx bx-power-off icon-brand-hover" aria-hidden="true" />
-                  {seleccionadoTipo.activo ? "Desactivar" : "Activar"}
                 </button>
               </div>
               <dl className="tipos-dl">
@@ -417,3 +445,4 @@ export default function TiposPrestamo() {
     </section>
   );
 }
+
