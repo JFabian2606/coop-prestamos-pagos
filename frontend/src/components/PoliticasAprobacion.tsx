@@ -271,20 +271,6 @@ export default function PoliticasAprobacion() {
             <>
               <div className="tipos-detail__header">
                 <h3>{seleccionadoPolitica.nombre}</h3>
-                <div className="estado-control">
-                  <button
-                    type="button"
-                    className={`estado-pill estado-pill--${seleccionadoPolitica.activo ? "activo" : "inactivo"} estado-pill--action`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      void toggleActivo(seleccionadoPolitica);
-                    }}
-                    disabled={guardando}
-                  >
-                    {seleccionadoPolitica.activo ? "Activa" : "Inactiva"}
-                    <span className="estado-pill__caret">▼</span>
-                  </button>
-                </div>
               </div>
               <p className="subtitle">Reglas usadas para aprobar automáticamente nuevas solicitudes.</p>
               <div className="socios-detail__actions">
