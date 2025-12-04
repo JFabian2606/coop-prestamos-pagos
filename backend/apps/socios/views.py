@@ -16,7 +16,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .audit import snapshot_socio, register_audit_entry
-from .models import Prestamo, Socio, SocioAuditLog, TipoPrestamo
+from .models import Prestamo, Socio, SocioAuditLog, TipoPrestamo, PoliticaAprobacion
 from .serializers import (
     HistorialCrediticioSerializer,
     ProfileCreateSerializer,
@@ -25,6 +25,8 @@ from .serializers import (
     SocioSerializer,
     TipoPrestamoSerializer,
     TipoPrestamoUpsertSerializer,
+    PoliticaAprobacionSerializer,
+    PoliticaAprobacionUpsertSerializer,
 )
 
 HEADER_FONT = Font(bold=True, color="FFFFFF")
@@ -181,6 +183,99 @@ class TipoPrestamoDetailView(APIView):
             tipo.activo = False
             tipo.save(update_fields=['activo', 'updated_at'])
         return Response(TipoPrestamoSerializer(tipo).data, status=status.HTTP_200_OK)
+
+
+class PoliticaAprobacionListCreateView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    @extend_schema(
+        tags=['Configuracion'],
+        responses=PoliticaAprobacionSerializer(many=True),
+        summary='Listado de políticas de aprobación',
+        description='Devuelve las políticas de aprobación automática configuradas. Solo administradores.',
+    )
+    def get(self, request):
+        qs = PoliticaAprobacion.objects.all().order_by('nombre')
+        q = (request.query_params.get('q') or '').strip()
+        if q:
+            qs = qs.filter(Q(nombre__icontains=q) | Q(descripcion__icontains=q))
+
+        solo_activas = request.query_params.get('solo_activos') or request.query_params.get('soloActivos')
+        if solo_activas and str(solo_activas).lower() in {'1', 'true', 't', 'yes', 'on'}:
+            qs = qs.filter(activo=True)
+
+        return Response(PoliticaAprobacionSerializer(qs, many=True).data)
+
+    @extend_schema(
+        tags=['Configuracion'],
+        request=PoliticaAprobacionUpsertSerializer,
+        responses={201: PoliticaAprobacionSerializer, 400: OpenApiResponse(description='Datos inválidos')},
+        summary='Crear política de aprobación',
+        description='Registra una política basada en score, antigüedad y capacidad de pago.',
+    )
+    def post(self, request):
+        serializer = PoliticaAprobacionUpsertSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        politica = serializer.save()
+        return Response(PoliticaAprobacionSerializer(politica).data, status=status.HTTP_201_CREATED)
+
+
+class PoliticaAprobacionDetailView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def get_object(self, politica_id):
+        return get_object_or_404(PoliticaAprobacion, pk=politica_id)
+
+    @extend_schema(
+        tags=['Configuracion'],
+        responses={200: PoliticaAprobacionSerializer, 404: OpenApiResponse(description='Política no encontrada')},
+        summary='Detalle de política de aprobación',
+        description='Obtiene la definición de una política de aprobación automática.',
+    )
+    def get(self, _request, politica_id):
+        politica = self.get_object(politica_id)
+        return Response(PoliticaAprobacionSerializer(politica).data)
+
+    @extend_schema(
+        tags=['Configuracion'],
+        request=PoliticaAprobacionUpsertSerializer,
+        responses={200: PoliticaAprobacionSerializer, 400: OpenApiResponse(description='Datos inválidos')},
+        summary='Actualizar política de aprobación',
+        description='Actualiza los parámetros de score, antigüedad y capacidad de pago.',
+    )
+    def put(self, request, politica_id):
+        politica = self.get_object(politica_id)
+        serializer = PoliticaAprobacionUpsertSerializer(instance=politica, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        politica = serializer.save()
+        return Response(PoliticaAprobacionSerializer(politica).data)
+
+    @extend_schema(
+        tags=['Configuracion'],
+        request=PoliticaAprobacionUpsertSerializer,
+        responses={200: PoliticaAprobacionSerializer, 400: OpenApiResponse(description='Datos inválidos')},
+        summary='Actualización parcial de política',
+        description='Permite editar parcialmente una política de aprobación.',
+    )
+    def patch(self, request, politica_id):
+        politica = self.get_object(politica_id)
+        serializer = PoliticaAprobacionUpsertSerializer(instance=politica, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        politica = serializer.save()
+        return Response(PoliticaAprobacionSerializer(politica).data)
+
+    @extend_schema(
+        tags=['Configuracion'],
+        responses={200: PoliticaAprobacionSerializer, 404: OpenApiResponse(description='Política no encontrada')},
+        summary='Desactivar política de aprobación',
+        description='Desactiva (soft delete) una política para que no aplique a nuevas solicitudes.',
+    )
+    def delete(self, _request, politica_id):
+        politica = self.get_object(politica_id)
+        if politica.activo:
+            politica.activo = False
+            politica.save(update_fields=['activo', 'updated_at'])
+        return Response(PoliticaAprobacionSerializer(politica).data, status=status.HTTP_200_OK)
 
 
 class SocioAdminDetailView(APIView):

@@ -216,6 +216,12 @@ export default function TiposPrestamo() {
     setEditModalAbierta(true);
   };
 
+  const nuevoTipo = () => {
+    resetForm();
+    setFormError(null);
+    setEditModalAbierta(true);
+  };
+
   return (
     <section className="socios-panel tipos-panel">
       <header className="socios-panel__header">
@@ -247,7 +253,7 @@ export default function TiposPrestamo() {
             <button className="ghost" onClick={() => void fetchTipos()} disabled={loading}>
               {loading ? "Actualizando..." : "Actualizar"}
             </button>
-            <button className="primary" onClick={resetForm}>
+            <button className="primary" onClick={nuevoTipo}>
               <i className="bx bx-plus-circle" aria-hidden="true" /> Nuevo tipo
             </button>
           </div>

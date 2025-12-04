@@ -1,0 +1,45 @@
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+
+Found 4 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders, drf_spectacular, messages, rest_framework, staticfiles
+  Apply all migrations: admin, auth, contenttypes, sessions, socios, usuarios
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying auth.0001_initial... OK
+  Applying auth.0002_alter_permission_name_max_length... OK
+  Applying auth.0003_alter_user_email_max_length... OK
+  Applying auth.0004_alter_user_username_opts... OK
+  Applying auth.0005_alter_user_last_login_null... OK
+  Applying auth.0006_require_contenttypes_0002... OK
+  Applying auth.0007_alter_validators_add_error_messages... OK
+  Applying auth.0008_alter_user_username_max_length... OK
+  Applying auth.0009_alter_user_last_name_max_length... OK
+  Applying auth.0010_alter_group_name_max_length... OK
+  Applying auth.0011_update_proxy_permissions... OK
+  Applying auth.0012_alter_user_first_name_max_length... OK
+  Applying usuarios.0001_initial... OK
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying sessions.0001_initial... OK
+  Applying socios.0001_initial... OK
+  Applying socios.0002_prestamo_pago... OK
+  Applying socios.0003_tipoprestamo_prestamo_tipo... OK
+  Applying socios.0004_politica_aprobacion...test_crea_actualiza_y_desactiva (apps.socios.tests.test_politica_aprobacion.PoliticaAprobacionTests.test_crea_actualiza_y_desactiva) ... ok
+test_filtra_activas (apps.socios.tests.test_politica_aprobacion.PoliticaAprobacionTests.test_filtra_activas) ... ok
+test_lista_requiere_admin (apps.socios.tests.test_politica_aprobacion.PoliticaAprobacionTests.test_lista_requiere_admin) ... ok
+test_valida_campos (apps.socios.tests.test_politica_aprobacion.PoliticaAprobacionTests.test_valida_campos) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 11.166s
+
+OK
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+
+ OK
+System check identified no issues (0 silenced).

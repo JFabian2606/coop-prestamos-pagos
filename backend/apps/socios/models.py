@@ -1,7 +1,7 @@
 import uuid
 from decimal import Decimal
 
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.contrib.auth import get_user_model
 
@@ -97,6 +97,32 @@ class TipoPrestamo(models.Model):
 
     def __str__(self) -> str:
         return f"{self.nombre} ({self.tasa_interes_anual}% - {self.plazo_meses}m)"
+
+
+class PoliticaAprobacion(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    nombre = models.CharField(max_length=120, unique=True)
+    descripcion = models.CharField(max_length=255, blank=True)
+    score_minimo = models.PositiveIntegerField(validators=[MinValueValidator(0), MaxValueValidator(1000)])
+    antiguedad_min_meses = models.PositiveSmallIntegerField(validators=[MinValueValidator(0)])
+    ratio_cuota_ingreso_max = models.DecimalField(
+        max_digits=5,
+        decimal_places=3,
+        validators=[MinValueValidator(Decimal('0')), MaxValueValidator(Decimal('1'))],
+        help_text="Máximo porcentaje de la cuota sobre el ingreso mensual (0-1).",
+    )
+    activo = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'politica_aprobacion'
+        ordering = ['nombre']
+        verbose_name = 'Política de aprobación'
+        verbose_name_plural = 'Políticas de aprobación'
+
+    def __str__(self) -> str:
+        return f"{self.nombre} (score ≥ {self.score_minimo}, antigüedad ≥ {self.antiguedad_min_meses}m)"
 
 
 class Prestamo(models.Model):

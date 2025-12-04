@@ -1,0 +1,37 @@
+.politicas-panel {
+  margin-top: 1rem;
+}
+
+.politicas-panel .socios-layout {
+  gap: 1rem;
+}
+
+.politicas-panel .socios-table__head {
+  grid-template-columns: 1.2fr 0.8fr 0.9fr 0.8fr 0.8fr;
+}
+
+.politicas-panel .socios-row {
+  grid-template-columns: 1.2fr 0.8fr 0.9fr 0.8fr 0.8fr;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.politicas-panel .tipo-cell small {
+  color: #667085;
+}
+
+.politicas-panel .estado-pill {
+  justify-self: flex-start;
+}
+
+@media (max-width: 960px) {
+  .politicas-panel .socios-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .politicas-panel .socios-table__head,
+  .politicas-panel .socios-row {
+    grid-template-columns: repeat(2, 1fr);
+    row-gap: 0.35rem;
+  }
+}
