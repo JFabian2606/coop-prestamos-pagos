@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Pago, Prestamo, Socio, SocioAuditLog, TipoPrestamo
+from .models import Pago, Prestamo, Socio, SocioAuditLog, TipoPrestamo, PoliticaAprobacion
 
 
 @admin.register(Socio)
@@ -26,6 +26,13 @@ class PrestamoAdmin(admin.ModelAdmin):
 @admin.register(TipoPrestamo)
 class TipoPrestamoAdmin(admin.ModelAdmin):
     list_display = ("id", "nombre", "tasa_interes_anual", "plazo_meses", "activo", "updated_at")
+    search_fields = ("nombre", "descripcion")
+    list_filter = ("activo",)
+
+
+@admin.register(PoliticaAprobacion)
+class PoliticaAprobacionAdmin(admin.ModelAdmin):
+    list_display = ("id", "nombre", "score_minimo", "antiguedad_min_meses", "ratio_cuota_ingreso_max", "activo", "updated_at")
     search_fields = ("nombre", "descripcion")
     list_filter = ("activo",)
 

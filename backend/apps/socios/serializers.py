@@ -4,7 +4,7 @@ from datetime import date
 
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Pago, Prestamo, Socio, TipoPrestamo
+from .models import Pago, Prestamo, Socio, TipoPrestamo, PoliticaAprobacion
 
 
 User = get_user_model()
@@ -123,6 +123,53 @@ class TipoPrestamoUpsertSerializer(serializers.ModelSerializer):
     def validate_plazo_meses(self, value):
         if value is None or value < 1:
             raise serializers.ValidationError('El plazo en meses debe ser mayor o igual a 1.')
+        return value
+
+
+class PoliticaAprobacionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PoliticaAprobacion
+        fields = (
+            'id',
+            'nombre',
+            'descripcion',
+            'score_minimo',
+            'antiguedad_min_meses',
+            'ratio_cuota_ingreso_max',
+            'activo',
+            'created_at',
+            'updated_at',
+        )
+
+
+class PoliticaAprobacionUpsertSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PoliticaAprobacion
+        fields = (
+            'nombre',
+            'descripcion',
+            'score_minimo',
+            'antiguedad_min_meses',
+            'ratio_cuota_ingreso_max',
+            'activo',
+        )
+        extra_kwargs = {'activo': {'required': False}}
+
+    def validate_ratio_cuota_ingreso_max(self, value: Decimal):
+        if value is None:
+            raise serializers.ValidationError('Este valor es obligatorio.')
+        if value < 0 or value > 1:
+            raise serializers.ValidationError('Debe estar entre 0 y 1 (ej: 0.35 representa 35%).')
+        return value
+
+    def validate_score_minimo(self, value: int):
+        if value is None or value < 0 or value > 1000:
+            raise serializers.ValidationError('El score debe estar entre 0 y 1000.')
+        return value
+
+    def validate_antiguedad_min_meses(self, value: int):
+        if value is None or value < 0:
+            raise serializers.ValidationError('La antigüedad mínima no puede ser negativa.')
         return value
 
     def validate_tasa_interes_anual(self, value):

@@ -5,6 +5,7 @@ import LoginRegistro from "./components/LoginRegistro";
 import HistorialCrediticio from "./components/HistorialCrediticio";
 import SociosViewer from "./components/SociosViewer";
 import TiposPrestamo from "./components/TiposPrestamo";
+import PoliticasAprobacion from "./components/PoliticasAprobacion";
 import type { SocioDto } from "./components/SociosViewer";
 import logo from "./assets/logo-cooprestamos-vector.svg";
 import avatarFallback from "./assets/solo-logo-cooprestamos-vector.svg";
@@ -37,7 +38,7 @@ const Loader = () => (
 function App() {
   const [usuario, setUsuario] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [vistaActiva, setVistaActiva] = useState<"home" | "socios" | "historial" | "tipos">("home");
+  const [vistaActiva, setVistaActiva] = useState<"home" | "socios" | "historial" | "tipos" | "configuracion">("home");
   const [ultimosSocios, setUltimosSocios] = useState<SocioDto[]>([]);
   const [ultimosPrestamos, setUltimosPrestamos] = useState<any[]>([]);
   const [actividadReciente, setActividadReciente] = useState<any[]>([]);
@@ -170,6 +171,8 @@ function App() {
       descripcion: "Parametros, roles y accesos.",
       icono: "bx-cog",
       variante: "outline",
+      onClick: () => setVistaActiva("configuracion"),
+      cta: "Políticas",
     },
     {
       titulo: "Auditoria",
@@ -438,6 +441,23 @@ function App() {
             </div>
           </div>
           <TiposPrestamo />
+        </main>
+      ) : vistaActiva === "configuracion" ? (
+        <main className="admin-container">
+          <div className="page-header">
+            <div>
+              <p className="eyebrow">Configuracion</p>
+              <h1>Políticas de aprobación</h1>
+              <p className="subtitle">Define reglas automáticas por score, antigüedad y capacidad de pago.</p>
+            </div>
+            <div className="header-meta">
+              <button className="ghost" onClick={() => setVistaActiva("home")}>
+                <i className="bx bx-chevron-left" aria-hidden="true" />
+                Volver al inicio
+              </button>
+            </div>
+          </div>
+          <PoliticasAprobacion />
         </main>
       ) : (
         <main className="admin-container">
