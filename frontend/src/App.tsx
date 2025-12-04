@@ -125,7 +125,7 @@ function App() {
      },
     {
       titulo: "Tipos de prestamo",
-      descripcion: "Define tasas, plazos y requisitos por producto.",
+      descripcion: "Define tasas, plazos y requisitos.",
       icono: "bx-slider-alt",
       variante: "outline",
       onClick: () => setVistaActiva("tipos"),

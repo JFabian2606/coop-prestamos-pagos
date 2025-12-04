@@ -93,7 +93,6 @@ export default function TiposPrestamo() {
 
   useEffect(() => {
     void fetchTipos();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [estadoFiltro, busqueda]);
 
   useEffect(() => {
