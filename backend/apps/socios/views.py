@@ -16,13 +16,15 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .audit import snapshot_socio, register_audit_entry
-from .models import Prestamo, Socio, SocioAuditLog
+from .models import Prestamo, Socio, SocioAuditLog, TipoPrestamo
 from .serializers import (
     HistorialCrediticioSerializer,
     ProfileCreateSerializer,
     SocioAdminUpdateSerializer,
     SocioEstadoSerializer,
     SocioSerializer,
+    TipoPrestamoSerializer,
+    TipoPrestamoUpsertSerializer,
 )
 
 HEADER_FONT = Font(bold=True, color="FFFFFF")
@@ -86,6 +88,99 @@ class SocioListView(APIView):
             )
 
         return Response(SocioSerializer(queryset, many=True).data)
+
+
+class TipoPrestamoListCreateView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    @extend_schema(
+        tags=['Prestamos'],
+        responses=TipoPrestamoSerializer(many=True),
+        summary='Listado de tipos de préstamo',
+        description='Devuelve los tipos de préstamo configurados. Solo administradores.',
+    )
+    def get(self, request):
+        qs = TipoPrestamo.objects.all().order_by('nombre')
+        q = (request.query_params.get('q') or '').strip()
+        if q:
+            qs = qs.filter(Q(nombre__icontains=q) | Q(descripcion__icontains=q))
+
+        solo_activos = request.query_params.get('solo_activos') or request.query_params.get('soloActivos')
+        if solo_activos and str(solo_activos).lower() in {'1', 'true', 't', 'yes', 'on'}:
+            qs = qs.filter(activo=True)
+
+        return Response(TipoPrestamoSerializer(qs, many=True).data)
+
+    @extend_schema(
+        tags=['Prestamos'],
+        request=TipoPrestamoUpsertSerializer,
+        responses={201: TipoPrestamoSerializer, 400: OpenApiResponse(description='Datos inválidos')},
+        summary='Crear tipo de préstamo',
+        description='Registra un nuevo tipo de préstamo con tasa, plazo y requisitos.',
+    )
+    def post(self, request):
+        serializer = TipoPrestamoUpsertSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        tipo = serializer.save()
+        return Response(TipoPrestamoSerializer(tipo).data, status=status.HTTP_201_CREATED)
+
+
+class TipoPrestamoDetailView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def get_object(self, tipo_id):
+        return get_object_or_404(TipoPrestamo, pk=tipo_id)
+
+    @extend_schema(
+        tags=['Prestamos'],
+        responses={200: TipoPrestamoSerializer, 404: OpenApiResponse(description='Tipo no encontrado')},
+        summary='Detalle de tipo de préstamo',
+        description='Obtiene la definición completa de un tipo de préstamo.',
+    )
+    def get(self, _request, tipo_id):
+        tipo = self.get_object(tipo_id)
+        return Response(TipoPrestamoSerializer(tipo).data)
+
+    @extend_schema(
+        tags=['Prestamos'],
+        request=TipoPrestamoUpsertSerializer,
+        responses={200: TipoPrestamoSerializer, 400: OpenApiResponse(description='Datos inválidos')},
+        summary='Actualizar tipo de préstamo',
+        description='Permite modificar tasa, plazo, requisitos o estado activo.',
+    )
+    def put(self, request, tipo_id):
+        tipo = self.get_object(tipo_id)
+        serializer = TipoPrestamoUpsertSerializer(instance=tipo, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        tipo = serializer.save()
+        return Response(TipoPrestamoSerializer(tipo).data)
+
+    @extend_schema(
+        tags=['Prestamos'],
+        request=TipoPrestamoUpsertSerializer,
+        responses={200: TipoPrestamoSerializer, 400: OpenApiResponse(description='Datos inválidos')},
+        summary='Actualización parcial de tipo de préstamo',
+        description='Actualiza parcialmente un tipo de préstamo.',
+    )
+    def patch(self, request, tipo_id):
+        tipo = self.get_object(tipo_id)
+        serializer = TipoPrestamoUpsertSerializer(instance=tipo, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        tipo = serializer.save()
+        return Response(TipoPrestamoSerializer(tipo).data)
+
+    @extend_schema(
+        tags=['Prestamos'],
+        responses={200: TipoPrestamoSerializer, 404: OpenApiResponse(description='Tipo no encontrado')},
+        summary='Desactivar tipo de préstamo',
+        description='Desactiva (soft delete) un tipo de préstamo para que no se use en nuevos créditos.',
+    )
+    def delete(self, _request, tipo_id):
+        tipo = self.get_object(tipo_id)
+        if tipo.activo:
+            tipo.activo = False
+            tipo.save(update_fields=['activo', 'updated_at'])
+        return Response(TipoPrestamoSerializer(tipo).data, status=status.HTTP_200_OK)
 
 
 class SocioAdminDetailView(APIView):
@@ -226,7 +321,7 @@ class SocioHistorialView(APIView):
         hasta = parse_date('hasta')
 
         prestamos_qs = Prestamo.objects.filter(socio=socio) if socio else Prestamo.objects.all()
-        prestamos_qs = prestamos_qs.prefetch_related('pagos').order_by('-fecha_desembolso')
+        prestamos_qs = prestamos_qs.select_related('socio', 'tipo').prefetch_related('pagos').order_by('-fecha_desembolso')
         if estados:
             prestamos_qs = prestamos_qs.filter(estado__in=estados)
         if desde:
@@ -417,7 +512,7 @@ class SocioHistorialExportView(APIView):
         if socio_id:
             socio = get_object_or_404(Socio, pk=socio_id)
 
-        prestamos_qs = Prestamo.objects.select_related('socio', 'socio__usuario').prefetch_related('pagos')
+        prestamos_qs = Prestamo.objects.select_related('socio', 'socio__usuario', 'tipo').prefetch_related('pagos')
         if socio:
             prestamos_qs = prestamos_qs.filter(socio=socio)
         if estados:
@@ -446,7 +541,7 @@ class SocioHistorialExportView(APIView):
         # Hoja de prestamos
         ws_prestamos = wb.create_sheet("Prestamos")
         headers_prestamos = [
-            "ID", "Socio", "Documento", "Estado",
+            "ID", "Tipo", "Tasa anual", "Plazo (meses)", "Socio", "Documento", "Estado",
             "Monto", "Pagado", "Saldo", "Monto en mora",
             "Días mora", "Cuotas vencidas",
             "Desembolso", "Vencimiento", "Descripción",
@@ -465,9 +560,15 @@ class SocioHistorialExportView(APIView):
             monto_mora = saldo if dias_mora > 0 else 0
             socio_name = p.socio.nombre_completo if p.socio else ""
             socio_doc = p.socio.documento if p.socio else ""
+            tipo_nombre = p.tipo.nombre if p.tipo else ""
+            tipo_tasa = float(p.tipo.tasa_interes_anual) if p.tipo else None
+            tipo_plazo = p.tipo.plazo_meses if p.tipo else None
 
             ws_prestamos.append([
                 str(p.id),
+                tipo_nombre,
+                tipo_tasa,
+                tipo_plazo,
                 socio_name,
                 socio_doc,
                 p.estado,

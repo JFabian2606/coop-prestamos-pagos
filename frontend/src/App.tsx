@@ -4,6 +4,7 @@ import { api, ensureCsrfCookie } from "./api";
 import LoginRegistro from "./components/LoginRegistro";
 import HistorialCrediticio from "./components/HistorialCrediticio";
 import SociosViewer from "./components/SociosViewer";
+import TiposPrestamo from "./components/TiposPrestamo";
 import type { SocioDto } from "./components/SociosViewer";
 import logo from "./assets/logo-cooprestamos-vector.svg";
 import avatarFallback from "./assets/solo-logo-cooprestamos-vector.svg";
@@ -36,10 +37,14 @@ const Loader = () => (
 function App() {
   const [usuario, setUsuario] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [vistaActiva, setVistaActiva] = useState<"home" | "socios" | "historial">("home");
+  const [vistaActiva, setVistaActiva] = useState<"home" | "socios" | "historial" | "tipos">("home");
   const [ultimosSocios, setUltimosSocios] = useState<SocioDto[]>([]);
   const [ultimosPrestamos, setUltimosPrestamos] = useState<any[]>([]);
   const [actividadReciente, setActividadReciente] = useState<any[]>([]);
+  const [totalSocios, setTotalSocios] = useState<number | null>(null);
+  const [totalSociosActivos, setTotalSociosActivos] = useState<number | null>(null);
+  const [prestamosTotales, setPrestamosTotales] = useState<number | null>(null);
+  const [prestamosEnCurso, setPrestamosEnCurso] = useState<number | null>(null);
 
   useEffect(() => {
     const verificarSesion = async () => {
@@ -65,12 +70,20 @@ function App() {
           (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
         setUltimosSocios(ordenados.slice(0, 4));
+        setTotalSocios(socios.length);
+        setTotalSociosActivos(socios.filter((s) => s.estado === "activo").length);
 
         const { data: historial } = await api.get<any>("socios/historial/");
         const prestamos = (historial?.prestamos ?? []).sort(
           (a: any, b: any) => new Date(b.fecha_desembolso).getTime() - new Date(a.fecha_desembolso).getTime()
         );
         setUltimosPrestamos(prestamos.slice(0, 4));
+        setPrestamosTotales(prestamos.length);
+        const activosDesdeResumen =
+          typeof historial?.resumen?.prestamos_activos === "number" ? historial.resumen.prestamos_activos : null;
+        const enCursoCalculados =
+          activosDesdeResumen ?? prestamos.filter((p: any) => p.estado === "activo" || p.estado === "moroso").length;
+        setPrestamosEnCurso(enCursoCalculados);
 
         const { data: actividad } = await api.get<any[]>("socios/actividad-admin/");
         setActividadReciente(actividad);
@@ -113,6 +126,14 @@ function App() {
     cta?: string;
   };
 
+  type Kpi = {
+    titulo: string;
+    valor: string;
+    detalle: string;
+    icono?: string;
+    iconoSvg?: JSX.Element;
+  };
+
   const acciones: Accion[] = [
      {
        titulo: "Socios",
@@ -122,6 +143,14 @@ function App() {
        onClick: () => setVistaActiva("socios"),
        cta: "Ver socios",
      },
+    {
+      titulo: "Tipos de prestamo",
+      descripcion: "Define tasas, plazos y requisitos.",
+      icono: "bx-slider-alt",
+      variante: "outline",
+      onClick: () => setVistaActiva("tipos"),
+      cta: "Configurar",
+    },
     {
       titulo: "Historial crediticio",
       descripcion: "Movimientos, pagos y conciliacion.",
@@ -157,11 +186,35 @@ function App() {
   ];
 
   const nombreParaMostrar = usuario?.nombre ?? usuario?.email ?? "Admin";
-  const kpis = [
-    { titulo: "Socios activos", valor: "128", detalle: "+4 esta semana", icono: "bx-user-check" },
-    { titulo: "Prestamos en curso", valor: "42", detalle: "12 en revision", icono: "bx-bank" },
-    { titulo: "Alertas del sistema", valor: "3", detalle: "1 critica, 2 medias", icono: "bx-bell" },
-    { titulo: "Pendientes del admin", valor: "5", detalle: "2 tickets, 3 tareas", icono: "bx-clipboard" },
+  const kpis: Kpi[] = [
+    {
+      titulo: "Socios activos",
+      valor: totalSociosActivos !== null ? String(totalSociosActivos) : "...",
+      detalle: totalSocios !== null ? `${totalSocios} registrados` : "Cargando...",
+      icono: "bx-user-check",
+    },
+    {
+      titulo: "Prestamos en curso",
+      valor: prestamosEnCurso !== null ? String(prestamosEnCurso) : "...",
+      detalle: prestamosTotales !== null ? `${prestamosTotales} en total` : "Cargando...",
+      iconoSvg: (
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.5}
+          aria-hidden="true"
+          width="26"
+          height="26"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z"
+          />
+        </svg>
+      ),
+    },
   ];
   const formatFechaRelativa = (fechaIso: string) => {
     const fecha = new Date(fechaIso);
@@ -231,7 +284,13 @@ function App() {
             {kpis.map((kpi) => (
               <article key={kpi.titulo} className="metric-card">
                 <div className="metric-card__icon">
-                  <i className={`bx ${kpi.icono} bx-tada-hover`} aria-hidden="true" />
+                  {kpi.iconoSvg ? (
+                    <span className="metric-card__svg bx-tada-hover" aria-hidden="true">
+                      {kpi.iconoSvg}
+                    </span>
+                  ) : (
+                    <i className={`bx ${kpi.icono} bx-tada-hover`} aria-hidden="true" />
+                  )}
                 </div>
                 <div className="metric-card__body">
                   <h3>{kpi.titulo}</h3>
@@ -362,6 +421,23 @@ function App() {
             </div>
           </div>
           <SociosViewer />
+        </main>
+      ) : vistaActiva === "tipos" ? (
+        <main className="admin-container">
+          <div className="page-header">
+            <div>
+              <p className="eyebrow">Configuracion</p>
+              <h1>Tipos de prestamo</h1>
+              <p className="subtitle">Administra tasas, plazos y requisitos por producto.</p>
+            </div>
+            <div className="header-meta">
+              <button className="ghost" onClick={() => setVistaActiva("home")}>
+                <i className="bx bx-chevron-left" aria-hidden="true" />
+                Volver al inicio
+              </button>
+            </div>
+          </div>
+          <TiposPrestamo />
         </main>
       ) : (
         <main className="admin-container">
