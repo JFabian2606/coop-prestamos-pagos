@@ -215,8 +215,6 @@ function App() {
         </svg>
       ),
     },
-    { titulo: "Alertas del sistema", valor: "3", detalle: "1 critica, 2 medias", icono: "bx-bell" },
-    { titulo: "Pendientes del admin", valor: "5", detalle: "2 tickets, 3 tareas", icono: "bx-clipboard" },
   ];
   const formatFechaRelativa = (fechaIso: string) => {
     const fecha = new Date(fechaIso);

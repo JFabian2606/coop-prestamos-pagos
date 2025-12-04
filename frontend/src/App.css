@@ -174,50 +174,62 @@ button.danger {
 
 .metrics-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 0.8rem;
-  margin-bottom: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.2rem;
 }
 
 .metric-card {
   display: flex;
-  gap: 0.75rem;
+  gap: 1rem;
   align-items: flex-start;
-  padding: 0.85rem 1rem;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: #ffffff;
+  padding: 1.1rem 1.35rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--green-main);
+  color: #ffffff;
 }
 
 .metric-card__icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 8px;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
   display: grid;
   place-items: center;
-  background: var(--green-light);
-  color: var(--green-dark);
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
   flex-shrink: 0;
 }
 
+.metric-card__svg {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+}
+
+.metric-card__icon svg {
+  width: 24px;
+  height: 24px;
+}
+
 .metric-card__body h3 {
-  margin: 0 0 0.1rem;
-  font-size: 14px;
-  color: #6b7280;
+  margin: 0 0 0.2rem;
+  font-size: 15px;
+  color: #e8f7f4;
   font-weight: 600;
 }
 
 .metric-card__value {
   margin: 0;
-  font-size: 20px;
+  font-size: 26px;
   font-weight: 800;
-  color: var(--text);
+  color: #ffffff;
 }
 
 .metric-card__delta {
   margin: 0.15rem 0 0;
   font-size: 13px;
-  color: var(--green-dark);
+  color: #dff3ef;
 }
 
 .actions-grid {
@@ -493,6 +505,18 @@ button.danger {
   animation-delay: 0.4s;
 }
 
+@media (max-width: 820px) {
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .actions-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @keyframes logoPulse {
   0% {
     transform: scale(1);
@@ -577,6 +601,10 @@ button.danger {
 
   .section-grid {
     grid-template-columns: 1fr;
+  }
+
+  .actions-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .admin-container {
