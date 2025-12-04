@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import type { FormEvent } from "react";
 import { api } from "../api";
 import "../styles/PoliticasAprobacion.css";
 
@@ -116,7 +117,7 @@ export default function PoliticasAprobacion() {
     }
   };
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setFormError(null);
     setGuardando(true);
@@ -187,6 +188,11 @@ export default function PoliticasAprobacion() {
     setEditModalAbierta(true);
   };
 
+  const nuevaPolitica = () => {
+    resetForm();
+    setEditModalAbierta(true);
+  };
+
   const formatPercent = (value: string | number) => {
     const num = Number(value);
     if (!Number.isFinite(num)) return value;
@@ -215,7 +221,7 @@ export default function PoliticasAprobacion() {
             <button className="ghost" onClick={() => void fetchPoliticas()} disabled={loading}>
               {loading ? "Actualizando..." : "Actualizar"}
             </button>
-            <button className="primary" onClick={resetForm}>
+            <button className="primary" onClick={nuevaPolitica}>
               <i className="bx bx-plus-circle" aria-hidden="true" /> Nueva política
             </button>
           </div>
