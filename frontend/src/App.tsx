@@ -41,6 +41,10 @@ function App() {
   const [ultimosSocios, setUltimosSocios] = useState<SocioDto[]>([]);
   const [ultimosPrestamos, setUltimosPrestamos] = useState<any[]>([]);
   const [actividadReciente, setActividadReciente] = useState<any[]>([]);
+  const [totalSocios, setTotalSocios] = useState<number | null>(null);
+  const [totalSociosActivos, setTotalSociosActivos] = useState<number | null>(null);
+  const [prestamosTotales, setPrestamosTotales] = useState<number | null>(null);
+  const [prestamosEnCurso, setPrestamosEnCurso] = useState<number | null>(null);
 
   useEffect(() => {
     const verificarSesion = async () => {
@@ -66,12 +70,20 @@ function App() {
           (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
         setUltimosSocios(ordenados.slice(0, 4));
+        setTotalSocios(socios.length);
+        setTotalSociosActivos(socios.filter((s) => s.estado === "activo").length);
 
         const { data: historial } = await api.get<any>("socios/historial/");
         const prestamos = (historial?.prestamos ?? []).sort(
           (a: any, b: any) => new Date(b.fecha_desembolso).getTime() - new Date(a.fecha_desembolso).getTime()
         );
         setUltimosPrestamos(prestamos.slice(0, 4));
+        setPrestamosTotales(prestamos.length);
+        const activosDesdeResumen =
+          typeof historial?.resumen?.prestamos_activos === "number" ? historial.resumen.prestamos_activos : null;
+        const enCursoCalculados =
+          activosDesdeResumen ?? prestamos.filter((p: any) => p.estado === "activo" || p.estado === "moroso").length;
+        setPrestamosEnCurso(enCursoCalculados);
 
         const { data: actividad } = await api.get<any[]>("socios/actividad-admin/");
         setActividadReciente(actividad);
@@ -167,8 +179,18 @@ function App() {
 
   const nombreParaMostrar = usuario?.nombre ?? usuario?.email ?? "Admin";
   const kpis = [
-    { titulo: "Socios activos", valor: "128", detalle: "+4 esta semana", icono: "bx-user-check" },
-    { titulo: "Prestamos en curso", valor: "42", detalle: "12 en revision", icono: "bx-bank" },
+    {
+      titulo: "Socios activos",
+      valor: totalSociosActivos !== null ? String(totalSociosActivos) : "...",
+      detalle: totalSocios !== null ? `${totalSocios} registrados` : "Cargando...",
+      icono: "bx-user-check",
+    },
+    {
+      titulo: "Prestamos en curso",
+      valor: prestamosEnCurso !== null ? String(prestamosEnCurso) : "...",
+      detalle: prestamosTotales !== null ? `${prestamosTotales} en total` : "Cargando...",
+      icono: "bx-bank",
+    },
     { titulo: "Alertas del sistema", valor: "3", detalle: "1 critica, 2 medias", icono: "bx-bell" },
     { titulo: "Pendientes del admin", valor: "5", detalle: "2 tickets, 3 tareas", icono: "bx-clipboard" },
   ];
