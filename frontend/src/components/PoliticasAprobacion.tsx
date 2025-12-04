@@ -302,6 +302,23 @@ export default function PoliticasAprobacion() {
                 <dd>{seleccionadoPolitica.antiguedad_min_meses} meses</dd>
                 <dt>Capacidad de pago</dt>
                 <dd>Cuota máx: {formatPercent(seleccionadoPolitica.ratio_cuota_ingreso_max)} del ingreso mensual</dd>
+                <dt>Estado</dt>
+                <dd>
+                  <div className="estado-control">
+                    <button
+                      type="button"
+                      className={`estado-pill estado-pill--${seleccionadoPolitica.activo ? "activo" : "inactivo"} estado-pill--action`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void toggleActivo(seleccionadoPolitica);
+                      }}
+                      disabled={guardando}
+                    >
+                      {seleccionadoPolitica.activo ? "Activa" : "Inactiva"}
+                      <span className="estado-pill__caret">▼</span>
+                    </button>
+                  </div>
+                </dd>
                 <dt>Actualizado</dt>
                 <dd>{new Date(seleccionadoPolitica.updated_at).toLocaleString()}</dd>
               </dl>
