@@ -10,9 +10,25 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='usuario',
-            name='email_verificado',
-            field=models.BooleanField(default=False),
+        migrations.SeparateDatabaseAndState(
+            database_operations=[
+                migrations.RunSQL(
+                    sql="""
+                    ALTER TABLE usuario
+                    ADD COLUMN IF NOT EXISTS email_verificado boolean NOT NULL DEFAULT false;
+                    """,
+                    reverse_sql="""
+                    ALTER TABLE usuario
+                    DROP COLUMN IF EXISTS email_verificado;
+                    """
+                ),
+            ],
+            state_operations=[
+                migrations.AddField(
+                    model_name='usuario',
+                    name='email_verificado',
+                    field=models.BooleanField(default=False),
+                ),
+            ],
         ),
     ]
