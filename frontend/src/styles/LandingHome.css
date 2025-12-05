@@ -130,6 +130,58 @@
   object-fit: cover;
 }
 
+.landing__solidaridad {
+  max-width: 1100px;
+  margin: 2.5rem auto 3rem;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
+  padding: 2.5rem 2rem;
+  display: grid;
+  gap: 1.8rem;
+  justify-items: center;
+}
+
+.solidaridad__content {
+  text-align: center;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.solidaridad__icon {
+  font-size: 2rem;
+  background: #e6f4f1;
+  color: #0f766e;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+}
+
+.landing__solidaridad h2 {
+  margin: 0;
+  font-size: clamp(1.8rem, 2vw + 1rem, 2.4rem);
+  line-height: 1.2;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.landing__subtext.center {
+  text-align: center;
+  max-width: 640px;
+}
+
+.solidaridad__image img {
+  width: 100%;
+  max-width: 960px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
 @media (max-width: 768px) {
   .landing__navbar {
     padding: 0 1rem;

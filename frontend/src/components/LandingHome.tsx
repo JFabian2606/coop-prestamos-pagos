@@ -37,6 +37,21 @@ export default function LandingHome() {
             <img src="/hero-aliado-financiero.png" alt="Equipo analizando crecimiento financiero" />
           </div>
         </section>
+
+        <section className="landing__solidaridad" id="solidaridad">
+          <div className="solidaridad__content">
+            <div className="solidaridad__icon">🏪</div>
+            <p className="landing__eyebrow">Cooperativa</p>
+            <h2>Construyendo futuro con solidaridad financiera</h2>
+            <p className="landing__subtext center">
+              COOPRESTAMOS nace del compromiso de apoyar a socios con servicios financieros transparentes y accesibles.
+              Trabajamos para empoderar a cada socio.
+            </p>
+          </div>
+          <div className="solidaridad__image">
+            <img src="/solidaridad-financiera.png" alt="Personas colaborando y planificando finanzas" />
+          </div>
+        </section>
       </main>
     </div>
   );
