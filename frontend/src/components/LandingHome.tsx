@@ -20,7 +20,7 @@ export default function LandingHome() {
       </header>
 
       <main>
-        <section className="landing__hero" id="hero">
+        <section className="landing__hero landing-section" id="hero">
           <div className="landing__hero-copy">
             <p className="landing__eyebrow">COOPRESTAMOS</p>
             <h1>Tu aliado financiero para crecer juntos</h1>
@@ -40,7 +40,7 @@ export default function LandingHome() {
 
         <hr className="landing__divider" />
 
-        <section className="landing__solidaridad" id="solidaridad">
+        <section className="landing__solidaridad landing-section" id="solidaridad">
           <div className="solidaridad__content">
             <div className="solidaridad__icon">🏪</div>
             <p className="landing__eyebrow">Cooperativa</p>
