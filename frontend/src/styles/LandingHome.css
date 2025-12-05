@@ -130,9 +130,16 @@
   object-fit: cover;
 }
 
+.landing__divider {
+  max-width: 1100px;
+  margin: 1.2rem auto 1rem;
+  border: none;
+  border-top: 1px solid #e5e7eb;
+}
+
 .landing__solidaridad {
   max-width: 1100px;
-  margin: 2.5rem auto 3rem;
+  margin: 1.2rem auto 2.5rem;
   background: #ffffff;
   border-radius: 16px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);

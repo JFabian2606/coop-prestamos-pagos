@@ -38,6 +38,8 @@ export default function LandingHome() {
           </div>
         </section>
 
+        <hr className="landing__divider" />
+
         <section className="landing__solidaridad" id="solidaridad">
           <div className="solidaridad__content">
             <div className="solidaridad__icon">🏪</div>
