@@ -119,6 +119,11 @@ function App() {
     return <LoginRegistro />;
   }
 
+  // Si el usuario no es staff/admin, mostramos la landing pública para socios.
+  if (!usuario?.is_staff) {
+    return <LandingHome />;
+  }
+
   type Accion = {
     titulo: string;
     descripcion: string;
