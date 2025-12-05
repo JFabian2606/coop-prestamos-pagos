@@ -261,9 +261,6 @@ function App() {
           <button className="ghost" onClick={() => setVistaActiva("home")}>
             Inicio
           </button>
-          <button className="ghost" onClick={() => setVistaActiva("landing")}>
-            Landing socio
-          </button>
           <button className="danger" onClick={handleLogout}>
             Cerrar sesion
           </button>
