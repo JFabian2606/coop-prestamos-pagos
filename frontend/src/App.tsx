@@ -6,6 +6,7 @@ import HistorialCrediticio from "./components/HistorialCrediticio";
 import SociosViewer from "./components/SociosViewer";
 import TiposPrestamo from "./components/TiposPrestamo";
 import PoliticasAprobacion from "./components/PoliticasAprobacion";
+import LandingHome from "./components/LandingHome";
 import type { SocioDto } from "./components/SociosViewer";
 import logo from "./assets/logo-cooprestamos-vector.svg";
 import avatarFallback from "./assets/solo-logo-cooprestamos-vector.svg";
@@ -38,7 +39,7 @@ const Loader = () => (
 function App() {
   const [usuario, setUsuario] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [vistaActiva, setVistaActiva] = useState<"home" | "socios" | "historial" | "tipos" | "configuracion">("home");
+  const [vistaActiva, setVistaActiva] = useState<"home" | "socios" | "historial" | "tipos" | "configuracion" | "landing">("home");
   const [ultimosSocios, setUltimosSocios] = useState<SocioDto[]>([]);
   const [ultimosPrestamos, setUltimosPrestamos] = useState<any[]>([]);
   const [actividadReciente, setActividadReciente] = useState<any[]>([]);
@@ -168,7 +169,7 @@ function App() {
     },
     {
       titulo: "Configuracion",
-      descripcion: "Parametros, roles y accesos.",
+      descripcion: "Políticas de aceptación.",
       icono: "bx-cog",
       variante: "outline",
       onClick: () => setVistaActiva("configuracion"),
@@ -259,6 +260,9 @@ function App() {
           </div>
           <button className="ghost" onClick={() => setVistaActiva("home")}>
             Inicio
+          </button>
+          <button className="ghost" onClick={() => setVistaActiva("landing")}>
+            Landing socio
           </button>
           <button className="danger" onClick={handleLogout}>
             Cerrar sesion
@@ -459,6 +463,8 @@ function App() {
           </div>
           <PoliticasAprobacion />
         </main>
+      ) : vistaActiva === "landing" ? (
+        <LandingHome />
       ) : (
         <main className="admin-container">
           <div className="page-header">
