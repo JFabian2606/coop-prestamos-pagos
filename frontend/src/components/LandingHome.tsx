@@ -54,6 +54,26 @@ export default function LandingHome() {
             <img src="/solidaridad-financiera.png" alt="Personas colaborando y planificando finanzas" />
           </div>
         </section>
+
+        <hr className="landing__divider" />
+
+        <section className="landing__creditos landing-section" id="creditos">
+          <div className="creditos__image">
+            <img src="/creditos-personalizados.png" alt="Equipo diseñando créditos adaptados" />
+          </div>
+          <div className="creditos__copy">
+            <p className="landing__eyebrow">Créditos personalizados</p>
+            <h2>Diseñamos créditos adaptados a tu perfil</h2>
+            <p className="landing__subtext">
+              Evaluamos tu situación financiera para ofrecerte las mejores condiciones. Nuestras cuotas se ajustan a tus
+              metas.
+            </p>
+            <div className="landing__cta">
+              <button className="landing__primary">Simular</button>
+              <button className="landing__ghost">Detalles</button>
+            </div>
+          </div>
+        </section>
       </main>
     </div>
   );
