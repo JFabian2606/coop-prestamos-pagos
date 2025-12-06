@@ -108,6 +108,29 @@ export default function LandingHome() {
             </div>
           </div>
         </section>
+
+        <hr className="landing__divider" />
+
+        <section className="landing__testimonios landing-section" id="testimonios">
+          <div className="testimonios__header">
+            <h2>Testimonios</h2>
+            <p className="landing__subtext center">Lo que dicen nuestros socios</p>
+          </div>
+          <div className="testimonios__grid">
+            <article className="testimonio">
+              <p className="testimonio__quote">"COOPRESTAMOS me ayudó a concretar mi sueño empresarial"</p>
+              <div className="testimonio__avatar">☺</div>
+              <p className="testimonio__name">María Rodríguez</p>
+              <p className="testimonio__role">Emprendedora, Santiago</p>
+            </article>
+            <article className="testimonio">
+              <p className="testimonio__quote">"Nunca había tenido un servicio financiero tan personalizado"</p>
+              <div className="testimonio__avatar">☺</div>
+              <p className="testimonio__name">Carlos Mendoza</p>
+              <p className="testimonio__role">Profesional independiente, Valparaíso</p>
+            </article>
+          </div>
+        </section>
       </main>
 
       <footer className="landing__footer">
