@@ -65,6 +65,7 @@ function App() {
   }, []);
 
   useEffect(() => {
+    if (!usuario?.is_staff) return;
     const fetchDashboard = async () => {
       try {
         const { data: socios } = await api.get<SocioDto[]>("socios");
@@ -94,7 +95,7 @@ function App() {
       }
     };
     void fetchDashboard();
-  }, []);
+  }, [usuario]);
 
   const handleLogout = async () => {
     try {
