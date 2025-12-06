@@ -216,6 +216,32 @@
   max-width: 520px;
 }
 
+.landing__tecnologia {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+  align-items: center;
+  padding: 2.5rem 2rem;
+}
+
+.tecnologia__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tecnologia__copy h2 {
+  margin: 0 0 0.6rem;
+  font-size: clamp(1.9rem, 2vw + 1rem, 2.5rem);
+  line-height: 1.2;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.tecnologia__copy .landing__subtext {
+  max-width: 520px;
+}
+
 @media (max-width: 768px) {
   .landing__navbar {
     padding: 0 1rem;
