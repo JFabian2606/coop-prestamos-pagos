@@ -89,6 +89,25 @@ export default function LandingHome() {
             <img src="/plataforma-digital.png" alt="Aplicación financiera en un smartphone" />
           </div>
         </section>
+
+        <hr className="landing__divider" />
+
+        <section className="landing__asesoria landing-section" id="asesoria">
+          <div className="asesoria__image">
+            <img src="/asesoria-integral.png" alt="Consultores financieros conversando con clientes" />
+          </div>
+          <div className="asesoria__copy">
+            <p className="landing__eyebrow">Acompañamiento</p>
+            <h2>Consultores financieros a tu servicio</h2>
+            <p className="landing__subtext">
+              Nuestros expertos te guían en cada decisión para alcanzar tus metas económicas.
+            </p>
+            <div className="landing__cta">
+              <button className="landing__primary">Agendar</button>
+              <button className="landing__ghost">Contactar</button>
+            </div>
+          </div>
+        </section>
       </main>
 
       <footer className="landing__footer">

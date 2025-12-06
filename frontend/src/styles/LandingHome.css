@@ -242,6 +242,32 @@
   max-width: 520px;
 }
 
+.landing__asesoria {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+  align-items: center;
+  padding: 2.5rem 2rem;
+}
+
+.asesoria__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.asesoria__copy h2 {
+  margin: 0 0 0.6rem;
+  font-size: clamp(1.9rem, 2vw + 1rem, 2.5rem);
+  line-height: 1.2;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.asesoria__copy .landing__subtext {
+  max-width: 520px;
+}
+
 .landing__footer {
   background: #ffffff;
   padding: 2.5rem 1.5rem;
