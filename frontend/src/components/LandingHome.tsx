@@ -90,6 +90,66 @@ export default function LandingHome() {
           </div>
         </section>
       </main>
+
+      <footer className="landing__footer">
+        <div className="footer__columns">
+          <div className="footer__brand-col">
+            <img src="/logo-cooprestamos-vector.svg" alt="Cooprestamos" />
+            <p className="footer__brand-name">COOPRESTAMOS</p>
+          </div>
+          <div className="footer__col">
+            <h4>COOPRESTAMOS</h4>
+            <a href="#hero">Inicio</a>
+            <a href="#servicios">Servicios</a>
+            <a href="#simulador">Simulador</a>
+            <a href="#sobre-nosotros">Sobre nosotros</a>
+            <a href="#contacto">Contacto</a>
+          </div>
+          <div className="footer__col">
+            <h4>Recursos</h4>
+            <a href="#faq">Preguntas frecuentes</a>
+            <a href="#guias">Guías</a>
+            <a href="#blog">Blog</a>
+            <a href="#comunidad">Comunidad</a>
+          </div>
+          <div className="footer__col">
+            <h4>Legal</h4>
+            <a href="#terminos">Términos</a>
+            <a href="#privacidad">Privacidad</a>
+            <a href="#cookies">Cookies</a>
+            <a href="#aviso-legal">Aviso legal</a>
+            <a href="#suscribirse">Suscribirse</a>
+          </div>
+          <div className="footer__col footer__boletin">
+            <h4>Boletín</h4>
+            <p className="footer__subtext">
+              Recibe información financiera y novedades de COOPRESTAMOS directamente en tu correo.
+            </p>
+            <div className="footer__newsletter">
+              <input type="email" placeholder="Correo electrónico" />
+              <button type="button">Enviar</button>
+            </div>
+            <small>Al suscribirte, aceptas nuestra política de privacidad</small>
+          </div>
+        </div>
+
+        <div className="footer__bottom">
+          <p>© 2024 COOPRESTAMOS. Todos los derechos reservados</p>
+          <div className="footer__links">
+            <a href="#privacidad">Política de privacidad</a>
+            <a href="#terminos">Términos del servicio</a>
+            <a href="#cookies">Configuración de cookies</a>
+          </div>
+          <div className="footer__social">
+            <a href="#facebook" aria-label="Facebook"></a>
+            <a href="#twitter" aria-label="Twitter"></a>
+            <a href="#whatsapp" aria-label="WhatsApp"></a>
+            <a href="#instagram" aria-label="Instagram"></a>
+            <a href="#linkedin" aria-label="LinkedIn"></a>
+            <a href="#youtube" aria-label="YouTube"></a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

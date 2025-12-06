@@ -242,6 +242,127 @@
   max-width: 520px;
 }
 
+.landing__footer {
+  background: #ffffff;
+  padding: 2.5rem 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  color: #1f2937;
+  margin-top: 0;
+}
+
+.footer__columns {
+  max-width: 1100px;
+  margin: 0 auto 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1.2rem;
+}
+
+.footer__brand-col img {
+  height: 46px;
+  width: auto;
+}
+
+.footer__brand-name {
+  margin: 0.5rem 0 0;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.footer__col h4 {
+  margin: 0 0 0.6rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.footer__col a {
+  display: block;
+  margin: 0.25rem 0;
+  color: #374151;
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.footer__col a:hover {
+  color: #0f766e;
+}
+
+.footer__boletin .footer__subtext {
+  margin: 0 0 0.6rem;
+  color: #4b5563;
+  font-size: 0.95rem;
+}
+
+.footer__newsletter {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+}
+
+.footer__newsletter input {
+  flex: 1;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+.footer__newsletter button {
+  padding: 0.65rem 1rem;
+  border: 1px solid #0f766e;
+  background: #0f766e;
+  color: #ffffff;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.footer__newsletter button:hover {
+  background: #0c5f58;
+}
+
+.footer__bottom {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.95rem;
+}
+
+.footer__links {
+  display: flex;
+  gap: 1rem;
+}
+
+.footer__links a {
+  color: #374151;
+  text-decoration: none;
+}
+
+.footer__links a:hover {
+  color: #0f766e;
+}
+
+.footer__social {
+  display: flex;
+  gap: 0.65rem;
+  font-family: "Font Awesome 5 Brands";
+}
+
+.footer__social a {
+  color: #374151;
+  text-decoration: none;
+  font-size: 1rem;
+}
+
+.footer__social a:hover {
+  color: #0f766e;
+}
+
 @media (max-width: 768px) {
   .landing__navbar {
     padding: 0 1rem;
@@ -257,5 +378,10 @@
 
   .landing__hero-copy {
     padding: 1.6rem;
+  }
+
+  .footer__bottom {
+    grid-template-columns: 1fr;
+    justify-items: flex-start;
   }
 }
