@@ -84,10 +84,6 @@ export default function LandingHome() {
             <p className="landing__subtext">
               Desarrollamos herramientas tecnológicas que simplifican tus trámites financieros con total seguridad.
             </p>
-            <div className="landing__cta">
-              <button className="landing__primary">Probar ahora</button>
-              <button className="landing__ghost">Saber más</button>
-            </div>
           </div>
           <div className="tecnologia__image">
             <img src="/plataforma-digital.png" alt="Aplicación financiera en un smartphone" />
