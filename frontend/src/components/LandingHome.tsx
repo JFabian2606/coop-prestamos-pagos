@@ -132,6 +132,48 @@ export default function LandingHome() {
             </article>
           </div>
         </section>
+
+        <hr className="landing__divider" />
+
+        <section className="landing__servicios landing-section" id="servicios">
+          <div className="servicios__content">
+            <p className="landing__eyebrow">Servicios</p>
+            <h2>Soluciones financieras para cada objetivo</h2>
+            <p className="landing__subtext center">
+              Crédito personal, hipotecario, vehicular y líneas flexibles para emprendedores. Ajustamos montos y plazos
+              a tu realidad.
+            </p>
+          </div>
+        </section>
+
+        <hr className="landing__divider" />
+
+        <section className="landing__sobre landing-section" id="sobre-nosotros">
+          <div className="sobre__content">
+            <p className="landing__eyebrow">Sobre nosotros</p>
+            <h2>Una cooperativa basada en confianza y acompañamiento</h2>
+            <p className="landing__subtext center">
+              Trabajamos con transparencia, educación financiera y asesoría continua para que tomes decisiones informadas
+              y seguras.
+            </p>
+          </div>
+        </section>
+
+        <hr className="landing__divider" />
+
+        <section className="landing__contacto landing-section" id="contacto">
+          <div className="contacto__content">
+            <p className="landing__eyebrow">Contacto</p>
+            <h2>Hablemos de tu próximo paso financiero</h2>
+            <p className="landing__subtext center">
+              Escríbenos y un asesor te responderá con opciones y recomendaciones personalizadas.
+            </p>
+            <div className="landing__cta">
+              <button className="landing__primary">Agendar llamada</button>
+              <button className="landing__ghost">Enviar mensaje</button>
+            </div>
+          </div>
+        </section>
       </main>
 
       <footer className="landing__footer">

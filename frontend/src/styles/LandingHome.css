@@ -347,6 +347,27 @@
   font-size: 0.95rem;
 }
 
+.landing__servicios,
+.landing__sobre,
+.landing__contacto {
+  padding: 2.5rem 2rem;
+  text-align: center;
+}
+
+.landing__servicios h2,
+.landing__sobre h2,
+.landing__contacto h2 {
+  margin: 0 0 0.6rem;
+  font-size: clamp(1.9rem, 2vw + 1rem, 2.4rem);
+}
+
+.landing__servicios .landing__subtext,
+.landing__sobre .landing__subtext,
+.landing__contacto .landing__subtext {
+  max-width: 720px;
+  margin: 0.25rem auto 0;
+}
+
 .landing__footer {
   background: #ffffff;
   padding: 2.5rem 1.5rem;
