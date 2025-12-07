@@ -111,12 +111,13 @@
 .socios-row {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr;
-  padding: 0.85rem 1rem;
+  padding: 1rem 1.2rem;
   text-align: left;
   border: none;
   border-bottom: 1px solid #f2f4f7;
   background: white;
   border-radius: 0;
+  align-items: center;
 }
 
 .socios-row span {
@@ -144,16 +145,19 @@
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  padding: 0.25rem 0.75rem;
+  padding: 0.35rem 0.9rem;
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: capitalize;
+  min-width: 110px;
 }
 
 .estado-pill--action {
   cursor: pointer;
   gap: 0.35rem;
-  border: 1px solid transparent;
+  border: 1px solid #0f766e;
+  background: #e2f3ed;
+  color: #0f766e;
 }
 
 .estado-pill--action:disabled {
@@ -172,13 +176,15 @@
 }
 
 .estado-pill--activo {
-  background: rgba(2, 122, 72, 0.12);
-  color: #027a48;
+  background: #d6eae1;
+  color: #1d8250;
+  border: 1px solid #b7d8c8;
 }
 
 .estado-pill--inactivo {
-  background: rgba(102, 112, 133, 0.12);
-  color: #475467;
+  background: #e7e8ee;
+  color: #4b5563;
+  border: 1px solid #d5d7df;
 }
 
 .estado-pill--suspendido {
