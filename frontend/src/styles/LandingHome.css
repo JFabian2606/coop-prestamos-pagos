@@ -15,6 +15,7 @@
   background: #ffffff;
   color: #111827;
   font-family: "DM Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  overflow-x: hidden;
 }
 
 .landing h1,
@@ -98,6 +99,7 @@
   overflow: hidden;
   gap: 1.5rem;
   padding: 0 1.5rem;
+  align-items: center;
 }
 
 .landing__hero-copy {
@@ -141,12 +143,15 @@
   min-height: 360px;
   padding-right: 1.5rem;
   box-sizing: border-box;
+  max-height: 520px;
+  overflow: hidden;
 }
 
 .landing__hero-visual img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .landing__divider {
