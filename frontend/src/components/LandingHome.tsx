@@ -43,7 +43,9 @@ export default function LandingHome() {
 
         <section className="landing__solidaridad landing-section" id="solidaridad">
           <div className="solidaridad__content">
-            <div className="solidaridad__icon">🏪</div>
+            <div className="solidaridad__icon">
+              <img src="/solo-logo-cooprestamos-vector.svg" alt="Cooperativa" />
+            </div>
             <p className="landing__eyebrow">Cooperativa</p>
             <h2>Construyendo futuro con solidaridad financiera</h2>
             <p className="landing__subtext center">
@@ -187,13 +189,13 @@ export default function LandingHome() {
               <p className="testimonio__quote">"COOPRESTAMOS me ayudó a concretar mi sueño empresarial"</p>
               <div className="testimonio__avatar">☺</div>
               <p className="testimonio__name">María Rodríguez</p>
-              <p className="testimonio__role">Emprendedora, Santiago</p>
+              <p className="testimonio__role">Emprendedora</p>
             </article>
             <article className="testimonio">
               <p className="testimonio__quote">"Nunca había tenido un servicio financiero tan personalizado"</p>
               <div className="testimonio__avatar">☺</div>
               <p className="testimonio__name">Carlos Mendoza</p>
-              <p className="testimonio__role">Profesional independiente, Valparaíso</p>
+              <p className="testimonio__role">Profesional independiente</p>
             </article>
           </div>
         </section>
@@ -203,7 +205,6 @@ export default function LandingHome() {
         <div className="footer__columns">
           <div className="footer__brand-col">
             <img src="/logo-cooprestamos-vector.svg" alt="Cooprestamos" />
-            <p className="footer__brand-name">COOPRESTAMOS</p>
           </div>
           <div className="footer__col">
             <h4>COOPRESTAMOS</h4>
@@ -242,7 +243,7 @@ export default function LandingHome() {
         </div>
 
         <div className="footer__bottom">
-          <p>© 2024 COOPRESTAMOS. Todos los derechos reservados</p>
+          <p>© 2025 COOPRESTAMOS. Todos los derechos reservados</p>
           <div className="footer__links">
             <a href="#privacidad">Política de privacidad</a>
             <a href="#terminos">Términos del servicio</a>

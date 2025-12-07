@@ -8,7 +8,7 @@ import TiposPrestamo from "./components/TiposPrestamo";
 import PoliticasAprobacion from "./components/PoliticasAprobacion";
 import LandingHome from "./components/LandingHome";
 import type { SocioDto } from "./components/SociosViewer";
-import logo from "./assets/logo-cooprestamos-vector.svg";
+import logo from "./assets/solo-logo-cooprestamos-vector.svg";
 import avatarFallback from "./assets/solo-logo-cooprestamos-vector.svg";
 
 const currency = new Intl.NumberFormat("es-CO", {
@@ -23,7 +23,6 @@ const Loader = () => (
       <div className="loader__logo">
         <img src={logo} alt="Logo Cooprestamos" />
       </div>
-      <p className="loader__name">COOPRESTAMOS</p>
       <p className="loader__status">
         Cargando
         <span className="loader__dots" aria-hidden="true">

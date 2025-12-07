@@ -39,7 +39,7 @@
 }
 
 .landing__brand img {
-  height: 42px;
+  height: 56px;
   width: auto;
 }
 
@@ -181,14 +181,17 @@
 }
 
 .solidaridad__icon {
-  font-size: 2rem;
   background: #e6f4f1;
-  color: #0f766e;
-  width: 48px;
-  height: 48px;
+  width: 72px;
+  height: 72px;
   border-radius: 12px;
   display: grid;
   place-items: center;
+}
+
+.solidaridad__icon img {
+  width: 60px;
+  height: 60px;
 }
 
 .landing__solidaridad h2 {
@@ -450,14 +453,8 @@
 }
 
 .footer__brand-col img {
-  height: 46px;
+  height: 64px;
   width: auto;
-}
-
-.footer__brand-name {
-  margin: 0.5rem 0 0;
-  font-weight: 700;
-  letter-spacing: 0.05em;
 }
 
 .footer__col h4 {
