@@ -9,6 +9,7 @@ type Usuario = {
   email: string;
   nombres: string;
   rol: Rol | null;
+  socio_documento?: string | null;
   activo: boolean;
   is_staff: boolean;
   is_superuser: boolean;
@@ -46,7 +47,11 @@ export default function UsuariosRoles() {
     const q = filtro.trim().toLowerCase();
     if (!q) return usuarios;
     return usuarios.filter(
-      (u) => u.nombres.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || (u.rol?.nombre ?? "").toLowerCase().includes(q)
+      (u) =>
+        u.nombres.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q) ||
+        (u.rol?.nombre ?? "").toLowerCase().includes(q) ||
+        (u.socio_documento ?? "").toLowerCase().includes(q)
     );
   }, [usuarios, filtro]);
 
@@ -96,10 +101,10 @@ export default function UsuariosRoles() {
       {error && <div className="alert error">{error}</div>}
       {mensaje && <div className="alert success">{mensaje}</div>}
 
-      <div className="socios-table">
+      <div className="socios-table usuarios-table">
         <div className="socios-table__head">
           <span>Nombre</span>
-          <span>Email</span>
+          <span>Documento</span>
           <span>Rol</span>
           <span>Estado</span>
         </div>
@@ -110,7 +115,7 @@ export default function UsuariosRoles() {
                 <strong>{usuario.nombres}</strong>
                 <small>{usuario.email}</small>
               </span>
-              <span>{usuario.email}</span>
+              <span>{usuario.socio_documento ?? "-"}</span>
               <span>
                 <div className="estado-control">
                   <button

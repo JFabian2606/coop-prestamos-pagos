@@ -202,10 +202,15 @@ class RolSerializer(serializers.ModelSerializer):
 
 class UsuarioListSerializer(serializers.ModelSerializer):
     rol = RolSerializer()
+    socio_documento = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ("id", "email", "nombres", "rol", "activo", "is_staff", "is_superuser")
+        fields = ("id", "email", "nombres", "rol", "activo", "is_staff", "is_superuser", "socio_documento")
+
+    def get_socio_documento(self, obj):
+        socio = getattr(obj, "socio", None)
+        return socio.documento if socio else None
 
 
 class UsuarioRoleUpdateSerializer(serializers.Serializer):
