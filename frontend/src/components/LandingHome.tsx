@@ -14,8 +14,8 @@ export default function LandingHome() {
           <a href="#sobre-nosotros">Sobre nosotros</a>
         </nav>
         <div className="landing__actions">
-          <button className="landing__ghost">Ingresar</button>
-          <button className="landing__primary">Registro</button>
+          <button className="landing__ghost">Solicitar</button>
+          <button className="landing__primary">Mis prestamos</button>
         </div>
       </header>
 
