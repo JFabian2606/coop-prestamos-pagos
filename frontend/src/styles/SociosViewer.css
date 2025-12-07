@@ -157,6 +157,10 @@
   overflow: visible;
 }
 
+.usuarios-table .rol-cell {
+  overflow: visible;
+}
+
 .usuarios-table .estado-pill--action {
   min-width: 120px;
   justify-content: center;

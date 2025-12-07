@@ -116,7 +116,7 @@ export default function UsuariosRoles() {
                 <small>{usuario.email}</small>
               </span>
               <span>{usuario.socio_documento ?? "-"}</span>
-              <span>
+              <span className="rol-cell">
                 <div className="estado-control">
                   <button
                     type="button"
