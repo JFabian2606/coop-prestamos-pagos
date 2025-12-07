@@ -66,7 +66,7 @@
   background: #0f766e;
   color: #ffffff;
   border: none;
-  border-radius: 8px;
+  border-radius: 0;
   padding: 0.7rem 1.1rem;
   font-weight: 700;
   cursor: pointer;
@@ -80,7 +80,7 @@
   background: #ffffff;
   color: #111827;
   border: 1px solid #d1d5db;
-  border-radius: 8px;
+  border-radius: 0;
   padding: 0.65rem 1.05rem;
   font-weight: 600;
   cursor: pointer;
@@ -388,7 +388,7 @@
   flex: 1;
   padding: 0.65rem 0.8rem;
   border: 1px solid #d1d5db;
-  border-radius: 6px;
+  border-radius: 0;
   font-size: 0.95rem;
 }
 
@@ -397,7 +397,7 @@
   border: 1px solid #0f766e;
   background: #0f766e;
   color: #ffffff;
-  border-radius: 6px;
+  border-radius: 0;
   cursor: pointer;
   font-weight: 700;
 }
@@ -442,6 +442,7 @@
   color: #374151;
   text-decoration: none;
   font-size: 1rem;
+  border-radius: 0;
 }
 
 .footer__social a:hover {
