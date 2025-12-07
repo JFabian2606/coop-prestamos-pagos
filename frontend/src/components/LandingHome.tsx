@@ -12,6 +12,7 @@ export default function LandingHome() {
           <a href="#servicios">Servicios</a>
           <a href="#simulador">Simulador</a>
           <a href="#sobre-nosotros">Sobre nosotros</a>
+          <a href="#contacto">Contacto</a>
         </nav>
         <div className="landing__actions">
           <button className="landing__ghost">Solicitar</button>
