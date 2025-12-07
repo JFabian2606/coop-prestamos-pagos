@@ -283,8 +283,14 @@
   text-align: center;
 }
 
+.testimonios__header {
+  display: grid;
+  gap: 0.35rem;
+  justify-items: center;
+}
+
 .testimonios__header h2 {
-  margin: 0 0 0.4rem;
+  margin: 0;
   font-size: clamp(1.8rem, 2vw + 1rem, 2.3rem);
 }
 
