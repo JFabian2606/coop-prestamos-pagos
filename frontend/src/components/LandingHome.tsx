@@ -112,29 +112,6 @@ export default function LandingHome() {
 
         <hr className="landing__divider" />
 
-        <section className="landing__testimonios landing-section" id="testimonios">
-          <div className="testimonios__header">
-            <h2>Testimonios</h2>
-            <p className="landing__subtext center">Lo que dicen nuestros socios</p>
-          </div>
-          <div className="testimonios__grid">
-            <article className="testimonio">
-              <p className="testimonio__quote">"COOPRESTAMOS me ayudó a concretar mi sueño empresarial"</p>
-              <div className="testimonio__avatar">☺</div>
-              <p className="testimonio__name">María Rodríguez</p>
-              <p className="testimonio__role">Emprendedora, Santiago</p>
-            </article>
-            <article className="testimonio">
-              <p className="testimonio__quote">"Nunca había tenido un servicio financiero tan personalizado"</p>
-              <div className="testimonio__avatar">☺</div>
-              <p className="testimonio__name">Carlos Mendoza</p>
-              <p className="testimonio__role">Profesional independiente, Valparaíso</p>
-            </article>
-          </div>
-        </section>
-
-        <hr className="landing__divider" />
-
         <section className="landing__servicios landing-section" id="servicios">
           <div className="servicios__content">
             <p className="landing__eyebrow">Servicios</p>
@@ -190,9 +167,9 @@ export default function LandingHome() {
                 <p>Equipos de asesores que te guían en cada meta: vivienda, negocios y bienestar financiero.</p>
               </div>
               <div className="sobre-card">
-                <i className="bx bx-graduation sobre-icon" aria-hidden="true" />
+                <i className="bx bx-book-open sobre-icon" aria-hidden="true" />
                 <h3>Educación</h3>
-                <p>Capacitaciones y herramientas para que planifiques mejor y tomes decisiones informadas.</p>
+                <p>Capacitaciones y herramientas para planificar mejor, reducir riesgos y tomar decisiones informadas.</p>
               </div>
             </div>
           </div>
@@ -200,17 +177,24 @@ export default function LandingHome() {
 
         <hr className="landing__divider" />
 
-        <section className="landing__contacto landing-section" id="contacto">
-          <div className="contacto__content">
-            <p className="landing__eyebrow">Contacto</p>
-            <h2>Hablemos de tu próximo paso financiero</h2>
-            <p className="landing__subtext center">
-              Escríbenos y un asesor te responderá con opciones y recomendaciones personalizadas.
-            </p>
-            <div className="landing__cta">
-              <button className="landing__primary">Agendar llamada</button>
-              <button className="landing__ghost">Enviar mensaje</button>
-            </div>
+        <section className="landing__testimonios landing-section" id="testimonios">
+          <div className="testimonios__header">
+            <h2>Testimonios</h2>
+            <p className="landing__subtext center">Lo que dicen nuestros socios</p>
+          </div>
+          <div className="testimonios__grid">
+            <article className="testimonio">
+              <p className="testimonio__quote">"COOPRESTAMOS me ayudó a concretar mi sueño empresarial"</p>
+              <div className="testimonio__avatar">☺</div>
+              <p className="testimonio__name">María Rodríguez</p>
+              <p className="testimonio__role">Emprendedora, Santiago</p>
+            </article>
+            <article className="testimonio">
+              <p className="testimonio__quote">"Nunca había tenido un servicio financiero tan personalizado"</p>
+              <div className="testimonio__avatar">☺</div>
+              <p className="testimonio__name">Carlos Mendoza</p>
+              <p className="testimonio__role">Profesional independiente, Valparaíso</p>
+            </article>
           </div>
         </section>
       </main>
