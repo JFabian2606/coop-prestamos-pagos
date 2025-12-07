@@ -12,7 +12,6 @@ export default function LandingHome() {
           <a href="#servicios">Servicios</a>
           <a href="#simulador">Simulador</a>
           <a href="#sobre-nosotros">Sobre nosotros</a>
-          <a href="#contacto">Contacto</a>
         </nav>
         <div className="landing__actions">
           <button className="landing__ghost">Solicitar</button>
@@ -212,7 +211,6 @@ export default function LandingHome() {
             <a href="#servicios">Servicios</a>
             <a href="#simulador">Simulador</a>
             <a href="#sobre-nosotros">Sobre nosotros</a>
-            <a href="#contacto">Contacto</a>
           </div>
           <div className="footer__col">
             <h4>Recursos</h4>

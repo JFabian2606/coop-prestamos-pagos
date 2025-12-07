@@ -46,7 +46,7 @@
 .landing__links {
   display: flex;
   gap: 1.25rem;
-  font-weight: 600;
+  font-weight: 500;
   color: #374151;
 }
 
