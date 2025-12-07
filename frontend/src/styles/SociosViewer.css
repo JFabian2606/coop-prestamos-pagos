@@ -91,6 +91,10 @@
   overflow: hidden;
 }
 
+.usuarios-table {
+  overflow: visible;
+}
+
 .socios-table__head {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr;
