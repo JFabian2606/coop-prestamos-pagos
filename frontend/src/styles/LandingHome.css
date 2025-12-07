@@ -100,6 +100,10 @@
   gap: 1.5rem;
   padding: 0 1.5rem;
   align-items: center;
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  min-height: 800px;
 }
 
 .landing__hero-copy {
@@ -169,6 +173,10 @@
   justify-items: center;
   border-radius: 0;
   box-shadow: none;
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  min-height: 1396px;
 }
 
 .solidaridad__content {
@@ -220,6 +228,10 @@
   gap: 1.5rem;
   align-items: center;
   padding: 2.5rem 2rem;
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  min-height: 824px;
 }
 
 .creditos__image img {
@@ -569,6 +581,11 @@
     padding: 1.6rem;
   }
 
+  .landing__solidaridad,
+  .landing__creditos {
+    min-height: auto;
+  }
+
   .footer__bottom {
     grid-template-columns: 1fr;
     justify-items: flex-start;
@@ -582,6 +599,7 @@
 
   .landing__hero {
     grid-template-columns: 1fr;
+    min-height: auto;
   }
 
   .landing__hero-copy {
@@ -598,6 +616,7 @@
   .landing__asesoria {
     grid-template-columns: 1fr;
     text-align: center;
+    min-height: auto;
   }
 
   .creditos__copy .landing__subtext,
