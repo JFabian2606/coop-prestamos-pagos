@@ -228,7 +228,7 @@ export default function SolicitudPrestamo({ onVolver, usuario }: SolicitudPresta
               >
                 {tipos.map((tipo) => (
                   <option key={tipo.id} value={tipo.id}>
-                    {tipo.nombre} • {Number(tipo.tasa_interes_anual).toFixed(2)}% anual • {tipo.plazo_meses}m
+                    {tipo.nombre} - {Number(tipo.tasa_interes_anual).toFixed(2)}% anual - {tipo.plazo_meses}m
                   </option>
                 ))}
               </select>
@@ -269,19 +269,19 @@ export default function SolicitudPrestamo({ onVolver, usuario }: SolicitudPresta
           <div className="summary-grid">
             <article className="summary-card">
               <p className="summary-label">Monto</p>
-              <p className="summary-value accent">{currency.format(Number(simulacion?.monto ?? monto || 0))}</p>
+              <p className="summary-value accent">{currency.format(Number(simulacion?.monto ?? (monto || 0)))}</p>
               <p className="summary-meta">Solicitado por el socio</p>
             </article>
             <article className="summary-card strong">
               <p className="summary-label">Cuota mensual</p>
               <p className="summary-value">
-                {simulacion ? currency.format(Number(simulacion.cuota_mensual)) : "—"}
+                {simulacion ? currency.format(Number(simulacion.cuota_mensual)) : "--"}
               </p>
               <p className="summary-meta">Plazo: {simulacion?.plazo_meses ?? tipoActual?.plazo_meses ?? 0} meses</p>
             </article>
             <article className="summary-card warning">
               <p className="summary-label">Intereses estimados</p>
-              <p className="summary-value">{simulacion ? currency.format(Number(simulacion.total_intereses)) : "—"}</p>
+              <p className="summary-value">{simulacion ? currency.format(Number(simulacion.total_intereses)) : "--"}</p>
               <p className="summary-meta">
                 Tasa anual: {tipoActual ? Number(tipoActual.tasa_interes_anual).toFixed(2) : "--"}%
               </p>
@@ -289,7 +289,7 @@ export default function SolicitudPrestamo({ onVolver, usuario }: SolicitudPresta
             <article className="summary-card success">
               <p className="summary-label">Total a pagar</p>
               <p className="summary-value accent">
-                {simulacion ? currency.format(Number(simulacion.total_a_pagar)) : "—"}
+                {simulacion ? currency.format(Number(simulacion.total_a_pagar)) : "--"}
               </p>
               <p className="summary-meta">Incluye capital + intereses</p>
             </article>
@@ -342,7 +342,7 @@ export default function SolicitudPrestamo({ onVolver, usuario }: SolicitudPresta
         <aside className="solicitud-card sticky">
           <div className="section-heading">
             <h2>Datos del socio</h2>
-            <p className="muted">Información precargada desde tu registro.</p>
+            <p className="muted">Informacion precargada desde tu registro.</p>
           </div>
           <div className="info-row">
             <span className="label">Nombre</span>
@@ -363,7 +363,7 @@ export default function SolicitudPrestamo({ onVolver, usuario }: SolicitudPresta
           <hr />
           <div className="info-row">
             <span className="label">Tipo elegido</span>
-            <span className="value">{tipoActual?.nombre ?? "—"}</span>
+            <span className="value">{tipoActual?.nombre ?? "--"}</span>
           </div>
           <div className="info-row">
             <span className="label">Plazo</span>
