@@ -130,6 +130,7 @@
   display: flex;
   gap: 0.9rem;
   align-items: center;
+  margin-top: 1rem;
 }
 
 .landing__hero-visual {
@@ -195,7 +196,7 @@
 .solidaridad__image img {
   width: 100%;
   max-width: 960px;
-  border-radius: 12px;
+  border-radius: 0;
   object-fit: cover;
 }
 
