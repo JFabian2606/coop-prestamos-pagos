@@ -110,7 +110,7 @@ export default function UsuariosRoles() {
         </div>
         <div className="socios-table__body">
           {usuariosFiltrados.map((usuario) => (
-            <div key={usuario.id} className="socios-row">
+            <div key={usuario.id} className={`socios-row ${menuAbierto === usuario.id ? "menu-open" : ""}`}>
               <span>
                 <strong>{usuario.nombres}</strong>
                 <small>{usuario.email}</small>
