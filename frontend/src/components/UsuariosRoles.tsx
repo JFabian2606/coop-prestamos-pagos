@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "../api";
+import "../styles/SociosViewer.css";
 
 type Rol = { id: string; nombre: string };
 
@@ -20,6 +21,7 @@ export default function UsuariosRoles() {
   const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [actualizando, setActualizando] = useState<string | null>(null);
+  const [filtro, setFiltro] = useState("");
 
   useEffect(() => {
     const cargar = async () => {
@@ -38,6 +40,14 @@ export default function UsuariosRoles() {
     };
     void cargar();
   }, []);
+
+  const usuariosFiltrados = useMemo(() => {
+    const q = filtro.trim().toLowerCase();
+    if (!q) return usuarios;
+    return usuarios.filter(
+      (u) => u.nombres.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || (u.rol?.nombre ?? "").toLowerCase().includes(q)
+    );
+  }, [usuarios, filtro]);
 
   const handleCambioRol = async (usuarioId: string, rolId: string) => {
     setError("");
@@ -60,35 +70,49 @@ export default function UsuariosRoles() {
   }
 
   return (
-    <div className="historial-panel">
-      <div className="historial-header">
+    <div className="socios-panel">
+      <div className="socios-panel__header">
         <div>
           <p className="eyebrow">Usuarios</p>
           <h2>Credenciales y roles</h2>
           <p className="section-description">Asigna rol: socio, cajero, analista o admin.</p>
         </div>
+        <div className="socios-panel__actions">
+          <div className="search-input">
+            <label htmlFor="filtro">Buscar</label>
+            <input
+              id="filtro"
+              type="text"
+              placeholder="Nombre, email o rol"
+              value={filtro}
+              onChange={(e) => setFiltro(e.target.value)}
+            />
+          </div>
+        </div>
       </div>
 
-      {error && <div className="alert danger">{error}</div>}
+      {error && <div className="alert error">{error}</div>}
       {mensaje && <div className="alert success">{mensaje}</div>}
 
-      <div className="table-wrapper" style={{ border: "1px solid var(--border)", borderRadius: "12px" }}>
-        <table className="list-table">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Email</th>
-              <th>Rol</th>
-              <th>Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {usuarios.map((usuario) => (
-              <tr key={usuario.id}>
-                <td>{usuario.nombres}</td>
-                <td>{usuario.email}</td>
-                <td>
+      <div className="socios-table">
+        <div className="socios-table__head">
+          <span>Nombre</span>
+          <span>Email</span>
+          <span>Rol</span>
+          <span>Estado</span>
+        </div>
+        <div className="socios-table__body">
+          {usuariosFiltrados.map((usuario) => (
+            <div key={usuario.id} className="socios-row">
+              <span>
+                <strong>{usuario.nombres}</strong>
+                <small>{usuario.email}</small>
+              </span>
+              <span>{usuario.email}</span>
+              <span>
+                <div className="estado-control">
                   <select
+                    className="estado-pill estado-pill--action"
                     value={usuario.rol?.id ?? ""}
                     onChange={(e) => handleCambioRol(usuario.id, e.target.value)}
                     disabled={actualizando === usuario.id}
@@ -100,16 +124,21 @@ export default function UsuariosRoles() {
                       </option>
                     ))}
                   </select>
-                </td>
-                <td>
-                  <span className={`status ${usuario.activo ? "success" : "warning"}`}>
-                    {usuario.activo ? "activo" : "inactivo"}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </div>
+              </span>
+              <span>
+                <span
+                  className={`estado-pill estado-pill--static ${
+                    usuario.activo ? "estado-pill--activo" : "estado-pill--inactivo"
+                  }`}
+                >
+                  {usuario.activo ? "Activo" : "Inactivo"}
+                </span>
+              </span>
+            </div>
+          ))}
+          {usuariosFiltrados.length === 0 && <div className="muted">Sin resultados.</div>}
+        </div>
       </div>
     </div>
   );
