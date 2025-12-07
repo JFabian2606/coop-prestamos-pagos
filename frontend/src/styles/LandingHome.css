@@ -63,7 +63,7 @@
 }
 
 .landing__primary {
-  background: #0f766e;
+  background: #259990;
   color: #ffffff;
   border: none;
   border-radius: 0;
@@ -73,7 +73,7 @@
 }
 
 .landing__primary:hover {
-  background: #0c5f58;
+  background: #1f7e78;
 }
 
 .landing__ghost {
@@ -394,8 +394,8 @@
 
 .footer__newsletter button {
   padding: 0.65rem 1rem;
-  border: 1px solid #0f766e;
-  background: #0f766e;
+  border: 1px solid #259990;
+  background: #259990;
   color: #ffffff;
   border-radius: 0;
   cursor: pointer;
@@ -403,7 +403,7 @@
 }
 
 .footer__newsletter button:hover {
-  background: #0c5f58;
+  background: #1f7e78;
 }
 
 .footer__bottom {
