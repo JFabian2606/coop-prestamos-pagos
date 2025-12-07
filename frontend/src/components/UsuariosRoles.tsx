@@ -22,6 +22,7 @@ export default function UsuariosRoles() {
   const [mensaje, setMensaje] = useState("");
   const [actualizando, setActualizando] = useState<string | null>(null);
   const [filtro, setFiltro] = useState("");
+  const [menuAbierto, setMenuAbierto] = useState<string | null>(null);
 
   useEffect(() => {
     const cargar = async () => {
@@ -53,6 +54,7 @@ export default function UsuariosRoles() {
     setError("");
     setMensaje("");
     setActualizando(usuarioId);
+    setMenuAbierto(null);
     try {
       const { data } = await api.patch(`auth/usuarios/${usuarioId}/rol/`, { rol_id: rolId });
       setUsuarios((prev) => prev.map((u) => (u.id === usuarioId ? { ...u, ...data } : u)));
@@ -111,19 +113,31 @@ export default function UsuariosRoles() {
               <span>{usuario.email}</span>
               <span>
                 <div className="estado-control">
-                  <select
+                  <button
+                    type="button"
                     className="estado-pill estado-pill--action"
-                    value={usuario.rol?.id ?? ""}
-                    onChange={(e) => handleCambioRol(usuario.id, e.target.value)}
+                    onClick={() => setMenuAbierto((prev) => (prev === usuario.id ? null : usuario.id))}
                     disabled={actualizando === usuario.id}
                   >
-                    <option value="">Sin rol</option>
-                    {roles.map((rol) => (
-                      <option key={rol.id} value={rol.id}>
-                        {rol.nombre}
-                      </option>
-                    ))}
-                  </select>
+                    {usuario.rol?.nombre ?? "Sin rol"}
+                    <span className="estado-pill__caret">▾</span>
+                  </button>
+                  {menuAbierto === usuario.id && (
+                    <div className="estado-menu">
+                      <p className="estado-menu__label">Cambiar a</p>
+                      {roles.map((rol) => (
+                        <button
+                          key={rol.id}
+                          type="button"
+                          className="estado-option"
+                          onClick={() => handleCambioRol(usuario.id, rol.id)}
+                        >
+                          <span className="estado-dot estado-dot--activo" />
+                          {rol.nombre}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </span>
               <span>
