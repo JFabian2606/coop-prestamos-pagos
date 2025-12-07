@@ -121,19 +121,6 @@ def get_table_columns(table_name: str) -> set[str]:
         return {row[0] for row in cursor.fetchall()}
 
 
-def producto_existe(producto_id: uuid.UUID) -> bool:
-    """Verifica si existe un producto_prestamo con el ID dado (devuelve False ante cualquier error)."""
-    try:
-        with connection.cursor() as cursor:
-            cursor.execute(
-                "SELECT 1 FROM public.producto_prestamo WHERE id = %s LIMIT 1",
-                [producto_id],
-            )
-            return cursor.fetchone() is not None
-    except Exception:
-        return False
-
-
 class MeView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -368,8 +355,8 @@ class PrestamoSolicitudCreateView(APIView):
             "created_at": ahora,
             "updated_at": ahora,
         }
-        # producto_id solo si existe en la tabla de productos y la columna está presente
-        if "producto_id" in columnas and producto_existe(tipo.id):
+        # producto_id: obligatorio en schema actual, usamos el id del tipo de prestamo
+        if "producto_id" in columnas:
             payload["producto_id"] = tipo.id
         # tipo_prestamo_id por compatibilidad si la columna existe
         if "tipo_prestamo_id" in columnas:
