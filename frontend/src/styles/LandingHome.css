@@ -96,6 +96,8 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   overflow: hidden;
+  gap: 1.5rem;
+  padding: 0 1.5rem;
 }
 
 .landing__hero-copy {
@@ -233,7 +235,7 @@
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 1.5rem;
   align-items: center;
-  padding: 2.5rem 2rem;
+  padding: 2.5rem 2rem 2.5rem 1.5rem;
 }
 
 .tecnologia__image img {
