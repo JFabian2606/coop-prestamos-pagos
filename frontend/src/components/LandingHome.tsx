@@ -2,9 +2,10 @@ import "../styles/LandingHome.css";
 
 type LandingHomeProps = {
   onSolicitar?: () => void;
+  onLogout?: () => void;
 };
 
-export default function LandingHome({ onSolicitar }: LandingHomeProps) {
+export default function LandingHome({ onSolicitar, onLogout }: LandingHomeProps) {
   return (
     <div className="landing">
       <header className="landing__navbar">
@@ -22,6 +23,11 @@ export default function LandingHome({ onSolicitar }: LandingHomeProps) {
             Solicitar
           </button>
           <button className="landing__primary">Mis prestamos</button>
+          {onLogout && (
+            <button type="button" className="landing__ghost" onClick={onLogout}>
+              Cerrar sesión
+            </button>
+          )}
         </div>
       </header>
 

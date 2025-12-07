@@ -126,7 +126,7 @@ function App() {
     return vistaSocio === "solicitud" ? (
       <SolicitudPrestamo usuario={usuario} onVolver={() => setVistaSocio("landing")} />
     ) : (
-      <LandingHome onSolicitar={() => setVistaSocio("solicitud")} />
+      <LandingHome onSolicitar={() => setVistaSocio("solicitud")} onLogout={handleLogout} />
     );
   }
 
