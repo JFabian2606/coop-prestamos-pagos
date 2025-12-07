@@ -369,6 +369,14 @@
   text-align: center;
 }
 
+.landing__servicios,
+.landing__sobre,
+.landing__testimonios {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
 .landing__servicios h2,
 .landing__sobre h2,
 .landing__contacto h2 {
@@ -562,6 +570,17 @@
 
 .footer__social a:hover {
   color: #0f766e;
+}
+
+@media (min-width: 1024px) {
+  .landing__servicios,
+  .landing__sobre,
+  .landing__testimonios {
+    min-height: 695px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
 }
 
 @media (max-width: 768px) {
