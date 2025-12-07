@@ -93,6 +93,7 @@
 
 .usuarios-table {
   overflow: visible;
+  position: relative;
 }
 
 .socios-table__head {
@@ -153,6 +154,7 @@
 
 .usuarios-table .socios-row {
   grid-template-columns: 2fr 2fr 1fr 1fr;
+  overflow: visible;
 }
 
 .usuarios-table .estado-pill--action {
@@ -237,7 +239,7 @@
   box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
   padding: 0.4rem;
   min-width: 180px;
-  z-index: 10;
+  z-index: 30;
 }
 
 .estado-menu__label {
