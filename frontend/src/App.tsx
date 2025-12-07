@@ -6,8 +6,9 @@ import HistorialCrediticio from "./components/HistorialCrediticio";
 import SociosViewer from "./components/SociosViewer";
 import TiposPrestamo from "./components/TiposPrestamo";
 import PoliticasAprobacion from "./components/PoliticasAprobacion";
+import LandingHome from "./components/LandingHome";
 import type { SocioDto } from "./components/SociosViewer";
-import logo from "./assets/logo-cooprestamos-vector.svg";
+import logo from "./assets/solo-logo-cooprestamos-vector.svg";
 import avatarFallback from "./assets/solo-logo-cooprestamos-vector.svg";
 
 const currency = new Intl.NumberFormat("es-CO", {
@@ -22,7 +23,6 @@ const Loader = () => (
       <div className="loader__logo">
         <img src={logo} alt="Logo Cooprestamos" />
       </div>
-      <p className="loader__name">COOPRESTAMOS</p>
       <p className="loader__status">
         Cargando
         <span className="loader__dots" aria-hidden="true">
@@ -38,7 +38,7 @@ const Loader = () => (
 function App() {
   const [usuario, setUsuario] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [vistaActiva, setVistaActiva] = useState<"home" | "socios" | "historial" | "tipos" | "configuracion">("home");
+  const [vistaActiva, setVistaActiva] = useState<"home" | "socios" | "historial" | "tipos" | "configuracion" | "landing">("home");
   const [ultimosSocios, setUltimosSocios] = useState<SocioDto[]>([]);
   const [ultimosPrestamos, setUltimosPrestamos] = useState<any[]>([]);
   const [actividadReciente, setActividadReciente] = useState<any[]>([]);
@@ -64,6 +64,7 @@ function App() {
   }, []);
 
   useEffect(() => {
+    if (!usuario?.is_staff) return;
     const fetchDashboard = async () => {
       try {
         const { data: socios } = await api.get<SocioDto[]>("socios");
@@ -93,7 +94,7 @@ function App() {
       }
     };
     void fetchDashboard();
-  }, []);
+  }, [usuario]);
 
   const handleLogout = async () => {
     try {
@@ -116,6 +117,11 @@ function App() {
 
   if (!usuario) {
     return <LoginRegistro />;
+  }
+
+  // Si el usuario no es staff/admin, mostramos la landing pública para socios.
+  if (!usuario?.is_staff) {
+    return <LandingHome />;
   }
 
   type Accion = {
@@ -168,7 +174,7 @@ function App() {
     },
     {
       titulo: "Configuracion",
-      descripcion: "Parametros, roles y accesos.",
+      descripcion: "Políticas de aceptación.",
       icono: "bx-cog",
       variante: "outline",
       onClick: () => setVistaActiva("configuracion"),
@@ -459,6 +465,8 @@ function App() {
           </div>
           <PoliticasAprobacion />
         </main>
+      ) : vistaActiva === "landing" ? (
+        <LandingHome />
       ) : (
         <main className="admin-container">
           <div className="page-header">

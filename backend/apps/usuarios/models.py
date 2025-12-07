@@ -67,6 +67,7 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
         related_name='usuarios',
         db_column='rol_id'
     )
+    email_verificado = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
     
     # Campos requeridos por Django
