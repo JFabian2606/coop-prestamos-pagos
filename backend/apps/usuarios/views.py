@@ -145,6 +145,9 @@ def login(request):
             'email': user.email,
             'nombres': user.nombres,
             'rol': user.rol.nombre if user.rol else None,
+            'is_staff': user.is_staff,
+            'is_superuser': user.is_superuser,
+            'activo': user.activo,
         },
         'session_id': request.session.session_key,
     }, status=status.HTTP_200_OK)
@@ -185,4 +188,6 @@ def usuario_actual(request):
         'nombres': user.nombres,
         'rol': user.rol.nombre if user.rol else None,
         'activo': user.activo,
+        'is_staff': user.is_staff,
+        'is_superuser': user.is_superuser,
     }, status=status.HTTP_200_OK)

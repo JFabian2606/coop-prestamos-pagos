@@ -1,6 +1,11 @@
 import "../styles/LandingHome.css";
 
-export default function LandingHome() {
+type LandingHomeProps = {
+  onSolicitar?: () => void;
+  onLogout?: () => void;
+};
+
+export default function LandingHome({ onSolicitar, onLogout }: LandingHomeProps) {
   return (
     <div className="landing">
       <header className="landing__navbar">
@@ -14,8 +19,15 @@ export default function LandingHome() {
           <a href="#sobre-nosotros">Sobre nosotros</a>
         </nav>
         <div className="landing__actions">
-          <button className="landing__ghost">Solicitar</button>
+          <button type="button" className="landing__ghost" onClick={onSolicitar}>
+            Solicitar
+          </button>
           <button className="landing__primary">Mis prestamos</button>
+          {onLogout && (
+            <button type="button" className="landing__logout" onClick={onLogout}>
+              Cerrar sesión
+            </button>
+          )}
         </div>
       </header>
 
@@ -29,7 +41,9 @@ export default function LandingHome() {
               compromiso para transformar tus metas en realidad.
             </p>
             <div className="landing__cta">
-              <button className="landing__primary">Simular</button>
+              <button className="landing__primary" type="button" onClick={onSolicitar}>
+                Simular
+              </button>
               <button className="landing__ghost">Contactar</button>
             </div>
           </div>

@@ -1,0 +1,332 @@
+.solicitud-shell {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f4f7f8 0%, #e8f2f0 60%, #f8fbfb 100%);
+  color: #0f172a;
+  padding: 1.4rem 0 2rem;
+  font-family: "DM Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.solicitud-header {
+  width: min(1220px, 94%);
+  margin: 0 auto 1rem;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.1rem 1.35rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  box-shadow: 0 12px 26px rgba(31, 41, 51, 0.06);
+}
+
+.solicitud-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.solicitud-brand img {
+  width: 62px;
+  height: auto;
+}
+
+.solicitud-brand h1 {
+  margin: 0 0 0.15rem;
+  font-size: 22px;
+}
+
+.solicitud-actions {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.solicitud-grid {
+  width: min(1220px, 94%);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1.35fr) minmax(280px, 0.9fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.solicitud-card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.25rem 1.35rem;
+  box-shadow: 0 12px 24px rgba(19, 22, 31, 0.07);
+}
+
+.solicitud-card.sticky {
+  position: sticky;
+  top: 20px;
+}
+
+.section-heading h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.section-heading .muted {
+  margin: 0.35rem 0 0;
+}
+
+.muted {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0.8rem;
+  margin: 0.75rem 0 0.5rem;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.form-field label {
+  font-weight: 700;
+  font-size: 14px;
+  color: #111827;
+}
+
+.input-with-badge {
+  display: flex;
+  align-items: center;
+  border: 1px solid #d0d5dd;
+  border-radius: 12px;
+  background: #f9fbfb;
+  overflow: hidden;
+}
+
+.input-prefix {
+  padding: 0.65rem 0.8rem;
+  font-weight: 700;
+  color: var(--green-dark);
+  background: #e9f4f1;
+  border-right: 1px solid #d0d5dd;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  border: 1px solid #d0d5dd;
+  border-radius: 12px;
+  padding: 0.65rem 0.7rem;
+  font: inherit;
+  background: #ffffff;
+  min-height: 48px;
+}
+
+.input-with-badge input {
+  border: none;
+  flex: 1;
+  min-height: 48px;
+  padding-left: 0.85rem;
+}
+
+.form-field textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.cta-row {
+  margin-top: 0.6rem;
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.alert {
+  margin-top: 0.8rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 12px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.alert.success {
+  background: #e4f2ed;
+  color: #1c5d46;
+  border-color: #bcded0;
+}
+
+.alert.danger {
+  background: #fee4e2;
+  color: #7f1d1d;
+  border-color: #f8b4ab;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.8rem;
+  margin: 1rem 0;
+}
+
+.summary-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.85rem 0.95rem;
+  background: #f8fafc;
+}
+
+.summary-card.warning {
+  background: #fff5e6;
+  border-color: #f0d7ac;
+}
+
+.summary-card.success {
+  background: #e4f2ed;
+  border-color: #bcded0;
+}
+
+.summary-card.strong .summary-value {
+  font-size: 1.4rem;
+}
+
+.summary-label {
+  margin: 0;
+  font-size: 13px;
+  color: #475467;
+}
+
+.summary-value {
+  margin: 0.1rem 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.summary-value.accent {
+  font-size: 1.35rem;
+}
+
+.summary-meta {
+  margin: 0;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.plan-wrapper {
+  margin-top: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.plan-header {
+  padding: 0.9rem 1rem;
+  background: #f4f8f7;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background: #e6f4f1;
+  color: #0f766e;
+  font-weight: 700;
+  font-size: 13px;
+  border: 1px solid #cce6df;
+}
+
+.table-container {
+  max-height: 340px;
+  overflow: auto;
+}
+
+.table-container table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table-container th,
+.table-container td {
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.table-container thead {
+  background: #f8fafc;
+  color: #475467;
+  text-align: left;
+  position: sticky;
+  top: 0;
+}
+
+.align-right {
+  text-align: right;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px dashed #e5e7eb;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-row .label {
+  color: #475467;
+  font-weight: 600;
+}
+
+.info-row .value {
+  font-weight: 700;
+  color: #0f172a;
+  text-align: right;
+}
+
+.solicitud-loader {
+  width: min(520px, 90%);
+  margin: 4rem auto;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  text-align: center;
+  box-shadow: 0 12px 24px rgba(19, 22, 31, 0.07);
+}
+
+.solicitud-loader img {
+  width: 72px;
+  margin-bottom: 0.65rem;
+}
+
+@media (max-width: 1080px) {
+  .solicitud-grid {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  }
+
+  .solicitud-card.sticky {
+    position: static;
+  }
+}
+
+@media (max-width: 720px) {
+  .solicitud-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .solicitud-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}

@@ -93,6 +93,22 @@
   color: #0f766e;
 }
 
+.landing__logout {
+  background: #ffffff;
+  color: #111827;
+  border: 1px solid #d1d5db;
+  border-radius: 0;
+  padding: 0.65rem 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.landing__logout:hover {
+  border-color: #c03434;
+  color: #c03434;
+}
+
 .landing__hero {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));

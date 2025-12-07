@@ -1,10 +1,14 @@
 import io
 import json
+import calendar
+import uuid
+from decimal import Decimal
 from datetime import datetime, date
 
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.db import connection
 from django.db.models import Q
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
@@ -27,6 +31,8 @@ from .serializers import (
     TipoPrestamoUpsertSerializer,
     PoliticaAprobacionSerializer,
     PoliticaAprobacionUpsertSerializer,
+    PrestamoSimulacionSerializer,
+    PrestamoSolicitudSerializer,
 )
 
 HEADER_FONT = Font(bold=True, color="FFFFFF")
@@ -46,6 +52,175 @@ def wrap_columns(ws, col_letters: list[str]):
     for col in col_letters:
         for cell in ws[col][1:]:
             cell.alignment = Alignment(wrap_text=True, vertical="top")
+
+
+def fmt_decimal(valor: Decimal) -> str:
+    """Devuelve el decimal con 2 decimales en formato string."""
+    return f"{valor.quantize(Decimal('0.01'))}"
+
+
+def calcular_tabla_amortizacion(monto: Decimal, tasa_anual: Decimal, plazo_meses: int):
+    """Calcula cuota, totales e historial simple de amortizacion."""
+    if plazo_meses <= 0:
+        raise ValidationError({'plazo_meses': 'El plazo en meses debe ser mayor a 0.'})
+
+    tasa_mensual = (Decimal(tasa_anual) / Decimal('100')) / Decimal('12')
+    if tasa_mensual > 0:
+        factor = (Decimal('1') + tasa_mensual) ** (-plazo_meses)
+        cuota = monto * tasa_mensual / (Decimal('1') - factor)
+    else:
+        cuota = monto / Decimal(plazo_meses)
+
+    cuota = cuota.quantize(Decimal('0.01'))
+    saldo = monto
+    cuotas = []
+    for numero in range(1, plazo_meses + 1):
+        interes = (saldo * tasa_mensual).quantize(Decimal('0.01')) if tasa_mensual > 0 else Decimal('0.00')
+        capital = (cuota - interes).quantize(Decimal('0.01'))
+        saldo = (saldo - capital).quantize(Decimal('0.01'))
+        if saldo < Decimal('0'):
+            saldo = Decimal('0.00')
+        cuotas.append({
+            "numero": numero,
+            "cuota": fmt_decimal(cuota),
+            "capital": fmt_decimal(capital),
+            "interes": fmt_decimal(interes),
+            "saldo": fmt_decimal(saldo),
+        })
+
+    total_a_pagar = cuota * plazo_meses
+    total_intereses = total_a_pagar - monto
+    return {
+        "cuota_mensual": fmt_decimal(cuota),
+        "total_a_pagar": fmt_decimal(total_a_pagar),
+        "total_intereses": fmt_decimal(total_intereses if total_intereses > Decimal('0') else Decimal('0')),
+        "cuotas": cuotas,
+    }
+
+
+def add_months(fecha: date, months: int) -> date:
+    """Suma meses a una fecha manteniendo el dia valido."""
+    month = fecha.month - 1 + months
+    year = fecha.year + month // 12
+    month = month % 12 + 1
+    day = min(fecha.day, calendar.monthrange(year, month)[1])
+    return date(year, month, day)
+
+
+def get_table_columns(table_name: str) -> set[str]:
+    """Retorna las columnas existentes de una tabla (schema public)."""
+    vendor = connection.vendor
+    with connection.cursor() as cursor:
+        if vendor == "postgresql":
+            cursor.execute(
+                """
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = %s AND table_name = %s
+                """,
+                ["public", table_name],
+            )
+            return {row[0] for row in cursor.fetchall()}
+        # SQLite fallback
+        cursor.execute(f"PRAGMA table_info({table_name})")
+        return {row[1] for row in cursor.fetchall()}
+
+
+def get_table_metadata(table_name: str):
+    """Retorna metadatos simples de columnas: nombre, nullable, default."""
+    vendor = connection.vendor
+    with connection.cursor() as cursor:
+        if vendor == "postgresql":
+            cursor.execute(
+                """
+                SELECT column_name, is_nullable, column_default, data_type
+                FROM information_schema.columns
+                WHERE table_schema = %s AND table_name = %s
+                """,
+                ["public", table_name],
+            )
+            return [
+                {
+                    "name": row[0],
+                    "nullable": row[1] == "YES",
+                    "has_default": row[2] is not None,
+                    "type": row[3],
+                }
+                for row in cursor.fetchall()
+            ]
+        cursor.execute(f"PRAGMA table_info({table_name})")
+        return [
+            {
+                "name": row[1],
+                "nullable": not bool(row[3]),  # 0 => nullable in sqlite pragma
+                "has_default": row[4] is not None,
+                "type": row[2],
+            }
+            for row in cursor.fetchall()
+        ]
+
+
+def ensure_producto_from_tipo(tipo) -> tuple[uuid.UUID | None, str | None]:
+    """Garantiza que exista un registro en producto_prestamo con el id del tipo."""
+    meta = get_table_metadata("producto_prestamo")
+    if not meta:
+        return None, "Tabla producto_prestamo no disponible."
+
+    producto_id = tipo.id
+    pid_param = str(producto_id)
+    table_name = "producto_prestamo" if connection.vendor != "postgresql" else "public.producto_prestamo"
+    with connection.cursor() as cursor:
+        cursor.execute(f"SELECT 1 FROM {table_name} WHERE id = %s LIMIT 1", [pid_param])
+        if cursor.fetchone():
+            return producto_id, None
+
+    now = timezone.now()
+    base_payload = {
+        "id": producto_id,
+        "nombre": getattr(tipo, "nombre", None),
+        "descripcion": getattr(tipo, "descripcion", "") if hasattr(tipo, "descripcion") else "",
+        "tasa_interes": getattr(tipo, "tasa_interes_anual", None),
+        "plazo_meses": getattr(tipo, "plazo_meses", None),
+        # Campos adicionales comunes en producto_prestamo
+        "tipo": getattr(tipo, "nombre", None) or "producto",
+        "tasa_nominal_anual": getattr(tipo, "tasa_interes_anual", None),
+        "plazo_max_meses": getattr(tipo, "plazo_meses", None),
+        "activo": True,
+        "created_at": now,
+        "updated_at": now,
+    }
+
+    columnas_insert: list[str] = []
+    valores: list = []
+    faltantes: list[str] = []
+    for col in meta:
+        name = col["name"]
+        if name in base_payload and base_payload[name] is not None:
+            columnas_insert.append(name)
+            valores.append(base_payload[name])
+        elif col["nullable"] or col["has_default"]:
+            continue
+        elif name == "nombre":
+            columnas_insert.append(name)
+            valores.append(base_payload.get("nombre") or "Producto generado")
+        else:
+            faltantes.append(name)
+
+    if faltantes:
+        return None, f"Faltan columnas obligatorias en producto_prestamo: {', '.join(faltantes)}"
+
+    if not columnas_insert:
+        return None, "No hay columnas válidas para insertar en producto_prestamo."
+
+    placeholders = ", ".join(["%s"] * len(columnas_insert))
+    columnas_sql = ", ".join(columnas_insert)
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(f"INSERT INTO {table_name} ({columnas_sql}) VALUES ({placeholders})", [pid_param if v == producto_id else v for v in valores])
+    except Exception as exc:
+        return None, f"No se pudo crear producto_prestamo: {exc}"
+
+    return producto_id, None
 
 
 class MeView(APIView):
@@ -183,6 +358,166 @@ class TipoPrestamoDetailView(APIView):
             tipo.activo = False
             tipo.save(update_fields=['activo', 'updated_at'])
         return Response(TipoPrestamoSerializer(tipo).data, status=status.HTTP_200_OK)
+
+
+class TipoPrestamoPublicListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        tags=['Prestamos'],
+        responses=TipoPrestamoSerializer(many=True),
+        summary='Tipos de prestamo activos (socios)',
+        description='Listado simplificado de tipos de prestamo activos para que el socio pueda solicitarlos.',
+    )
+    def get(self, _request):
+        qs = TipoPrestamo.objects.filter(activo=True).order_by('nombre')
+        return Response(TipoPrestamoSerializer(qs, many=True).data)
+
+
+class PrestamoSimulacionView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        tags=['Prestamos'],
+        request=PrestamoSimulacionSerializer,
+        responses={200: OpenApiResponse(description='Simulacion generada'), 404: OpenApiResponse(description='Socio o tipo no encontrado')},
+        summary='Simular prestamo de socio',
+        description='Calcula cuota mensual, total a pagar e intereses usando el tipo de prestamo seleccionado.',
+    )
+    def post(self, request):
+        socio = getattr(request.user, 'socio', None)
+        if not socio:
+            return Response({'detail': 'Perfil de socio no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+        if socio.estado != Socio.ESTADO_ACTIVO:
+            return Response({'detail': 'El socio no se encuentra activo.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = PrestamoSimulacionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        tipo = get_object_or_404(TipoPrestamo, pk=serializer.validated_data['tipo_prestamo_id'], activo=True)
+        monto = serializer.validated_data['monto']
+        plazo = serializer.validated_data.get('plazo_meses') or tipo.plazo_meses
+        if plazo > tipo.plazo_meses:
+            return Response({'plazo_meses': f'Maximo permitido para este producto: {tipo.plazo_meses} meses.'}, status=status.HTTP_400_BAD_REQUEST)
+        if plazo < 6 or plazo % 6 != 0:
+            return Response({'plazo_meses': 'El plazo debe ser en saltos de 6 meses y al menos 6.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        plan = calcular_tabla_amortizacion(monto, tipo.tasa_interes_anual, plazo)
+
+        data = {
+            "socio": {
+                "id": str(socio.id),
+                "nombre_completo": socio.nombre_completo,
+                "documento": socio.documento,
+                "email": socio.usuario.email if socio.usuario else None,
+            },
+            "tipo": TipoPrestamoSerializer(tipo).data,
+            "monto": fmt_decimal(monto),
+            "plazo_meses": plazo,
+            **plan,
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class PrestamoSolicitudCreateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        tags=['Prestamos'],
+        request=PrestamoSolicitudSerializer,
+        responses={201: OpenApiResponse(description='Solicitud registrada'), 404: OpenApiResponse(description='Socio o tipo no encontrado')},
+        summary='Registrar solicitud de prestamo',
+        description='Crea un prestamo asociado al socio autenticado usando un tipo activo y devuelve el resumen calculado.',
+    )
+    def post(self, request):
+        socio = getattr(request.user, 'socio', None)
+        if not socio:
+            return Response({'detail': 'Perfil de socio no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+        if socio.estado != Socio.ESTADO_ACTIVO:
+            return Response({'detail': 'El socio no se encuentra activo.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = PrestamoSolicitudSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        tipo = get_object_or_404(TipoPrestamo, pk=serializer.validated_data['tipo_prestamo_id'], activo=True)
+        monto = serializer.validated_data['monto']
+        plazo = serializer.validated_data.get('plazo_meses') or tipo.plazo_meses
+        if plazo > tipo.plazo_meses:
+            return Response({'plazo_meses': f'Maximo permitido para este producto: {tipo.plazo_meses} meses.'}, status=status.HTTP_400_BAD_REQUEST)
+        if plazo < 6 or plazo % 6 != 0:
+            return Response({'plazo_meses': 'El plazo debe ser en saltos de 6 meses y al menos 6.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        plan = calcular_tabla_amortizacion(monto, tipo.tasa_interes_anual, plazo)
+
+        # Insertar en tabla de solicitudes (no crea prestamo aún)
+        columnas = get_table_columns('solicitud')
+        if not columnas:
+            return Response({'detail': 'Tabla de solicitud no disponible en la base de datos.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        solicitud_id = uuid.uuid4()
+        ahora = timezone.now()
+        descripcion = serializer.validated_data.get('descripcion') or ""
+        producto_id = None
+        if "producto_id" in columnas:
+            producto_id, error_producto = ensure_producto_from_tipo(tipo)
+            if error_producto:
+                return Response({'detail': error_producto}, status=status.HTTP_400_BAD_REQUEST)
+        # Campos candidatos (solo se insertan los que existan en la tabla)
+        payload = {
+            "id": solicitud_id,
+            "socio_id": socio.id,
+            "monto": monto,
+            "tasa_interes": tipo.tasa_interes_anual,
+            "plazo_meses": plazo,
+            "descripcion": descripcion,
+            "estado": "pendiente",
+            "created_at": ahora,
+            "updated_at": ahora,
+        }
+        # producto_id: obligatorio en schema actual, usamos el id del tipo de prestamo
+        if producto_id:
+            payload["producto_id"] = producto_id
+        # tipo_prestamo_id por compatibilidad si la columna existe
+        if "tipo_prestamo_id" in columnas:
+            payload["tipo_prestamo_id"] = tipo.id
+        cols_presentes = [col for col in payload.keys() if col in columnas]
+        if not cols_presentes:
+            return Response({'detail': 'No hay columnas compatibles para guardar la solicitud.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        placeholders = ", ".join(["%s"] * len(cols_presentes))
+        columnas_sql = ", ".join(cols_presentes)
+        valores = [payload[col] for col in cols_presentes]
+        solicitud_table = "solicitud" if connection.vendor != "postgresql" else "public.solicitud"
+        if connection.vendor != "postgresql":
+            valores = [str(v) if isinstance(v, uuid.UUID) else v for v in valores]
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    f"INSERT INTO {solicitud_table} ({columnas_sql}) VALUES ({placeholders})",
+                    valores,
+                )
+        except Exception as exc:
+            return Response({'detail': f'No se pudo registrar la solicitud: {exc}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response(
+            {
+                "solicitud_id": str(solicitud_id),
+                "estado": payload.get("estado") if "estado" in columnas else "registrada",
+                "fecha_desembolso": None,
+                "fecha_vencimiento": None,
+                "socio": {
+                    "id": str(socio.id),
+                    "nombre_completo": socio.nombre_completo,
+                    "documento": socio.documento,
+                    "email": socio.usuario.email if socio.usuario else None,
+                },
+                "tipo": TipoPrestamoSerializer(tipo).data,
+                "monto": fmt_decimal(monto),
+                "plazo_meses": tipo.plazo_meses,
+                **plan,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class PoliticaAprobacionListCreateView(APIView):

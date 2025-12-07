@@ -1,0 +1,9 @@
+Comando: python manage.py test apps.socios.tests.test_solicitud -v 2
+Resultado:
+  Ran 3 tests in 1.454s
+  OK
+
+Pruebas:
+  - test_simulacion_con_plazo_personalizado_valido ... OK
+  - test_simulacion_rechaza_plazo_fuera_de_rango ... OK
+  - test_solicitud_crea_producto_y_registra ... OK
