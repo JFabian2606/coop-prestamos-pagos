@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import "../styles/SolicitudPrestamo.css";
 import { api } from "../api";
 import logo from "../assets/logo-cooprestamos-vector.svg";
+import soloLogo from "../assets/solo-logo-cooprestamos-vector.svg";
 
 type TipoPrestamoDto = {
   id: string;
@@ -182,7 +183,7 @@ export default function SolicitudPrestamo({ onVolver, usuario }: SolicitudPresta
       <div className="loader">
         <div className="loader__card" role="status" aria-live="polite">
           <div className="loader__logo">
-            <img src={logo} alt="Cooprestamos" />
+            <img src={soloLogo} alt="Cooprestamos" />
           </div>
           <p className="loader__status">
             Cargando
