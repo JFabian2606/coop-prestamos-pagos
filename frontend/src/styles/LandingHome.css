@@ -478,3 +478,58 @@
     justify-items: flex-start;
   }
 }
+
+@media (max-width: 960px) {
+  .landing-section {
+    padding: 1.5rem 1.25rem;
+  }
+
+  .landing__hero {
+    grid-template-columns: 1fr;
+  }
+
+  .landing__hero-copy {
+    text-align: center;
+    align-items: center;
+  }
+
+  .landing__cta {
+    justify-content: center;
+  }
+
+  .landing__creditos,
+  .landing__tecnologia,
+  .landing__asesoria {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .creditos__copy .landing__subtext,
+  .tecnologia__copy .landing__subtext,
+  .asesoria__copy .landing__subtext {
+    margin: 0 auto;
+  }
+
+  .landing__solidaridad h2,
+  .creditos__copy h2,
+  .tecnologia__copy h2,
+  .asesoria__copy h2 {
+    text-align: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .landing-section {
+    padding: 1rem;
+  }
+
+  .landing__hero-copy {
+    padding: 1.25rem;
+    gap: 1rem;
+  }
+
+  .landing__cta {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+}
