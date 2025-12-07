@@ -179,10 +179,19 @@ export default function SolicitudPrestamo({ onVolver, usuario }: SolicitudPresta
 
   if (loading) {
     return (
-      <div className="solicitud-shell">
-        <div className="solicitud-loader" role="status">
-          <img src={logo} alt="Cooprestamos" />
-          <p>Cargando modulo de solicitud...</p>
+      <div className="loader">
+        <div className="loader__card" role="status" aria-live="polite">
+          <div className="loader__logo">
+            <img src={logo} alt="Cooprestamos" />
+          </div>
+          <p className="loader__status">
+            Cargando
+            <span className="loader__dots" aria-hidden="true">
+              <span className="loader__dot">.</span>
+              <span className="loader__dot">.</span>
+              <span className="loader__dot">.</span>
+            </span>
+          </p>
         </div>
       </div>
     );
