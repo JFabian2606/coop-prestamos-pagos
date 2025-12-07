@@ -1,12 +1,14 @@
 import io
 import json
 import calendar
+import uuid
 from decimal import Decimal
 from datetime import datetime, date
 
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.db import connection
 from django.db.models import Q
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
@@ -103,6 +105,20 @@ def add_months(fecha: date, months: int) -> date:
     month = month % 12 + 1
     day = min(fecha.day, calendar.monthrange(year, month)[1])
     return date(year, month, day)
+
+
+def get_table_columns(table_name: str) -> set[str]:
+    """Retorna las columnas existentes de una tabla (schema public)."""
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = %s AND table_name = %s
+            """,
+            ["public", table_name],
+        )
+        return {row[0] for row in cursor.fetchall()}
 
 
 class MeView(APIView):
@@ -319,26 +335,49 @@ class PrestamoSolicitudCreateView(APIView):
         monto = serializer.validated_data['monto']
         plan = calcular_tabla_amortizacion(monto, tipo.tasa_interes_anual, tipo.plazo_meses)
 
-        hoy = date.today()
-        fecha_vencimiento = add_months(hoy, tipo.plazo_meses)
+        # Insertar en tabla de solicitudes (no crea prestamo aún)
+        columnas = get_table_columns('solicitud')
+        if not columnas:
+            return Response({'detail': 'Tabla de solicitud no disponible en la base de datos.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        prestamo = Prestamo.objects.create(
-            socio=socio,
-            tipo=tipo,
-            monto=monto,
-            tasa_interes=tipo.tasa_interes_anual,
-            estado=Prestamo.Estados.ACTIVO,
-            fecha_desembolso=hoy,
-            fecha_vencimiento=fecha_vencimiento,
-            descripcion=serializer.validated_data.get('descripcion') or "",
-        )
+        solicitud_id = uuid.uuid4()
+        ahora = timezone.now()
+        descripcion = serializer.validated_data.get('descripcion') or ""
+        # Campos candidatos (solo se insertan los que existan en la tabla)
+        payload = {
+            "id": solicitud_id,
+            "socio_id": socio.id,
+            "producto_id": tipo.id,
+            "monto": monto,
+            "tasa_interes": tipo.tasa_interes_anual,
+            "plazo_meses": tipo.plazo_meses,
+            "descripcion": descripcion,
+            "estado": "pendiente",
+            "created_at": ahora,
+            "updated_at": ahora,
+        }
+        cols_presentes = [col for col in payload.keys() if col in columnas]
+        if not cols_presentes:
+            return Response({'detail': 'No hay columnas compatibles para guardar la solicitud.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        placeholders = ", ".join(["%s"] * len(cols_presentes))
+        columnas_sql = ", ".join(cols_presentes)
+        valores = [payload[col] for col in cols_presentes]
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    f"INSERT INTO public.solicitud ({columnas_sql}) VALUES ({placeholders})",
+                    valores,
+                )
+        except Exception as exc:
+            return Response({'detail': f'No se pudo registrar la solicitud: {exc}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response(
             {
-                "prestamo_id": str(prestamo.id),
-                "estado": prestamo.estado,
-                "fecha_desembolso": prestamo.fecha_desembolso.isoformat(),
-                "fecha_vencimiento": prestamo.fecha_vencimiento.isoformat() if prestamo.fecha_vencimiento else None,
+                "solicitud_id": str(solicitud_id),
+                "estado": payload.get("estado") if "estado" in columnas else "registrada",
+                "fecha_desembolso": None,
+                "fecha_vencimiento": None,
                 "socio": {
                     "id": str(socio.id),
                     "nombre_completo": socio.nombre_completo,

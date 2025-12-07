@@ -21,6 +21,7 @@ type CuotaPlan = {
 
 type SimulacionResponse = {
   prestamo_id?: string;
+  solicitud_id?: string;
   estado?: string;
   fecha_desembolso?: string;
   fecha_vencimiento?: string | null;
@@ -149,7 +150,10 @@ export default function SolicitudPrestamo({ onVolver, usuario }: SolicitudPresta
         descripcion: descripcion || undefined,
       });
       setSimulacion(data);
-      setMensaje("Solicitud registrada. Te notificaremos cuando sea revisada.");
+      const ref = data.solicitud_id || data.prestamo_id;
+      setMensaje(
+        `Solicitud registrada. Te notificaremos cuando sea revisada.${ref ? ` Ref: ${ref}` : ""}`
+      );
     } catch (err: any) {
       console.error("Error al registrar solicitud", err);
       const detail = err?.response?.data?.detail || "No pudimos registrar la solicitud.";
