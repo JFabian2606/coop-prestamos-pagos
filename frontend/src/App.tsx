@@ -199,6 +199,7 @@ function App() {
       icono: "bx-user-circle",
       variante: "outline",
       onClick: () => setVistaActiva("usuarios"),
+      cta: "Ver roles",
     },
   ];
 
