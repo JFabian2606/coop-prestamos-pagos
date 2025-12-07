@@ -350,7 +350,7 @@
 .landing__servicios,
 .landing__sobre,
 .landing__contacto {
-  padding: 2.5rem 2rem;
+  padding: 3rem 2rem;
   text-align: center;
 }
 
@@ -366,6 +366,39 @@
 .landing__contacto .landing__subtext {
   max-width: 720px;
   margin: 0.25rem auto 0;
+}
+
+.servicios__grid {
+  margin-top: 1.8rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.2rem;
+}
+
+.servicio-card {
+  padding: 1.2rem 1rem;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  text-align: left;
+  display: grid;
+  gap: 0.4rem;
+  align-content: start;
+}
+
+.servicio-card h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.servicio-card p {
+  margin: 0;
+  color: #4b5563;
+  font-size: 0.95rem;
+}
+
+.servicio-icon {
+  font-size: 1.5rem;
+  color: #259990;
 }
 
 .landing__footer {

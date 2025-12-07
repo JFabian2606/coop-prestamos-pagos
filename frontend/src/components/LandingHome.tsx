@@ -143,6 +143,28 @@ export default function LandingHome() {
               Crédito personal, hipotecario, vehicular y líneas flexibles para emprendedores. Ajustamos montos y plazos
               a tu realidad.
             </p>
+            <div className="servicios__grid">
+              <div className="servicio-card">
+                <i className="bx bx-user-check servicio-icon" aria-hidden="true" />
+                <h3>Préstamo personal</h3>
+                <p>Liquidez rápida para metas inmediatas, con cuotas diseñadas según tu flujo.</p>
+              </div>
+              <div className="servicio-card">
+                <i className="bx bx-home-heart servicio-icon" aria-hidden="true" />
+                <h3>Hipotecario</h3>
+                <p>Financia tu vivienda con tasas competitivas y asesoría personalizada en cada paso.</p>
+              </div>
+              <div className="servicio-card">
+                <i className="bx bx-car servicio-icon" aria-hidden="true" />
+                <h3>Vehicular</h3>
+                <p>Estrena vehículo con planes flexibles y aprobación ágil para que no detengas tu camino.</p>
+              </div>
+              <div className="servicio-card">
+                <i className="bx bx-rocket servicio-icon" aria-hidden="true" />
+                <h3>Emprendedores</h3>
+                <p>Capital de trabajo, líneas de crédito y apoyo financiero para impulsar tu negocio.</p>
+              </div>
+            </div>
           </div>
         </section>
 
