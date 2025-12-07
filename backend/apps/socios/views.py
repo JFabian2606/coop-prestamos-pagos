@@ -121,6 +121,84 @@ def get_table_columns(table_name: str) -> set[str]:
         return {row[0] for row in cursor.fetchall()}
 
 
+def get_table_metadata(table_name: str):
+    """Retorna metadatos simples de columnas: nombre, nullable, default."""
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT column_name, is_nullable, column_default, data_type
+            FROM information_schema.columns
+            WHERE table_schema = %s AND table_name = %s
+            """,
+            ["public", table_name],
+        )
+        return [
+            {
+                "name": row[0],
+                "nullable": row[1] == "YES",
+                "has_default": row[2] is not None,
+                "type": row[3],
+            }
+            for row in cursor.fetchall()
+        ]
+
+
+def ensure_producto_from_tipo(tipo) -> uuid.UUID | None:
+    """Garantiza que exista un registro en producto_prestamo con el id del tipo."""
+    meta = get_table_metadata("producto_prestamo")
+    if not meta:
+        return None
+
+    producto_id = tipo.id
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT 1 FROM public.producto_prestamo WHERE id = %s LIMIT 1", [producto_id])
+        if cursor.fetchone():
+            return producto_id
+
+    now = timezone.now()
+    base_payload = {
+        "id": producto_id,
+        "nombre": getattr(tipo, "nombre", None),
+        "descripcion": getattr(tipo, "descripcion", "") if hasattr(tipo, "descripcion") else "",
+        "tasa_interes": getattr(tipo, "tasa_interes_anual", None),
+        "plazo_meses": getattr(tipo, "plazo_meses", None),
+        "activo": True,
+        "created_at": now,
+        "updated_at": now,
+    }
+
+    columnas_insert: list[str] = []
+    valores: list = []
+    for col in meta:
+        name = col["name"]
+        if name in base_payload and base_payload[name] is not None:
+            columnas_insert.append(name)
+            valores.append(base_payload[name])
+        elif col["nullable"] or col["has_default"]:
+            continue
+        elif name == "nombre":
+            columnas_insert.append(name)
+            valores.append(base_payload.get("nombre") or "Producto generado")
+        else:
+            return None
+
+    if not columnas_insert:
+        return None
+
+    placeholders = ", ".join(["%s"] * len(columnas_insert))
+    columnas_sql = ", ".join(columnas_insert)
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                f"INSERT INTO public.producto_prestamo ({columnas_sql}) VALUES ({placeholders})",
+                valores,
+            )
+    except Exception:
+        return None
+
+    return producto_id
+
+
 class MeView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -343,6 +421,14 @@ class PrestamoSolicitudCreateView(APIView):
         solicitud_id = uuid.uuid4()
         ahora = timezone.now()
         descripcion = serializer.validated_data.get('descripcion') or ""
+        producto_id = None
+        if "producto_id" in columnas:
+            producto_id = ensure_producto_from_tipo(tipo)
+            if not producto_id:
+                return Response(
+                    {'detail': 'No existe producto_prestamo vinculado a este tipo. Crea uno o ajusta el mapeo.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
         # Campos candidatos (solo se insertan los que existan en la tabla)
         payload = {
             "id": solicitud_id,
@@ -356,8 +442,8 @@ class PrestamoSolicitudCreateView(APIView):
             "updated_at": ahora,
         }
         # producto_id: obligatorio en schema actual, usamos el id del tipo de prestamo
-        if "producto_id" in columnas:
-            payload["producto_id"] = tipo.id
+        if producto_id:
+            payload["producto_id"] = producto_id
         # tipo_prestamo_id por compatibilidad si la columna existe
         if "tipo_prestamo_id" in columnas:
             payload["tipo_prestamo_id"] = tipo.id
