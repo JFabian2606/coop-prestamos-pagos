@@ -328,3 +328,12 @@ class HistorialCrediticioSerializer(serializers.Serializer):
             'cuotas_vencidas_total': cuotas_vencidas_total,
             'prestamos_en_mora': len(dias_mora_list),
         }
+
+
+class PrestamoSimulacionSerializer(serializers.Serializer):
+    tipo_prestamo_id = serializers.UUIDField()
+    monto = serializers.DecimalField(max_digits=14, decimal_places=2, min_value=Decimal('0.01'))
+
+
+class PrestamoSolicitudSerializer(PrestamoSimulacionSerializer):
+    descripcion = serializers.CharField(max_length=255, allow_blank=True, required=False)

@@ -7,6 +7,7 @@ import SociosViewer from "./components/SociosViewer";
 import TiposPrestamo from "./components/TiposPrestamo";
 import PoliticasAprobacion from "./components/PoliticasAprobacion";
 import LandingHome from "./components/LandingHome";
+import SolicitudPrestamo from "./components/SolicitudPrestamo";
 import type { SocioDto } from "./components/SociosViewer";
 import logo from "./assets/solo-logo-cooprestamos-vector.svg";
 import avatarFallback from "./assets/solo-logo-cooprestamos-vector.svg";
@@ -39,6 +40,7 @@ function App() {
   const [usuario, setUsuario] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [vistaActiva, setVistaActiva] = useState<"home" | "socios" | "historial" | "tipos" | "configuracion" | "landing">("home");
+  const [vistaSocio, setVistaSocio] = useState<"landing" | "solicitud">("landing");
   const [ultimosSocios, setUltimosSocios] = useState<SocioDto[]>([]);
   const [ultimosPrestamos, setUltimosPrestamos] = useState<any[]>([]);
   const [actividadReciente, setActividadReciente] = useState<any[]>([]);
@@ -121,7 +123,11 @@ function App() {
 
   // Si el usuario no es staff/admin, mostramos la landing pública para socios.
   if (!usuario?.is_staff) {
-    return <LandingHome />;
+    return vistaSocio === "solicitud" ? (
+      <SolicitudPrestamo usuario={usuario} onVolver={() => setVistaSocio("landing")} />
+    ) : (
+      <LandingHome onSolicitar={() => setVistaSocio("solicitud")} />
+    );
   }
 
   type Accion = {
