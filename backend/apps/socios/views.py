@@ -109,35 +109,52 @@ def add_months(fecha: date, months: int) -> date:
 
 def get_table_columns(table_name: str) -> set[str]:
     """Retorna las columnas existentes de una tabla (schema public)."""
+    vendor = connection.vendor
     with connection.cursor() as cursor:
-        cursor.execute(
-            """
-            SELECT column_name
-            FROM information_schema.columns
-            WHERE table_schema = %s AND table_name = %s
-            """,
-            ["public", table_name],
-        )
-        return {row[0] for row in cursor.fetchall()}
+        if vendor == "postgresql":
+            cursor.execute(
+                """
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = %s AND table_name = %s
+                """,
+                ["public", table_name],
+            )
+            return {row[0] for row in cursor.fetchall()}
+        # SQLite fallback
+        cursor.execute(f"PRAGMA table_info({table_name})")
+        return {row[1] for row in cursor.fetchall()}
 
 
 def get_table_metadata(table_name: str):
     """Retorna metadatos simples de columnas: nombre, nullable, default."""
+    vendor = connection.vendor
     with connection.cursor() as cursor:
-        cursor.execute(
-            """
-            SELECT column_name, is_nullable, column_default, data_type
-            FROM information_schema.columns
-            WHERE table_schema = %s AND table_name = %s
-            """,
-            ["public", table_name],
-        )
+        if vendor == "postgresql":
+            cursor.execute(
+                """
+                SELECT column_name, is_nullable, column_default, data_type
+                FROM information_schema.columns
+                WHERE table_schema = %s AND table_name = %s
+                """,
+                ["public", table_name],
+            )
+            return [
+                {
+                    "name": row[0],
+                    "nullable": row[1] == "YES",
+                    "has_default": row[2] is not None,
+                    "type": row[3],
+                }
+                for row in cursor.fetchall()
+            ]
+        cursor.execute(f"PRAGMA table_info({table_name})")
         return [
             {
-                "name": row[0],
-                "nullable": row[1] == "YES",
-                "has_default": row[2] is not None,
-                "type": row[3],
+                "name": row[1],
+                "nullable": not bool(row[3]),  # 0 => nullable in sqlite pragma
+                "has_default": row[4] is not None,
+                "type": row[2],
             }
             for row in cursor.fetchall()
         ]
@@ -150,8 +167,10 @@ def ensure_producto_from_tipo(tipo) -> tuple[uuid.UUID | None, str | None]:
         return None, "Tabla producto_prestamo no disponible."
 
     producto_id = tipo.id
+    pid_param = str(producto_id)
+    table_name = "producto_prestamo" if connection.vendor != "postgresql" else "public.producto_prestamo"
     with connection.cursor() as cursor:
-        cursor.execute("SELECT 1 FROM public.producto_prestamo WHERE id = %s LIMIT 1", [producto_id])
+        cursor.execute(f"SELECT 1 FROM {table_name} WHERE id = %s LIMIT 1", [pid_param])
         if cursor.fetchone():
             return producto_id, None
 
@@ -197,10 +216,7 @@ def ensure_producto_from_tipo(tipo) -> tuple[uuid.UUID | None, str | None]:
     columnas_sql = ", ".join(columnas_insert)
     try:
         with connection.cursor() as cursor:
-            cursor.execute(
-                f"INSERT INTO public.producto_prestamo ({columnas_sql}) VALUES ({placeholders})",
-                valores,
-            )
+            cursor.execute(f"INSERT INTO {table_name} ({columnas_sql}) VALUES ({placeholders})", [pid_param if v == producto_id else v for v in valores])
     except Exception as exc:
         return None, f"No se pudo crear producto_prestamo: {exc}"
 
@@ -471,10 +487,13 @@ class PrestamoSolicitudCreateView(APIView):
         placeholders = ", ".join(["%s"] * len(cols_presentes))
         columnas_sql = ", ".join(cols_presentes)
         valores = [payload[col] for col in cols_presentes]
+        solicitud_table = "solicitud" if connection.vendor != "postgresql" else "public.solicitud"
+        if connection.vendor != "postgresql":
+            valores = [str(v) if isinstance(v, uuid.UUID) else v for v in valores]
         try:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    f"INSERT INTO public.solicitud ({columnas_sql}) VALUES ({placeholders})",
+                    f"INSERT INTO {solicitud_table} ({columnas_sql}) VALUES ({placeholders})",
                     valores,
                 )
         except Exception as exc:
