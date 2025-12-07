@@ -204,7 +204,7 @@ export default function SolicitudPrestamo({ onVolver, usuario }: SolicitudPresta
         <div className="solicitud-actions">
           {onVolver && (
             <button className="ghost" type="button" onClick={onVolver}>
-              Volver a la landing
+              Volver a inicio
             </button>
           )}
         </div>
