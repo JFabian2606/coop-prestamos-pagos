@@ -380,7 +380,13 @@ class PrestamoSimulacionView(APIView):
 
         tipo = get_object_or_404(TipoPrestamo, pk=serializer.validated_data['tipo_prestamo_id'], activo=True)
         monto = serializer.validated_data['monto']
-        plan = calcular_tabla_amortizacion(monto, tipo.tasa_interes_anual, tipo.plazo_meses)
+        plazo = serializer.validated_data.get('plazo_meses') or tipo.plazo_meses
+        if plazo > tipo.plazo_meses:
+            return Response({'plazo_meses': f'Maximo permitido para este producto: {tipo.plazo_meses} meses.'}, status=status.HTTP_400_BAD_REQUEST)
+        if plazo < 6 or plazo % 6 != 0:
+            return Response({'plazo_meses': 'El plazo debe ser en saltos de 6 meses y al menos 6.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        plan = calcular_tabla_amortizacion(monto, tipo.tasa_interes_anual, plazo)
 
         data = {
             "socio": {
@@ -391,7 +397,7 @@ class PrestamoSimulacionView(APIView):
             },
             "tipo": TipoPrestamoSerializer(tipo).data,
             "monto": fmt_decimal(monto),
-            "plazo_meses": tipo.plazo_meses,
+            "plazo_meses": plazo,
             **plan,
         }
         return Response(data, status=status.HTTP_200_OK)
@@ -419,7 +425,13 @@ class PrestamoSolicitudCreateView(APIView):
 
         tipo = get_object_or_404(TipoPrestamo, pk=serializer.validated_data['tipo_prestamo_id'], activo=True)
         monto = serializer.validated_data['monto']
-        plan = calcular_tabla_amortizacion(monto, tipo.tasa_interes_anual, tipo.plazo_meses)
+        plazo = serializer.validated_data.get('plazo_meses') or tipo.plazo_meses
+        if plazo > tipo.plazo_meses:
+            return Response({'plazo_meses': f'Maximo permitido para este producto: {tipo.plazo_meses} meses.'}, status=status.HTTP_400_BAD_REQUEST)
+        if plazo < 6 or plazo % 6 != 0:
+            return Response({'plazo_meses': 'El plazo debe ser en saltos de 6 meses y al menos 6.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        plan = calcular_tabla_amortizacion(monto, tipo.tasa_interes_anual, plazo)
 
         # Insertar en tabla de solicitudes (no crea prestamo aún)
         columnas = get_table_columns('solicitud')
@@ -440,7 +452,7 @@ class PrestamoSolicitudCreateView(APIView):
             "socio_id": socio.id,
             "monto": monto,
             "tasa_interes": tipo.tasa_interes_anual,
-            "plazo_meses": tipo.plazo_meses,
+            "plazo_meses": plazo,
             "descripcion": descripcion,
             "estado": "pendiente",
             "created_at": ahora,

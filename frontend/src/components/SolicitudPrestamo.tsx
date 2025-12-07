@@ -63,6 +63,7 @@ export default function SolicitudPrestamo({ onVolver, usuario }: SolicitudPresta
   const [enviando, setEnviando] = useState<boolean>(false);
   const [mensaje, setMensaje] = useState<string>("");
   const [error, setError] = useState<string>("");
+  const [plazoSeleccionado, setPlazoSeleccionado] = useState<number | null>(null);
 
   useEffect(() => {
     const cargar = async () => {
@@ -77,6 +78,7 @@ export default function SolicitudPrestamo({ onVolver, usuario }: SolicitudPresta
         setTipos(disponibles);
         if (disponibles.length > 0) {
           setTipoSeleccionado(disponibles[0].id);
+          setPlazoSeleccionado(disponibles[0].plazo_meses ?? null);
         }
       } catch (err) {
         console.error("No se pudo cargar solicitud de prestamo", err);
@@ -92,6 +94,16 @@ export default function SolicitudPrestamo({ onVolver, usuario }: SolicitudPresta
     () => tipos.find((t) => t.id === tipoSeleccionado),
     [tipos, tipoSeleccionado]
   );
+
+  const opcionesPlazo = useMemo(() => {
+    const max = tipoActual?.plazo_meses ?? 0;
+    if (!max || max < 6) return [];
+    const arr: number[] = [];
+    for (let m = 6; m <= max; m += 6) {
+      arr.push(m);
+    }
+    return arr;
+  }, [tipoActual]);
 
   const handleSimular = async () => {
     setError("");
@@ -111,6 +123,7 @@ export default function SolicitudPrestamo({ onVolver, usuario }: SolicitudPresta
       const { data } = await api.post<SimulacionResponse>("prestamos/simular", {
         tipo_prestamo_id: tipoSeleccionado,
         monto: montoNumerico,
+        plazo_meses: plazoSeleccionado ?? tipoActual?.plazo_meses,
       });
       setSimulacion(data);
     } catch (err: any) {
@@ -147,6 +160,7 @@ export default function SolicitudPrestamo({ onVolver, usuario }: SolicitudPresta
       const { data } = await api.post<SimulacionResponse>("prestamos/solicitudes", {
         tipo_prestamo_id: tipoSeleccionado,
         monto: montoNumerico,
+        plazo_meses: plazoSeleccionado ?? tipoActual?.plazo_meses,
         descripcion: descripcion || undefined,
       });
       setSimulacion(data);
@@ -223,22 +237,43 @@ export default function SolicitudPrestamo({ onVolver, usuario }: SolicitudPresta
               <small className="muted">Ingresa el monto total que necesitas financiar.</small>
             </div>
 
+          <div className="form-field">
+            <label htmlFor="tipo">Tipo de prestamo</label>
+            <select
+              id="tipo"
+              value={tipoSeleccionado}
+              onChange={(e) => {
+                setTipoSeleccionado(e.target.value);
+                const nuevo = tipos.find((t) => t.id === e.target.value);
+                setPlazoSeleccionado(nuevo?.plazo_meses ?? null);
+              }}
+            >
+              {tipos.map((tipo) => (
+                <option key={tipo.id} value={tipo.id}>
+                  {tipo.nombre} - {Number(tipo.tasa_interes_anual).toFixed(2)}% anual - {tipo.plazo_meses}m
+                </option>
+              ))}
+            </select>
+            {tipoActual?.descripcion && <small className="muted">{tipoActual.descripcion}</small>}
+          </div>
+          {opcionesPlazo.length > 0 && (
             <div className="form-field">
-              <label htmlFor="tipo">Tipo de prestamo</label>
+              <label htmlFor="plazo">Plazo en meses</label>
               <select
-                id="tipo"
-                value={tipoSeleccionado}
-                onChange={(e) => setTipoSeleccionado(e.target.value)}
+                id="plazo"
+                value={plazoSeleccionado ?? tipoActual?.plazo_meses ?? ""}
+                onChange={(e) => setPlazoSeleccionado(Number(e.target.value))}
               >
-                {tipos.map((tipo) => (
-                  <option key={tipo.id} value={tipo.id}>
-                    {tipo.nombre} - {Number(tipo.tasa_interes_anual).toFixed(2)}% anual - {tipo.plazo_meses}m
+                {opcionesPlazo.map((m) => (
+                  <option key={m} value={m}>
+                    {m} meses
                   </option>
                 ))}
               </select>
-              {tipoActual?.descripcion && <small className="muted">{tipoActual.descripcion}</small>}
+              <small className="muted">Elige en saltos de 6 meses hasta {tipoActual?.plazo_meses}.</small>
             </div>
-          </div>
+          )}
+        </div>
 
           <div className="form-field">
             <label htmlFor="descripcion">Descripcion (opcional)</label>
@@ -281,7 +316,9 @@ export default function SolicitudPrestamo({ onVolver, usuario }: SolicitudPresta
               <p className="summary-value">
                 {simulacion ? currency.format(Number(simulacion.cuota_mensual)) : "--"}
               </p>
-              <p className="summary-meta">Plazo: {simulacion?.plazo_meses ?? tipoActual?.plazo_meses ?? 0} meses</p>
+              <p className="summary-meta">
+                Plazo: {simulacion?.plazo_meses ?? plazoSeleccionado ?? tipoActual?.plazo_meses ?? 0} meses
+              </p>
             </article>
             <article className="summary-card warning">
               <p className="summary-label">Intereses estimados</p>
@@ -303,7 +340,7 @@ export default function SolicitudPrestamo({ onVolver, usuario }: SolicitudPresta
             <div className="plan-header">
               <div>
                 <p className="summary-label">Plan de cuotas</p>
-                <h3>{simulacion?.cuotas?.length ?? tipoActual?.plazo_meses ?? 0} cuotas</h3>
+                <h3>{simulacion?.cuotas?.length ?? plazoSeleccionado ?? tipoActual?.plazo_meses ?? 0} cuotas</h3>
               </div>
               <div className="pill">
                 {tipoActual ? `${Number(tipoActual.tasa_interes_anual).toFixed(2)}% anual` : "--"}
