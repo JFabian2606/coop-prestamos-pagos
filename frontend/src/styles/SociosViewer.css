@@ -93,7 +93,7 @@
 
 .socios-table__head {
   display: grid;
-  grid-template-columns: 2fr 2fr 1fr 1fr;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
   padding: 0.75rem 1rem;
   background: #f8fafc;
   font-size: 0.85rem;
@@ -110,7 +110,7 @@
 
 .socios-row {
   display: grid;
-  grid-template-columns: 2fr 2fr 1fr 1fr;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
   padding: 1rem 1.2rem;
   text-align: left;
   border: none;
@@ -136,6 +136,20 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.usuarios-table .socios-table__head {
+  grid-template-columns: 2fr 2fr 1fr 1fr;
+}
+
+.usuarios-table .socios-row {
+  grid-template-columns: 2fr 2fr 1fr 1fr;
+}
+
+.usuarios-table .estado-pill--action {
+  min-width: 120px;
+  justify-content: center;
+  padding: 0.35rem 1rem;
 }
 
 .socios-row:hover {
@@ -164,9 +178,6 @@
   border: 1px solid #0f766e;
   background: #e2f3ed;
   color: #0f766e;
-  min-width: 120px;
-  justify-content: space-between;
-  padding: 0.35rem 0.65rem 0.35rem 0.9rem;
 }
 
 .estado-pill--action:disabled {
