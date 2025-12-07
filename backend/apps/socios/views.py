@@ -143,17 +143,17 @@ def get_table_metadata(table_name: str):
         ]
 
 
-def ensure_producto_from_tipo(tipo) -> uuid.UUID | None:
+def ensure_producto_from_tipo(tipo) -> tuple[uuid.UUID | None, str | None]:
     """Garantiza que exista un registro en producto_prestamo con el id del tipo."""
     meta = get_table_metadata("producto_prestamo")
     if not meta:
-        return None
+        return None, "Tabla producto_prestamo no disponible."
 
     producto_id = tipo.id
     with connection.cursor() as cursor:
         cursor.execute("SELECT 1 FROM public.producto_prestamo WHERE id = %s LIMIT 1", [producto_id])
         if cursor.fetchone():
-            return producto_id
+            return producto_id, None
 
     now = timezone.now()
     base_payload = {
@@ -169,6 +169,7 @@ def ensure_producto_from_tipo(tipo) -> uuid.UUID | None:
 
     columnas_insert: list[str] = []
     valores: list = []
+    faltantes: list[str] = []
     for col in meta:
         name = col["name"]
         if name in base_payload and base_payload[name] is not None:
@@ -180,10 +181,13 @@ def ensure_producto_from_tipo(tipo) -> uuid.UUID | None:
             columnas_insert.append(name)
             valores.append(base_payload.get("nombre") or "Producto generado")
         else:
-            return None
+            faltantes.append(name)
+
+    if faltantes:
+        return None, f"Faltan columnas obligatorias en producto_prestamo: {', '.join(faltantes)}"
 
     if not columnas_insert:
-        return None
+        return None, "No hay columnas válidas para insertar en producto_prestamo."
 
     placeholders = ", ".join(["%s"] * len(columnas_insert))
     columnas_sql = ", ".join(columnas_insert)
@@ -193,10 +197,10 @@ def ensure_producto_from_tipo(tipo) -> uuid.UUID | None:
                 f"INSERT INTO public.producto_prestamo ({columnas_sql}) VALUES ({placeholders})",
                 valores,
             )
-    except Exception:
-        return None
+    except Exception as exc:
+        return None, f"No se pudo crear producto_prestamo: {exc}"
 
-    return producto_id
+    return producto_id, None
 
 
 class MeView(APIView):
@@ -423,12 +427,9 @@ class PrestamoSolicitudCreateView(APIView):
         descripcion = serializer.validated_data.get('descripcion') or ""
         producto_id = None
         if "producto_id" in columnas:
-            producto_id = ensure_producto_from_tipo(tipo)
-            if not producto_id:
-                return Response(
-                    {'detail': 'No existe producto_prestamo vinculado a este tipo. Crea uno o ajusta el mapeo.'},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+            producto_id, error_producto = ensure_producto_from_tipo(tipo)
+            if error_producto:
+                return Response({'detail': error_producto}, status=status.HTTP_400_BAD_REQUEST)
         # Campos candidatos (solo se insertan los que existan en la tabla)
         payload = {
             "id": solicitud_id,
