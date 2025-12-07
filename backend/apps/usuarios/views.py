@@ -1,7 +1,7 @@
 """
 Endpoints de autenticación: Login y Registro
 """
-from rest_framework import status, permissions
+from rest_framework import status, permissions, serializers
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -13,6 +13,7 @@ from django.middleware.csrf import get_token
 from apps.usuarios.models import Rol
 from apps.socios.models import Socio
 from datetime import date
+from django.shortcuts import get_object_or_404
 
 User = get_user_model()
 
@@ -191,3 +192,56 @@ def usuario_actual(request):
         'is_staff': user.is_staff,
         'is_superuser': user.is_superuser,
     }, status=status.HTTP_200_OK)
+
+
+class RolSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Rol
+        fields = ("id", "nombre")
+
+
+class UsuarioListSerializer(serializers.ModelSerializer):
+    rol = RolSerializer()
+
+    class Meta:
+        model = User
+        fields = ("id", "email", "nombres", "rol", "activo", "is_staff", "is_superuser")
+
+
+class UsuarioRoleUpdateSerializer(serializers.Serializer):
+    rol_id = serializers.UUIDField()
+
+    def validate_rol_id(self, value):
+        get_object_or_404(Rol, pk=value)
+        return value
+
+
+class RolesListView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, _request):
+        roles = Rol.objects.all().order_by("nombre")
+        return Response(RolSerializer(roles, many=True).data)
+
+
+class UsuariosListView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, _request):
+        usuarios = User.objects.select_related("rol").all().order_by("email")
+        return Response(UsuarioListSerializer(usuarios, many=True).data)
+
+
+class UsuarioRoleUpdateView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def patch(self, request, usuario_id):
+        usuario = get_object_or_404(User, pk=usuario_id)
+        serializer = UsuarioRoleUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        rol_id = serializer.validated_data["rol_id"]
+        rol = get_object_or_404(Rol, pk=rol_id)
+        usuario.rol = rol
+        usuario.is_staff = rol.nombre.upper() == "ADMIN"
+        usuario.save(update_fields=["rol", "is_staff"])
+        return Response(UsuarioListSerializer(usuario).data)
