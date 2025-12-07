@@ -162,6 +162,10 @@ def ensure_producto_from_tipo(tipo) -> tuple[uuid.UUID | None, str | None]:
         "descripcion": getattr(tipo, "descripcion", "") if hasattr(tipo, "descripcion") else "",
         "tasa_interes": getattr(tipo, "tasa_interes_anual", None),
         "plazo_meses": getattr(tipo, "plazo_meses", None),
+        # Campos adicionales comunes en producto_prestamo
+        "tipo": getattr(tipo, "nombre", None) or "producto",
+        "tasa_nominal_anual": getattr(tipo, "tasa_interes_anual", None),
+        "plazo_max_meses": getattr(tipo, "plazo_meses", None),
         "activo": True,
         "created_at": now,
         "updated_at": now,
