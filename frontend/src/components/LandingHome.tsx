@@ -24,7 +24,7 @@ export default function LandingHome({ onSolicitar, onLogout }: LandingHomeProps)
           </button>
           <button className="landing__primary">Mis prestamos</button>
           {onLogout && (
-            <button type="button" className="landing__ghost" onClick={onLogout}>
+            <button type="button" className="landing__logout" onClick={onLogout}>
               Cerrar sesión
             </button>
           )}
