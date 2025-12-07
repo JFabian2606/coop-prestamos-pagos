@@ -178,6 +178,23 @@ export default function LandingHome() {
               Trabajamos con transparencia, educación financiera y asesoría continua para que tomes decisiones informadas
               y seguras.
             </p>
+            <div className="sobre__grid">
+              <div className="sobre-card">
+                <i className="bx bx-shield sobre-icon" aria-hidden="true" />
+                <h3>Propósito</h3>
+                <p>Proteger y hacer crecer el patrimonio de nuestros socios con productos claros y justos.</p>
+              </div>
+              <div className="sobre-card">
+                <i className="bx bx-group sobre-icon" aria-hidden="true" />
+                <h3>Acompañamiento</h3>
+                <p>Equipos de asesores que te guían en cada meta: vivienda, negocios y bienestar financiero.</p>
+              </div>
+              <div className="sobre-card">
+                <i className="bx bx-graduation sobre-icon" aria-hidden="true" />
+                <h3>Educación</h3>
+                <p>Capacitaciones y herramientas para que planifiques mejor y tomes decisiones informadas.</p>
+              </div>
+            </div>
           </div>
         </section>
 

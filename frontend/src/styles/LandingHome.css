@@ -368,6 +368,38 @@
   margin: 0.25rem auto 0;
 }
 
+.sobre__grid {
+  margin-top: 2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.4rem;
+}
+
+.sobre-card {
+  padding: 1.3rem 1.1rem;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  text-align: left;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.sobre-card h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.sobre-card p {
+  margin: 0;
+  color: #4b5563;
+  font-size: 0.95rem;
+}
+
+.sobre-icon {
+  font-size: 1.6rem;
+  color: #259990;
+}
+
 .servicios__grid {
   margin-top: 2rem;
   display: grid;
