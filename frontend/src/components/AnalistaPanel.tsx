@@ -112,6 +112,7 @@ const AnalistaEvaluarModule = ({ solicitudIdProp }: { solicitudIdProp?: string }
   useEffect(() => {
     if (solicitudIdProp) {
       setSolicitudId(solicitudIdProp);
+      void buscar(solicitudIdProp);
     }
   }, [solicitudIdProp]);
   const [detalle, setDetalle] = useState<SolicitudDetalle | null>(null);
@@ -120,12 +121,14 @@ const AnalistaEvaluarModule = ({ solicitudIdProp }: { solicitudIdProp?: string }
   const [ok, setOk] = useState("");
   const [observaciones, setObservaciones] = useState("");
 
-  const buscar = async () => {
+  const buscar = async (id?: string) => {
+    const targetId = (id ?? solicitudId).trim();
+    if (!targetId) return;
     setLoading(true);
     setError("");
     setOk("");
     try {
-      const { data } = await api.get(`solicitudes/${solicitudId}/evaluar/`);
+      const { data } = await api.get(`solicitudes/${targetId}/evaluar/`);
       setDetalle(data);
       setObservaciones(data?.solicitud?.observaciones ?? "");
     } catch (err: any) {
@@ -203,6 +206,7 @@ const AnalistaDecisionModule = ({ solicitudIdProp }: { solicitudIdProp?: string 
   useEffect(() => {
     if (solicitudIdProp) {
       setSolicitudId(solicitudIdProp);
+      void buscar(solicitudIdProp);
     }
   }, [solicitudIdProp]);
   const [detalle, setDetalle] = useState<SolicitudDetalle | null>(null);
@@ -211,12 +215,14 @@ const AnalistaDecisionModule = ({ solicitudIdProp }: { solicitudIdProp?: string 
   const [ok, setOk] = useState("");
   const [comentario, setComentario] = useState("");
 
-  const buscar = async () => {
+  const buscar = async (id?: string) => {
+    const targetId = (id ?? solicitudId).trim();
+    if (!targetId) return;
     setLoading(true);
     setError("");
     setOk("");
     try {
-      const { data } = await api.get(`solicitudes/${solicitudId}/evaluar/`);
+      const { data } = await api.get(`solicitudes/${targetId}/evaluar/`);
       setDetalle(data);
       setComentario(data?.solicitud?.observaciones ?? "");
     } catch (err: any) {

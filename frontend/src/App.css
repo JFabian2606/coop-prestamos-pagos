@@ -798,7 +798,9 @@ button.danger {
 }
 
 .analista-modal {
-  width: min(920px, 96vw);
+  width: min(1000px, 96vw);
+  max-height: 92vh;
+  overflow: auto;
 }
 
 .analista-modal__body {
