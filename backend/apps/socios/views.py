@@ -684,17 +684,19 @@ class SolicitudEvaluarView(APIView):
                 updates["descripcion"] = _adjuntar_observacion_en_descripcion(descripcion_actual, observaciones)
         if recomendacion_req:
             updates["recomendacion"] = recomendacion_req  # solo se guarda si la columna existe
-        updates["updated_at"] = now
+        has_updated = "updated_at" in columnas
+        if has_updated:
+            updates["updated_at"] = now
 
         set_parts = []
         values = []
         for col, val in updates.items():
-            if col not in columnas:
+            if col not in columnas and not (col == "updated_at" and has_updated):
                 continue
             set_parts.append(f"{col} = %s")
             values.append(val)
 
-        if all(not part.startswith("updated_at") for part in set_parts):
+        if has_updated and all(not part.startswith("updated_at") for part in set_parts):
             set_parts.append("updated_at = %s")
             values.append(now)
 
@@ -741,7 +743,10 @@ class SolicitudDecisionBaseView(APIView):
         descripcion_actual = solicitud.get("descripcion") or ""
         now = timezone.now()
 
-        updates = {"estado": self.nuevo_estado, "updated_at": now}
+        has_updated = "updated_at" in columnas
+        updates = {"estado": self.nuevo_estado}
+        if has_updated:
+            updates["updated_at"] = now
         obs_col = _obs_column(columnas)
         if obs_col and comentario:
             updates[obs_col] = comentario
@@ -751,7 +756,7 @@ class SolicitudDecisionBaseView(APIView):
         set_parts = []
         values = []
         for col, val in updates.items():
-            if col not in columnas and col not in {"updated_at", "estado"}:
+            if col not in columnas and not (col == "updated_at" and has_updated):
                 continue
             set_parts.append(f"{col} = %s")
             values.append(val)
