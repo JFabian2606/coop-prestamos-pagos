@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db import connection
 from django.db.models import Q, Count
+from django.db.models.functions import Lower, Trim
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
@@ -913,8 +914,9 @@ class PrestamosAprobadosListView(APIView):
             .annotate(
                 desembolsos_count=Count("desembolsos"),
                 pagos_count=Count("pagos"),
+                estado_norm=Lower(Trim("estado")),
             )
-            .filter(estado__in=estados_permitidos)
+            .filter(estado_norm__in=["aprobado", "activo"])
             .filter(desembolsos_count=0, pagos_count=0)
             .order_by("-created_at")
         )

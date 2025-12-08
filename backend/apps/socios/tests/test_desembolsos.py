@@ -131,6 +131,22 @@ class DesembolsoApiTests(TestCase):
         self.assertNotIn(str(self.prestamo.id), ids)
         self.assertNotIn(str(prestamo_con_pago.id), ids)
 
+    def test_prestamos_aprobados_excluye_rechazados(self):
+        prestamo_rechazado = Prestamo.objects.create(
+            socio=self.socio,
+            tipo=self.prestamo.tipo,
+            monto=Decimal("999999.00"),
+            tasa_interes=Decimal("5.0"),
+            estado="rechazado",
+            fecha_desembolso=date.today(),
+        )
+        url = reverse("prestamos-aprobados")
+        self.client.force_authenticate(user=self.tesorero)
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        ids = {item["id"] for item in resp.data["results"]}
+        self.assertNotIn(str(prestamo_rechazado.id), ids)
+
     def test_get_listado_con_tesorero(self):
         Desembolso.objects.create(
             prestamo=self.prestamo,
