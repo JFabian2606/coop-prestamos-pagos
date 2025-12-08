@@ -100,6 +100,8 @@ export default function TesoreroPanel({ usuario, onLogout }: Props) {
     setError("");
     setOk("");
     try {
+      const refEnviada = form.referencia;
+      const comEnviada = form.comentarios;
       const payload = {
         prestamo_id: form.prestamo_id.trim(),
         monto: form.monto,
@@ -111,7 +113,11 @@ export default function TesoreroPanel({ usuario, onLogout }: Props) {
       setOk("Desembolso registrado.");
       setForm((prev) => ({ ...prev, referencia: "", comentarios: "" }));
       setDesembolsos((prev) => [data, ...prev]);
-      setUltimoDesembolso(data);
+      setUltimoDesembolso({
+        ...data,
+        referencia: data?.referencia ?? refEnviada,
+        comentarios: data?.comentarios ?? comEnviada,
+      });
       setMostrarComprobante(true);
     } catch (err: any) {
       setError(err?.response?.data?.detail ?? JSON.stringify(err?.response?.data ?? "Error al registrar"));
