@@ -1,0 +1,11 @@
+Comando: python manage.py test apps.socios.tests.test_solicitudes_unit -v 2
+Resultado:
+  Ran 5 tests in 0.002s
+  OK
+
+Pruebas:
+  - test_obs_column_prefiere_observaciones_luego_comentarios ... OK
+  - test_extraer_observaciones_prioriza_campo ... OK
+  - test_extraer_observaciones_desde_descripcion_con_marcador ... OK
+  - test_adjuntar_observacion_evita_duplicados ... OK
+  - test_is_analista_acepta_rol_staff_o_superuser ... OK
