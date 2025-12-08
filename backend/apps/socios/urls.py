@@ -21,6 +21,8 @@ from .views import (
     SolicitudAprobarView,
     SolicitudRechazarView,
     SolicitudListView,
+    PrestamosAprobadosListView,
+    DesembolsoListCreateView,
 )
 
 urlpatterns = [
@@ -43,8 +45,10 @@ urlpatterns = [
     path('politicas-aprobacion/public', PoliticaAprobacionPublicListView.as_view(), name='politicas-aprobacion-public'),
     path('prestamos/simular', PrestamoSimulacionView.as_view(), name='prestamos-simular'),
     path('prestamos/solicitudes', PrestamoSolicitudCreateView.as_view(), name='prestamos-solicitudes'),
+    path('prestamos/aprobados/', PrestamosAprobadosListView.as_view(), name='prestamos-aprobados'),
     path('solicitudes/', SolicitudListView.as_view(), name='solicitudes-list'),
     path('solicitudes/<uuid:solicitud_id>/evaluar/', SolicitudEvaluarView.as_view(), name='solicitudes-evaluar'),
     path('solicitudes/<uuid:solicitud_id>/aprobar/', SolicitudAprobarView.as_view(), name='solicitudes-aprobar'),
     path('solicitudes/<uuid:solicitud_id>/rechazar/', SolicitudRechazarView.as_view(), name='solicitudes-rechazar'),
+    path('desembolsos/', DesembolsoListCreateView.as_view(), name='desembolsos-list-create'),
 ]

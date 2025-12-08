@@ -8,8 +8,9 @@ from datetime import datetime, date
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.db import connection
-from django.db.models import Q
+from django.db import connection, transaction
+from django.db.models import Q, Count
+from django.db.models.functions import Lower, Trim
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
@@ -20,7 +21,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .audit import snapshot_socio, register_audit_entry
-from .models import Prestamo, Socio, SocioAuditLog, TipoPrestamo, PoliticaAprobacion
+from .models import Prestamo, Socio, SocioAuditLog, TipoPrestamo, PoliticaAprobacion, Desembolso
 from .serializers import (
     HistorialCrediticioSerializer,
     ProfileCreateSerializer,
@@ -33,6 +34,7 @@ from .serializers import (
     PoliticaAprobacionUpsertSerializer,
     PrestamoSimulacionSerializer,
     PrestamoSolicitudSerializer,
+    DesembolsoSerializer,
 )
 
 HEADER_FONT = Font(bold=True, color="FFFFFF")
@@ -524,6 +526,10 @@ def _is_analista(user) -> bool:
     rol_nombre = getattr(getattr(user, "rol", None), "nombre", "") or getattr(user, "rol", "") or ""
     return rol_nombre.upper() == "ANALISTA" or getattr(user, "is_staff", False) or getattr(user, "is_superuser", False)
 
+def _is_tesorero(user) -> bool:
+    rol_nombre = getattr(getattr(user, "rol", None), "nombre", "") or getattr(user, "rol", "") or ""
+    return rol_nombre.upper() == "TESORERO" or getattr(user, "is_staff", False) or getattr(user, "is_superuser", False)
+
 
 def _fetch_solicitud_row(solicitud_id: uuid.UUID) -> tuple[dict, set[str]]:
     columnas = get_table_columns("solicitud")
@@ -590,6 +596,81 @@ def _obs_column(columnas: set[str]) -> str | None:
     if "comentarios" in columnas:
         return "comentarios"
     return None
+
+
+def _crear_prestamo_desde_solicitud_row(solicitud_row: dict):
+    """
+    Genera un registro en prestamo usando los datos de la solicitud aprobada.
+    Devuelve (prestamo, error:str|None). Usa el id de la solicitud para mantener trazabilidad/idempotencia.
+    """
+    solicitud_id = solicitud_row.get("id")
+    socio_id = solicitud_row.get("socio_id")
+    if not socio_id:
+        return None, "La solicitud no tiene socio asociado."
+    socio = Socio.objects.filter(pk=socio_id).first()
+    if not socio:
+        return None, "No se encontró el socio asociado a la solicitud."
+
+    # Evita duplicar si ya existe el préstamo con ese id
+    if solicitud_id and Prestamo.objects.filter(pk=solicitud_id).exists():
+        return Prestamo.objects.get(pk=solicitud_id), None
+
+    tipo_id = solicitud_row.get("tipo_prestamo_id") or solicitud_row.get("producto_id")
+    tipo = TipoPrestamo.objects.filter(pk=tipo_id).first() if tipo_id else None
+
+    try:
+        monto = Decimal(str(solicitud_row.get("monto") or "0"))
+    except Exception:
+        return None, "Monto de solicitud inválido."
+
+    try:
+        tasa = Decimal(str(solicitud_row.get("tasa_interes") or "0"))
+    except Exception:
+        tasa = Decimal("0")
+
+    plazo_raw = solicitud_row.get("plazo_meses")
+    try:
+        plazo_meses = int(plazo_raw) if plazo_raw is not None else None
+    except (TypeError, ValueError):
+        plazo_meses = None
+
+    fecha_desembolso = timezone.now().date()
+    fecha_vencimiento = add_months(fecha_desembolso, plazo_meses) if plazo_meses else None
+
+    prestamo = Prestamo.objects.create(
+        id=solicitud_id or uuid.uuid4(),
+        socio=socio,
+        tipo=tipo,
+        monto=monto,
+        tasa_interes=tasa,
+        estado="aprobado",
+        fecha_desembolso=fecha_desembolso,
+        fecha_vencimiento=fecha_vencimiento,
+        descripcion=solicitud_row.get("descripcion") or "",
+    )
+    return prestamo, None
+
+
+def _desembolso_columnas() -> dict:
+    cols = get_table_columns("desembolso")
+    return {
+        "cols": cols,
+        "metodo": "metodo_pago" if "metodo_pago" in cols else ("metodo" if "metodo" in cols else None),
+        "fecha": "created_at" if "created_at" in cols else ("fecha" if "fecha" in cols else None),
+        "comentarios": "comentarios" if "comentarios" in cols else None,
+        "socio": "socio_id" if "socio_id" in cols else None,
+        "tesorero": "tesorero_id" if "tesorero_id" in cols else None,
+        "updated": "updated_at" if "updated_at" in cols else None,
+        "referencia": "referencia" if "referencia" in cols else None,
+    }
+
+
+def _fmt_uuid(val):
+    if isinstance(val, uuid.UUID):
+        return str(val)
+    if isinstance(val, str) and len(val) == 32 and val.count("-") == 0:
+        return f"{val[0:8]}-{val[8:12]}-{val[12:16]}-{val[16:20]}-{val[20:]}"
+    return val
 
 
 def _recomendacion_basica(socio: Socio | None, solicitud: dict) -> str:
@@ -763,14 +844,23 @@ class SolicitudDecisionBaseView(APIView):
 
         values.append(str(solicitud_id))
         table_name = "solicitud" if connection.vendor != "postgresql" else "public.solicitud"
-        with connection.cursor() as cursor:
-            cursor.execute(
-                f"UPDATE {table_name} SET {', '.join(set_parts)} WHERE id = %s",
-                values,
-            )
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    f"UPDATE {table_name} SET {', '.join(set_parts)} WHERE id = %s",
+                    values,
+                )
 
-        solicitud_actualizada, _ = _fetch_solicitud_row(solicitud_id)
-        socio = Socio.objects.filter(pk=solicitud.get("socio_id")).first()
+            solicitud_actualizada, _ = _fetch_solicitud_row(solicitud_id)
+            prestamo_id = None
+            if self.nuevo_estado == "aprobado":
+                prestamo, error = _crear_prestamo_desde_solicitud_row(solicitud_actualizada)
+                if error:
+                    raise ValidationError({"detail": error})
+                if prestamo:
+                    prestamo_id = str(prestamo.id)
+
+        socio = Socio.objects.filter(pk=solicitud_actualizada.get("socio_id")).first()
         notificacion = None
         if socio and getattr(socio, "usuario", None) and socio.usuario.email:
             notificacion = f"Notificar a {socio.usuario.email} sobre estado {self.nuevo_estado}"
@@ -781,6 +871,7 @@ class SolicitudDecisionBaseView(APIView):
                 "estado": solicitud_actualizada.get("estado"),
                 "comentario": comentario,
                 "notificacion": notificacion,
+                "prestamo_id": prestamo_id,
             },
             status=status.HTTP_200_OK,
         )
@@ -864,6 +955,228 @@ class SolicitudListView(APIView):
                 }
             )
         return Response({"results": results, "count": len(results)}, status=status.HTTP_200_OK)
+
+
+class PrestamosAprobadosListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def _ensure_tesorero(self, request):
+        if not _is_tesorero(request.user):
+            return Response({"detail": "Solo tesorero o admin puede ver préstamos aprobados."}, status=status.HTTP_403_FORBIDDEN)
+        return None
+
+    def get(self, request):
+        forbidden = self._ensure_tesorero(request)
+        if forbidden:
+            return forbidden
+
+        q = (request.query_params.get("q") or "").strip()
+        limit = min(max(int(request.query_params.get("limit", 30)), 1), 100)
+        estados_permitidos = {"aprobado", Prestamo.Estados.ACTIVO, "activo"}
+        qs = (
+            Prestamo.objects.select_related("socio", "socio__usuario")
+            .annotate(
+                desembolsos_count=Count("desembolsos"),
+                pagos_count=Count("pagos"),
+                estado_norm=Lower(Trim("estado")),
+            )
+            .filter(estado_norm__in=["aprobado", "activo"])
+            .filter(desembolsos_count=0, pagos_count=0)
+            .order_by("-created_at")
+        )
+        if q:
+            qs = qs.filter(
+                Q(id__icontains=q)
+                | Q(descripcion__icontains=q)
+                | Q(socio__nombre_completo__icontains=q)
+                | Q(socio__documento__icontains=q)
+            )
+        qs = qs[:limit]
+
+        results = []
+        for prestamo in qs:
+            socio = prestamo.socio
+            results.append(
+                {
+                    "id": str(prestamo.id),
+                    "monto": fmt_decimal(prestamo.monto) if hasattr(prestamo.monto, "quantize") else str(prestamo.monto),
+                    "estado": prestamo.estado,
+                    "descripcion": prestamo.descripcion,
+                    "socio": {
+                        "id": str(socio.id),
+                        "nombre_completo": socio.nombre_completo,
+                        "documento": socio.documento,
+                        "email": socio.usuario.email if socio and socio.usuario else None,
+                    }
+                    if socio
+                    else None,
+                }
+            )
+
+        return Response({"results": results, "count": len(results)}, status=status.HTTP_200_OK)
+
+
+class DesembolsoListCreateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def _ensure_tesorero(self, request):
+        if not _is_tesorero(request.user):
+            return Response({"detail": "Solo tesorero o admin puede gestionar desembolsos."}, status=status.HTTP_403_FORBIDDEN)
+        return None
+
+    def get(self, request):
+        forbidden = self._ensure_tesorero(request)
+        if forbidden:
+            return forbidden
+        meta = _desembolso_columnas()
+        cols = ["id", "prestamo_id", "monto"]
+        if meta["metodo"]:
+            cols.append(meta["metodo"])
+        if meta["referencia"]:
+            cols.append(meta["referencia"])
+        if meta["comentarios"]:
+            cols.append(meta["comentarios"])
+        if meta["fecha"]:
+            cols.append(meta["fecha"])
+        if meta["updated"]:
+            cols.append(meta["updated"])
+        socio_join = meta["socio"] is not None
+        socio_cols = []
+        if socio_join:
+            socio_cols = ["nombre_completo", "documento", "email"]
+        select_cols = ", ".join([f"d.{c}" for c in cols])
+        table_name = "desembolso" if connection.vendor != "postgresql" else "public.desembolso"
+        sql = f"SELECT {select_cols}"
+        if socio_join:
+            sql += ", s.nombre_completo, s.documento, u.email"
+        sql += f" FROM {table_name} d"
+        if socio_join:
+            sql += " LEFT JOIN socio s ON s.id = d.socio_id LEFT JOIN usuario u ON u.id = s.usuario_id"
+        sql += " ORDER BY d.id DESC LIMIT 100"
+
+        data = []
+        with connection.cursor() as cursor:
+            cursor.execute(sql)
+            rows = cursor.fetchall()
+        for row in rows:
+            base = dict(zip([c.split(".")[-1] for c in cols], row[: len(cols)]))
+            record = {
+                "id": str(_fmt_uuid(base.get("id"))),
+                "prestamo_id": str(_fmt_uuid(base.get("prestamo_id"))),
+                "monto": str(base.get("monto")),
+                "metodo_pago": base.get(meta["metodo"]) if meta["metodo"] else None,
+                "referencia": base.get(meta["referencia"]) if meta["referencia"] else None,
+                "comentarios": base.get(meta["comentarios"]) if meta["comentarios"] else None,
+                "created_at": base.get(meta["fecha"]) if meta["fecha"] else None,
+                "updated_at": base.get(meta["updated"]) if meta["updated"] else None,
+                "socio": None,
+            }
+            if socio_join:
+                socio_data = row[len(cols) :]
+                record["socio"] = {
+                    "nombre_completo": socio_data[0],
+                    "documento": socio_data[1],
+                    "email": socio_data[2],
+                }
+            data.append(record)
+        return Response({"results": data, "count": len(data)}, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        forbidden = self._ensure_tesorero(request)
+        if forbidden:
+            return forbidden
+        meta = _desembolso_columnas()
+        prestamo_id = (request.data or {}).get("prestamo_id")
+        monto = (request.data or {}).get("monto")
+        metodo_pago = (request.data or {}).get("metodo_pago") or (request.data or {}).get("metodo")
+        referencia = (request.data or {}).get("referencia") or ""
+        comentarios = (request.data or {}).get("comentarios") or ""
+
+        if not prestamo_id or not monto or not metodo_pago:
+            return Response({"detail": "prestamo_id, monto y metodo_pago son obligatorios"}, status=status.HTTP_400_BAD_REQUEST)
+
+        prestamo = get_object_or_404(Prestamo, pk=prestamo_id)
+        estado = (prestamo.estado or "").lower()
+        if estado not in {"aprobado", Prestamo.Estados.ACTIVO, "activo"}:
+            return Response({"prestamo_id": "El préstamo no está aprobado/activo para desembolso."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            monto_decimal = Decimal(str(monto))
+        except Exception:
+            return Response({"monto": "Monto inválido."}, status=status.HTTP_400_BAD_REQUEST)
+        if prestamo.monto and monto_decimal > prestamo.monto:
+            return Response({"monto": "El monto excede el valor del préstamo."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Si la tabla coincide con el esquema del modelo (metodo_pago/created_at), usamos ORM
+        if meta["metodo"] == "metodo_pago" and meta["fecha"] == "created_at":
+            serializer = DesembolsoSerializer(data={
+                "prestamo_id": prestamo.id,
+                "monto": monto_decimal,
+                "metodo_pago": metodo_pago,
+                "referencia": referencia,
+                "comentarios": comentarios,
+            })
+            serializer.is_valid(raise_exception=True)
+            desembolso = serializer.save()
+            return Response(DesembolsoSerializer(desembolso).data, status=status.HTTP_201_CREATED)
+
+        payload = {
+            "id": uuid.uuid4(),
+            "prestamo_id": prestamo.id,
+            "monto": monto_decimal,
+        }
+        if meta["metodo"]:
+            payload[meta["metodo"]] = metodo_pago
+        if meta["referencia"]:
+            payload[meta["referencia"]] = referencia
+        if meta["comentarios"]:
+            payload[meta["comentarios"]] = comentarios
+        if meta["fecha"]:
+            payload[meta["fecha"]] = timezone.now()
+        if meta["updated"]:
+            payload[meta["updated"]] = timezone.now()
+        if meta["socio"]:
+            payload[meta["socio"]] = prestamo.socio_id
+        if meta.get("tesorero"):
+            payload[meta["tesorero"]] = getattr(request.user, "id", None)
+
+        cols_presentes = [c for c in payload.keys() if c in meta["cols"] or c in {meta.get("fecha"), meta.get("metodo"), meta.get("referencia"), meta.get("comentarios"), meta.get("updated"), meta.get("socio")}]
+        placeholders = ", ".join(["%s"] * len(cols_presentes))
+        columnas_sql = ", ".join(cols_presentes)
+        valores = [payload[col] for col in cols_presentes]
+        if connection.vendor == "sqlite":
+            conv = []
+            for v in valores:
+                if isinstance(v, uuid.UUID):
+                    conv.append(str(v))
+                elif isinstance(v, Decimal):
+                    conv.append(float(v))
+                else:
+                    conv.append(v)
+            valores = conv
+        table_name = "desembolso" if connection.vendor != "postgresql" else "public.desembolso"
+        with connection.cursor() as cursor:
+            cursor.execute(
+                f"INSERT INTO {table_name} ({columnas_sql}) VALUES ({placeholders})",
+                valores,
+            )
+
+        return Response(
+            {
+                "id": str(payload["id"]),
+                "prestamo_id": str(prestamo.id),
+                "monto": str(monto_decimal),
+                "metodo_pago": metodo_pago,
+                "referencia": referencia,
+                "comentarios": comentarios if meta["comentarios"] else None,
+                "socio": {
+                    "id": str(prestamo.socio_id),
+                    "nombre_completo": prestamo.socio.nombre_completo if prestamo.socio else None,
+                    "documento": prestamo.socio.documento if prestamo.socio else None,
+                    "email": prestamo.socio.usuario.email if prestamo.socio and prestamo.socio.usuario else None,
+                } if meta["socio"] else None,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class PoliticaAprobacionListCreateView(APIView):
