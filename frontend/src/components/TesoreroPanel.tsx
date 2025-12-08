@@ -166,48 +166,9 @@ export default function TesoreroPanel({ usuario, onLogout }: Props) {
         <section className="tesorero-grid">
           <div className="tesorero-card">
             <h3>Nuevo desembolso</h3>
-            <div className="analista-card__header" style={{ padding: 0, marginBottom: "0.5rem" }}>
-              <div>
-                <p className="eyebrow">Solicitudes aprobadas</p>
-                <p className="subtitle">Selecciona una para autocompletar ID y monto.</p>
-              </div>
-              <div className="analista-actions">
-                <input
-                  className="analista-input"
-                  placeholder="Buscar por socio, doc o ID"
-                  value={filtroAprobados}
-                  onChange={(e) => setFiltroAprobados(e.target.value)}
-                />
-                <button type="button" onClick={() => void fetchAprobados()} disabled={loadingAprobados}>
-                  {loadingAprobados ? "Cargando..." : "Buscar aprobados"}
-                </button>
-              </div>
-            </div>
-            {aprobadosError && <div className="alert error">{aprobadosError}</div>}
-            {loadingAprobados && <p className="muted">Cargando aprobados...</p>}
-            {!loadingAprobados && aprobados.length === 0 && <p className="muted">No hay préstamos aprobados/activos.</p>}
-            <div className="analista-list">
-              {aprobados.map((p) => (
-                <button type="button" key={p.id} className="analista-list__row" onClick={() => usarAprobado(p)}>
-                  <div>
-                    <p className="eyebrow">{(p.estado || "aprobado").toUpperCase()}</p>
-                    <strong>{p.descripcion?.trim() || "Préstamo aprobado"}</strong>
-                    <p className="subtitle">ID: {p.id}</p>
-                    {p.socio && (
-                      <p className="subtitle">
-                        {p.socio.nombre_completo} · {p.socio.documento || "Sin doc"} · {p.socio.email || "Sin email"}
-                      </p>
-                    )}
-                  </div>
-                  <div className="analista-list__meta">
-                    <span className="badge badge-info">{p.monto}</span>
-                  </div>
-                </button>
-              ))}
-            </div>
             <form className="tesorero-form" onSubmit={handleSubmit}>
               <label>
-                <span>ID de préstamo</span>
+                <span>ID de pr?stamo</span>
                 <input
                   type="text"
                   value={form.prestamo_id}
@@ -227,7 +188,7 @@ export default function TesoreroPanel({ usuario, onLogout }: Props) {
                 />
               </label>
               <label>
-                <span>Método de pago</span>
+                <span>M?todo de pago</span>
                 <select
                   value={form.metodo_pago}
                   onChange={(e) => setForm((prev) => ({ ...prev, metodo_pago: e.target.value }))}
@@ -267,29 +228,73 @@ export default function TesoreroPanel({ usuario, onLogout }: Props) {
             {ok && <div className="alert success">{ok}</div>}
           </div>
 
-          <div className="tesorero-card">
-            <h3>Desembolsos recientes</h3>
-            {loading && desembolsos.length === 0 && <p className="muted">Cargando...</p>}
-            {!loading && desembolsos.length === 0 && <p className="muted">No hay desembolsos registrados.</p>}
-            <div className="tesorero-list">
-              {desembolsos.map((d) => (
-                <article key={d.id} className="tesorero-list__item">
-                  <div>
-                    <p className="eyebrow">{d.metodo_pago}</p>
-                    <h4>{d.monto}</h4>
-                    <p className="subtitle">Préstamo: {d.prestamo_id}</p>
-                    {d.referencia && <p className="subtitle">Ref: {d.referencia}</p>}
-                    {d.comentarios && <p className="subtitle">Nota: {d.comentarios}</p>}
-                  </div>
-                  {d.socio && (
-                    <div className="tesorero-list__meta">
-                      <p className="subtitle">{d.socio.nombre_completo}</p>
-                      <p className="subtitle">{d.socio.documento}</p>
-                      <p className="subtitle">{d.socio.email}</p>
+          <div className="tesorero-column">
+            <div className="tesorero-card">
+              <h3>Solicitudes aprobadas</h3>
+              <div className="analista-card__header" style={{ padding: 0, marginBottom: "0.5rem" }}>
+                <div>
+                  <p className="subtitle">Selecciona una para autocompletar ID y monto.</p>
+                </div>
+                <div className="analista-actions">
+                  <input
+                    className="analista-input"
+                    placeholder="Buscar por socio, doc o ID"
+                    value={filtroAprobados}
+                    onChange={(e) => setFiltroAprobados(e.target.value)}
+                  />
+                  <button type="button" onClick={() => void fetchAprobados()} disabled={loadingAprobados}>
+                    {loadingAprobados ? "Cargando..." : "Buscar aprobados"}
+                  </button>
+                </div>
+              </div>
+              {aprobadosError && <div className="alert error">{aprobadosError}</div>}
+              {loadingAprobados && <p className="muted">Cargando aprobados...</p>}
+              {!loadingAprobados && aprobados.length === 0 && <p className="muted">No hay pr?stamos aprobados/activos.</p>}
+              <div className="analista-list">
+                {aprobados.map((p) => (
+                  <button type="button" key={p.id} className="analista-list__row" onClick={() => usarAprobado(p)}>
+                    <div>
+                      <p className="eyebrow">{(p.estado || "aprobado").toUpperCase()}</p>
+                      <strong>{p.descripcion?.trim() || "Pr?stamo aprobado"}</strong>
+                      <p className="subtitle">ID: {p.id}</p>
+                      {p.socio && (
+                        <p className="subtitle">
+                          {p.socio.nombre_completo} ? {p.socio.documento || "Sin doc"} ? {p.socio.email || "Sin email"}
+                        </p>
+                      )}
                     </div>
-                  )}
-                </article>
-              ))}
+                    <div className="analista-list__meta">
+                      <span className="badge badge-info">{p.monto}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="tesorero-card">
+              <h3>Desembolsos recientes</h3>
+              {loading && desembolsos.length === 0 && <p className="muted">Cargando...</p>}
+              {!loading && desembolsos.length === 0 && <p className="muted">No hay desembolsos registrados.</p>}
+              <div className="tesorero-list">
+                {desembolsos.map((d) => (
+                  <article key={d.id} className="tesorero-list__item">
+                    <div>
+                      <p className="eyebrow">{d.metodo_pago}</p>
+                      <h4>{d.monto}</h4>
+                      <p className="subtitle">Pr?stamo: {d.prestamo_id}</p>
+                      {d.referencia && <p className="subtitle">Ref: {d.referencia}</p>}
+                      {d.comentarios && <p className="subtitle">Nota: {d.comentarios}</p>}
+                    </div>
+                    {d.socio && (
+                      <div className="tesorero-list__meta">
+                        <p className="subtitle">{d.socio.nombre_completo}</p>
+                        <p className="subtitle">{d.socio.documento}</p>
+                        <p className="subtitle">{d.socio.email}</p>
+                      </div>
+                    )}
+                  </article>
+                ))}
+              </div>
             </div>
           </div>
         </section>
