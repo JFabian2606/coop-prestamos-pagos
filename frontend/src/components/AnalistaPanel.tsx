@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../api";
 import logo from "../assets/solo-logo-cooprestamos-vector.svg";
+import AnalistaSolicitudesList from "./AnalistaSolicitudesList";
 
 type SolicitudDetalle = {
   solicitud: {
@@ -74,8 +75,13 @@ const DetalleSolicitud = ({ detalle }: { detalle: SolicitudDetalle | null }) => 
   );
 };
 
-const AnalistaEvaluarModule = () => {
-  const [solicitudId, setSolicitudId] = useState("");
+const AnalistaEvaluarModule = ({ solicitudIdProp }: { solicitudIdProp?: string }) => {
+  const [solicitudId, setSolicitudId] = useState(solicitudIdProp ?? "");
+  useEffect(() => {
+    if (solicitudIdProp) {
+      setSolicitudId(solicitudIdProp);
+    }
+  }, [solicitudIdProp]);
   const [detalle, setDetalle] = useState<SolicitudDetalle | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -160,8 +166,13 @@ const AnalistaEvaluarModule = () => {
   );
 };
 
-const AnalistaDecisionModule = () => {
-  const [solicitudId, setSolicitudId] = useState("");
+const AnalistaDecisionModule = ({ solicitudIdProp }: { solicitudIdProp?: string }) => {
+  const [solicitudId, setSolicitudId] = useState(solicitudIdProp ?? "");
+  useEffect(() => {
+    if (solicitudIdProp) {
+      setSolicitudId(solicitudIdProp);
+    }
+  }, [solicitudIdProp]);
   const [detalle, setDetalle] = useState<SolicitudDetalle | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -254,6 +265,7 @@ const AnalistaDecisionModule = () => {
 
 export default function AnalistaPanel({ usuario, onLogout }: Props) {
   const [vista, setVista] = useState<"evaluar" | "decidir">("evaluar");
+  const [seleccionada, setSeleccionada] = useState<string | undefined>(undefined);
   const nombreParaMostrar = usuario?.nombre ?? usuario?.email ?? "Analista";
 
   return (
@@ -300,7 +312,16 @@ export default function AnalistaPanel({ usuario, onLogout }: Props) {
         </div>
 
         <div className="analista-modules">
-          {vista === "evaluar" ? <AnalistaEvaluarModule /> : <AnalistaDecisionModule />}
+          <div className="analista-grid">
+            <AnalistaSolicitudesList onSelect={(id) => {
+              setSeleccionada(id);
+            }} />
+            {vista === "evaluar" ? (
+              <AnalistaEvaluarModule solicitudIdProp={seleccionada} />
+            ) : (
+              <AnalistaDecisionModule solicitudIdProp={seleccionada} />
+            )}
+          </div>
         </div>
       </main>
 

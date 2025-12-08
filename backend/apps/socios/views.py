@@ -774,6 +774,76 @@ class SolicitudRechazarView(SolicitudDecisionBaseView):
     nuevo_estado = "rechazado"
 
 
+class SolicitudListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        if not _is_analista(request.user):
+            return Response({"detail": "Solo analistas o administradores pueden listar solicitudes."}, status=status.HTTP_403_FORBIDDEN)
+
+        q = (request.query_params.get("q") or "").strip().lower()
+        estado = (request.query_params.get("estado") or "").strip().lower()
+        limit = min(max(int(request.query_params.get("limit", 20)), 1), 100)
+
+        columnas = get_table_columns("solicitud")
+        if not columnas:
+            return Response({"detail": "Tabla solicitud no disponible."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        base_cols = ["id", "socio_id", "monto", "plazo_meses", "estado", "created_at", "updated_at", "descripcion"]
+        select_cols = [c for c in base_cols if c in columnas]
+        if "observaciones" in columnas:
+            select_cols.append("observaciones")
+        table_name = "solicitud" if connection.vendor != "postgresql" else "public.solicitud"
+
+        where_parts = []
+        params: list = []
+        if estado:
+            where_parts.append("LOWER(estado) = %s")
+            params.append(estado)
+        if q:
+            where_parts.append("(LOWER(id::text) LIKE %s OR LOWER(descripcion) LIKE %s)")
+            like = f"%{q}%"
+            params.extend([like, like])
+
+        where_sql = f"WHERE {' AND '.join(where_parts)}" if where_parts else ""
+        sql = f"""
+            SELECT {', '.join(select_cols)}
+            FROM {table_name}
+            {where_sql}
+            ORDER BY created_at DESC
+            LIMIT %s
+        """
+        params.append(limit)
+
+        with connection.cursor() as cursor:
+            cursor.execute(sql, params)
+            rows = cursor.fetchall()
+
+        results = []
+        for row in rows:
+            data = dict(zip(select_cols, row))
+            socio = Socio.objects.filter(pk=data.get("socio_id")).select_related("usuario").first()
+            results.append(
+                {
+                    "id": str(data.get("id")),
+                    "estado": data.get("estado"),
+                    "monto": str(data.get("monto")),
+                    "plazo_meses": data.get("plazo_meses"),
+                    "descripcion": data.get("descripcion"),
+                    "observaciones": data.get("observaciones") if "observaciones" in data else _extraer_observaciones(data),
+                    "created_at": data.get("created_at"),
+                    "socio": {
+                        "id": str(socio.id),
+                        "nombre_completo": socio.nombre_completo,
+                        "documento": socio.documento,
+                        "email": socio.usuario.email if socio and socio.usuario else None,
+                        "estado": socio.estado if socio else None,
+                    } if socio else None,
+                }
+            )
+        return Response({"results": results, "count": len(results)}, status=status.HTTP_200_OK)
+
+
 class PoliticaAprobacionListCreateView(APIView):
     permission_classes = [permissions.IsAdminUser]
 

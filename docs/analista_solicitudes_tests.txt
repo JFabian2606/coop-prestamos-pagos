@@ -6,6 +6,7 @@ Resultado:
 Pruebas:
   - test_get_evaluar_entrega_detalle_y_recomendacion ... OK
   - test_put_evaluar_guarda_observaciones ... OK
+  - test_listado_entrega_resultados ... OK
   - test_aprobar_actualiza_estado_y_comentario ... OK
   - test_rechazar_requiere_analista ... OK
 

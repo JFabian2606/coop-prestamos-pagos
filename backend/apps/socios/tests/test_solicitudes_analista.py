@@ -165,6 +165,14 @@ class SolicitudAnalistaEndpointsTests(TestCase):
         self.assertIsNotNone(row)
         self.assertEqual(row[0], "Ingresos verificados")
 
+    def test_listado_entrega_resultados(self):
+        solicitud_id = self._insert_solicitud()
+        self.client.force_authenticate(self.analista)
+        resp = self.client.get(reverse("solicitudes-list"))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        ids = [item["id"] for item in resp.data["results"]]
+        self.assertIn(solicitud_id, ids)
+
     def test_aprobar_actualiza_estado_y_comentario(self):
         solicitud_id = self._insert_solicitud()
         url = reverse("solicitudes-aprobar", kwargs={"solicitud_id": solicitud_id})
