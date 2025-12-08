@@ -818,9 +818,13 @@ button.danger {
   margin-left: 0.6rem;
 }
 
-.tab-active {
-  border-color: #2f7c76;
-  background: #2f7c76;
-  color: #fff;
+.analista-tabs .tab-active {
+  border-color: #2f7c76 !important;
+  background: #2f7c76 !important;
+  color: #fff !important;
   box-shadow: 0 6px 14px rgba(47, 124, 118, 0.14);
+}
+
+.analista-tabs .tab-active i {
+  color: #fff;
 }
