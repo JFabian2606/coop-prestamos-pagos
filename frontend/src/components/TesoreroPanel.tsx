@@ -51,6 +51,8 @@ export default function TesoreroPanel({ usuario, onLogout }: Props) {
   const [aprobadosError, setAprobadosError] = useState("");
   const [loadingAprobados, setLoadingAprobados] = useState(false);
   const [filtroAprobados, setFiltroAprobados] = useState("");
+  const [ultimoDesembolso, setUltimoDesembolso] = useState<Desembolso | null>(null);
+  const [mostrarComprobante, setMostrarComprobante] = useState(false);
   const [form, setForm] = useState({
     prestamo_id: "",
     monto: "",
@@ -109,6 +111,8 @@ export default function TesoreroPanel({ usuario, onLogout }: Props) {
       setOk("Desembolso registrado.");
       setForm((prev) => ({ ...prev, referencia: "", comentarios: "" }));
       setDesembolsos((prev) => [data, ...prev]);
+      setUltimoDesembolso(data);
+      setMostrarComprobante(true);
     } catch (err: any) {
       setError(err?.response?.data?.detail ?? JSON.stringify(err?.response?.data ?? "Error al registrar"));
     } finally {
@@ -124,6 +128,58 @@ export default function TesoreroPanel({ usuario, onLogout }: Props) {
     }));
     setOk(`Formulario completado con el préstamo ${p.id.slice(0, 8)}...`);
     setError("");
+  };
+
+  const descargarComprobante = () => {
+    if (!ultimoDesembolso) return;
+    const fecha = new Date(ultimoDesembolso.created_at ?? Date.now()).toLocaleString("es-ES");
+    const monto = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP" }).format(
+      Number(ultimoDesembolso.monto ?? 0),
+    );
+    const html = `
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Comprobante de desembolso</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; color: #111; }
+    h1 { margin-bottom: 8px; }
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 12px; background: #e6f7ff; color: #006d75; font-weight: bold; }
+    .row { margin: 6px 0; }
+    .label { color: #555; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .box { border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <h1>Comprobante de desembolso</h1>
+  <div class="row"><span class="label">Fecha</span><br />${fecha}</div>
+  <div class="row"><span class="label">Monto</span><br /><span class="badge">${monto}</span></div>
+  <div class="box">
+    <div class="row"><span class="label">ID desembolso</span><br />${ultimoDesembolso.id}</div>
+    <div class="row"><span class="label">Préstamo</span><br />${ultimoDesembolso.prestamo_id}</div>
+    <div class="row"><span class="label">Método</span><br />${ultimoDesembolso.metodo_pago}</div>
+    <div class="row"><span class="label">Referencia</span><br />${ultimoDesembolso.referencia || "N/A"}</div>
+    <div class="row"><span class="label">Comentarios</span><br />${ultimoDesembolso.comentarios || "N/A"}</div>
+  </div>
+  ${
+    ultimoDesembolso.socio
+      ? `<div class="box">
+    <div class="row"><span class="label">Socio</span><br />${ultimoDesembolso.socio.nombre_completo || ""}</div>
+    <div class="row"><span class="label">Documento</span><br />${ultimoDesembolso.socio.documento || ""}</div>
+    <div class="row"><span class="label">Email</span><br />${ultimoDesembolso.socio.email || ""}</div>
+  </div>`
+      : ""
+  }
+  <p style="margin-top:16px;font-size:12px;color:#777;">Generado desde Cooprestamos.</p>
+</body>
+</html>`;
+    const w = window.open("", "_blank", "width=900,height=1000");
+    if (!w) return;
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    w.print();
   };
 
   const nombreParaMostrar = usuario?.nombre ?? usuario?.email ?? "Tesorero";
@@ -301,6 +357,55 @@ export default function TesoreroPanel({ usuario, onLogout }: Props) {
       </main>
 
       <footer className="admin-footer">Cooprestamos - Panel Tesorero - {new Date().getFullYear()}</footer>
+
+      {mostrarComprobante && ultimoDesembolso && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.45)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 999,
+            padding: "1rem",
+          }}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: "12px",
+              maxWidth: "520px",
+              width: "100%",
+              padding: "20px",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
+            }}
+          >
+            <h3>Comprobante listo</h3>
+            <p className="subtitle" style={{ marginBottom: "1rem" }}>
+              Descarga o imprime el comprobante del desembolso registrado.
+            </p>
+            <div className="analista-list__row" style={{ marginBottom: "1rem" }}>
+              <div>
+                <p className="eyebrow">{ultimoDesembolso.metodo_pago}</p>
+                <strong>{ultimoDesembolso.monto}</strong>
+                <p className="subtitle">Préstamo: {ultimoDesembolso.prestamo_id}</p>
+                {ultimoDesembolso.referencia && <p className="subtitle">Ref: {ultimoDesembolso.referencia}</p>}
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
+              <button type="button" onClick={() => setMostrarComprobante(false)}>
+                Cerrar
+              </button>
+              <button className="primary" type="button" onClick={descargarComprobante}>
+                Descargar PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
