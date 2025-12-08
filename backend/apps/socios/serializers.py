@@ -1,10 +1,12 @@
 from decimal import Decimal
 import math
 from datetime import date
+import uuid
 
 from rest_framework import serializers
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from .models import Pago, Prestamo, Socio, TipoPrestamo, PoliticaAprobacion, Desembolso
 
 
@@ -370,8 +372,24 @@ class DesembolsoSerializer(serializers.ModelSerializer):
         attrs["socio"] = prestamo.socio
         estado = (prestamo.estado or "").lower()
         if estado not in {"aprobado", Prestamo.Estados.ACTIVO, "activo"}:
-            raise serializers.ValidationError({"prestamo_id": "El préstamo no está aprobado/activo para desembolso."})
+            raise serializers.ValidationError({"prestamo_id": "El prestamo no esta aprobado/activo para desembolso."})
         monto = attrs.get("monto")
         if monto and prestamo.monto and monto > prestamo.monto:
-            raise serializers.ValidationError({"monto": "El monto excede el valor del préstamo."})
+            raise serializers.ValidationError({"monto": "El monto excede el valor del prestamo."})
         return attrs
+
+    def create(self, validated_data):
+        referencia = validated_data.get("referencia")
+        metodo_pago = validated_data.get("metodo_pago")
+        if not referencia and metodo_pago == "efectivo":
+            validated_data["referencia"] = self._referencia_efectivo(validated_data)
+        return super().create(validated_data)
+
+    def _referencia_efectivo(self, data: dict) -> str:
+        """Genera referencia automatica para desembolsos en efectivo."""
+        fecha = timezone.now().strftime("%Y%m%d")
+        sufijo = uuid.uuid4().hex[:6].upper()
+        prestamo_id = data.get("prestamo_id") or ""
+        tail = str(prestamo_id).replace("-", "")[-4:] if prestamo_id else sufijo
+        return f"EF-{fecha}-{tail}"
+
