@@ -20,7 +20,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .audit import snapshot_socio, register_audit_entry
-from .models import Prestamo, Socio, SocioAuditLog, TipoPrestamo, PoliticaAprobacion
+from .models import Prestamo, Socio, SocioAuditLog, TipoPrestamo, PoliticaAprobacion, Desembolso
 from .serializers import (
     HistorialCrediticioSerializer,
     ProfileCreateSerializer,
@@ -33,6 +33,7 @@ from .serializers import (
     PoliticaAprobacionUpsertSerializer,
     PrestamoSimulacionSerializer,
     PrestamoSolicitudSerializer,
+    DesembolsoSerializer,
 )
 
 HEADER_FONT = Font(bold=True, color="FFFFFF")
@@ -524,6 +525,10 @@ def _is_analista(user) -> bool:
     rol_nombre = getattr(getattr(user, "rol", None), "nombre", "") or getattr(user, "rol", "") or ""
     return rol_nombre.upper() == "ANALISTA" or getattr(user, "is_staff", False) or getattr(user, "is_superuser", False)
 
+def _is_tesorero(user) -> bool:
+    rol_nombre = getattr(getattr(user, "rol", None), "nombre", "") or getattr(user, "rol", "") or ""
+    return rol_nombre.upper() == "TESORERO" or getattr(user, "is_staff", False) or getattr(user, "is_superuser", False)
+
 
 def _fetch_solicitud_row(solicitud_id: uuid.UUID) -> tuple[dict, set[str]]:
     columnas = get_table_columns("solicitud")
@@ -864,6 +869,50 @@ class SolicitudListView(APIView):
                 }
             )
         return Response({"results": results, "count": len(results)}, status=status.HTTP_200_OK)
+
+
+class DesembolsoListCreateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def _ensure_tesorero(self, request):
+        if not _is_tesorero(request.user):
+            return Response({"detail": "Solo tesorero o admin puede gestionar desembolsos."}, status=status.HTTP_403_FORBIDDEN)
+        return None
+
+    def get(self, request):
+        forbidden = self._ensure_tesorero(request)
+        if forbidden:
+            return forbidden
+        qs = Desembolso.objects.select_related("prestamo", "socio").order_by("-created_at")
+        data = []
+        for d in qs[:100]:
+            data.append(
+                {
+                    "id": str(d.id),
+                    "monto": str(d.monto),
+                    "metodo_pago": d.metodo_pago,
+                    "referencia": d.referencia,
+                    "comentarios": d.comentarios,
+                    "created_at": d.created_at,
+                    "prestamo_id": str(d.prestamo_id),
+                    "socio": {
+                        "id": str(d.socio_id),
+                        "nombre_completo": d.socio.nombre_completo if d.socio else None,
+                        "documento": d.socio.documento if d.socio else None,
+                        "email": d.socio.usuario.email if d.socio and d.socio.usuario else None,
+                    },
+                }
+            )
+        return Response({"results": data, "count": len(data)}, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        forbidden = self._ensure_tesorero(request)
+        if forbidden:
+            return forbidden
+        serializer = DesembolsoSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        desembolso = serializer.save()
+        return Response(DesembolsoSerializer(desembolso).data, status=status.HTTP_201_CREATED)
 
 
 class PoliticaAprobacionListCreateView(APIView):

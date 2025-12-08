@@ -177,3 +177,27 @@ class Pago(models.Model):
 
     def __str__(self) -> str:
         return f"Pago {self.id} - {self.fecha_pago:%Y-%m-%d}"
+
+
+class Desembolso(models.Model):
+    METODOS = (
+        ('transferencia', 'Transferencia'),
+        ('efectivo', 'Efectivo'),
+        ('cheque', 'Cheque'),
+    )
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    prestamo = models.ForeignKey(Prestamo, on_delete=models.CASCADE, related_name='desembolsos')
+    socio = models.ForeignKey(Socio, on_delete=models.CASCADE, related_name='desembolsos')
+    monto = models.DecimalField(max_digits=14, decimal_places=2)
+    metodo_pago = models.CharField(max_length=30, choices=METODOS)
+    referencia = models.CharField(max_length=100, blank=True)
+    comentarios = models.TextField(blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        db_table = 'desembolso'
+
+    def __str__(self) -> str:
+        return f"Desembolso {self.id} - {self.metodo_pago} - {self.monto}"

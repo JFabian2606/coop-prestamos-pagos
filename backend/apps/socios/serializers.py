@@ -3,8 +3,9 @@ import math
 from datetime import date
 
 from rest_framework import serializers
+from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
-from .models import Pago, Prestamo, Socio, TipoPrestamo, PoliticaAprobacion
+from .models import Pago, Prestamo, Socio, TipoPrestamo, PoliticaAprobacion, Desembolso
 
 
 User = get_user_model()
@@ -338,3 +339,39 @@ class PrestamoSimulacionSerializer(serializers.Serializer):
 
 class PrestamoSolicitudSerializer(PrestamoSimulacionSerializer):
     descripcion = serializers.CharField(max_length=255, allow_blank=True, required=False)
+
+
+class DesembolsoSerializer(serializers.ModelSerializer):
+    socio_id = serializers.UUIDField(write_only=True, required=False)
+    socio = SocioSerializer(read_only=True)
+    prestamo_id = serializers.UUIDField(write_only=True)
+    prestamo = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = Desembolso
+        fields = (
+            "id",
+            "prestamo",
+            "prestamo_id",
+            "socio",
+            "socio_id",
+            "monto",
+            "metodo_pago",
+            "referencia",
+            "comentarios",
+            "created_at",
+        )
+        read_only_fields = ("id", "created_at", "prestamo", "socio")
+
+    def validate(self, attrs):
+        prestamo_id = attrs.get("prestamo_id")
+        prestamo = get_object_or_404(Prestamo, pk=prestamo_id)
+        attrs["prestamo"] = prestamo
+        attrs["socio"] = prestamo.socio
+        estado = (prestamo.estado or "").lower()
+        if estado not in {"aprobado", Prestamo.Estados.ACTIVO, "activo"}:
+            raise serializers.ValidationError({"prestamo_id": "El préstamo no está aprobado/activo para desembolso."})
+        monto = attrs.get("monto")
+        if monto and prestamo.monto and monto > prestamo.monto:
+            raise serializers.ValidationError({"monto": "El monto excede el valor del préstamo."})
+        return attrs

@@ -1,0 +1,9 @@
+Comando: python manage.py test apps.socios.tests.test_desembolsos -v 2
+Resultado:
+  Ran 3 tests in 1.316s
+  OK
+
+Pruebas:
+  - test_post_desembolso_requiere_tesorero ... OK
+  - test_post_rechaza_prestamo_no_aprobado ... OK
+  - test_get_listado_con_tesorero ... OK

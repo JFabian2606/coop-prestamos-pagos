@@ -1,6 +1,6 @@
 Comando: python manage.py test apps.socios.tests.test_solicitudes_analista -v 2
 Resultado:
-  Ran 4 tests in 1.186s
+  Ran 5 tests in 2.803s
   OK
 
 Pruebas:

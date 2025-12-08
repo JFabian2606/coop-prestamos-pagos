@@ -21,6 +21,7 @@ from .views import (
     SolicitudAprobarView,
     SolicitudRechazarView,
     SolicitudListView,
+    DesembolsoListCreateView,
 )
 
 urlpatterns = [
@@ -47,4 +48,5 @@ urlpatterns = [
     path('solicitudes/<uuid:solicitud_id>/evaluar/', SolicitudEvaluarView.as_view(), name='solicitudes-evaluar'),
     path('solicitudes/<uuid:solicitud_id>/aprobar/', SolicitudAprobarView.as_view(), name='solicitudes-aprobar'),
     path('solicitudes/<uuid:solicitud_id>/rechazar/', SolicitudRechazarView.as_view(), name='solicitudes-rechazar'),
+    path('desembolsos/', DesembolsoListCreateView.as_view(), name='desembolsos-list-create'),
 ]

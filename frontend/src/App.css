@@ -797,6 +797,74 @@ button.danger {
   color: #0f172a;
 }
 
+.tesorero-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.tesorero-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 8px 18px rgba(31, 41, 51, 0.06);
+}
+
+.tesorero-form {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.tesorero-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  color: #334155;
+}
+
+.tesorero-form input,
+.tesorero-form select,
+.tesorero-form textarea {
+  border: 1px solid #d0d5dd;
+  border-radius: 10px;
+  padding: 0.55rem 0.75rem;
+  font: inherit;
+}
+
+.tesorero-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.tesorero-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.tesorero-list__item {
+  border: 1px solid #e4e7ec;
+  border-radius: 10px;
+  padding: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: #f9fbfb;
+}
+
+.tesorero-list__meta {
+  text-align: right;
+  color: #475467;
+}
+
+@media (max-width: 960px) {
+  .tesorero-grid {
+    grid-template-columns: 1fr;
+  }
+}
 .analista-modal {
   width: min(1000px, 96vw);
   max-height: 92vh;
