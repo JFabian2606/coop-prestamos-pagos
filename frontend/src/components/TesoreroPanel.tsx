@@ -18,6 +18,19 @@ type Desembolso = {
   } | null;
 };
 
+type PrestamoAprobado = {
+  id: string;
+  monto: string;
+  estado?: string;
+  descripcion?: string;
+  socio?: {
+    id?: string;
+    nombre_completo?: string;
+    documento?: string;
+    email?: string;
+  } | null;
+};
+
 const METODOS = [
   { value: "transferencia", label: "Transferencia" },
   { value: "efectivo", label: "Efectivo" },
@@ -34,6 +47,10 @@ export default function TesoreroPanel({ usuario, onLogout }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
+  const [aprobados, setAprobados] = useState<PrestamoAprobado[]>([]);
+  const [aprobadosError, setAprobadosError] = useState("");
+  const [loadingAprobados, setLoadingAprobados] = useState(false);
+  const [filtroAprobados, setFiltroAprobados] = useState("");
   const [form, setForm] = useState({
     prestamo_id: "",
     monto: "",
@@ -55,8 +72,24 @@ export default function TesoreroPanel({ usuario, onLogout }: Props) {
     }
   };
 
+  const fetchAprobados = async () => {
+    setLoadingAprobados(true);
+    setAprobadosError("");
+    try {
+      const params: Record<string, string> = { limit: "30" };
+      if (filtroAprobados.trim()) params.q = filtroAprobados.trim();
+      const { data } = await api.get("prestamos/aprobados/", { params });
+      setAprobados(data?.results ?? []);
+    } catch (err: any) {
+      setAprobadosError(err?.response?.data?.detail ?? "No se pudieron cargar los préstamos aprobados.");
+    } finally {
+      setLoadingAprobados(false);
+    }
+  };
+
   useEffect(() => {
     void fetchListado();
+    void fetchAprobados();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -81,6 +114,16 @@ export default function TesoreroPanel({ usuario, onLogout }: Props) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const usarAprobado = (p: PrestamoAprobado) => {
+    setForm((prev) => ({
+      ...prev,
+      prestamo_id: p.id ?? prev.prestamo_id,
+      monto: p.monto ?? prev.monto,
+    }));
+    setOk(`Formulario completado con el préstamo ${p.id.slice(0, 8)}...`);
+    setError("");
   };
 
   const nombreParaMostrar = usuario?.nombre ?? usuario?.email ?? "Tesorero";
@@ -123,6 +166,45 @@ export default function TesoreroPanel({ usuario, onLogout }: Props) {
         <section className="tesorero-grid">
           <div className="tesorero-card">
             <h3>Nuevo desembolso</h3>
+            <div className="analista-card__header" style={{ padding: 0, marginBottom: "0.5rem" }}>
+              <div>
+                <p className="eyebrow">Solicitudes aprobadas</p>
+                <p className="subtitle">Selecciona una para autocompletar ID y monto.</p>
+              </div>
+              <div className="analista-actions">
+                <input
+                  className="analista-input"
+                  placeholder="Buscar por socio, doc o ID"
+                  value={filtroAprobados}
+                  onChange={(e) => setFiltroAprobados(e.target.value)}
+                />
+                <button type="button" onClick={() => void fetchAprobados()} disabled={loadingAprobados}>
+                  {loadingAprobados ? "Cargando..." : "Buscar aprobados"}
+                </button>
+              </div>
+            </div>
+            {aprobadosError && <div className="alert error">{aprobadosError}</div>}
+            {loadingAprobados && <p className="muted">Cargando aprobados...</p>}
+            {!loadingAprobados && aprobados.length === 0 && <p className="muted">No hay préstamos aprobados/activos.</p>}
+            <div className="analista-list">
+              {aprobados.map((p) => (
+                <button type="button" key={p.id} className="analista-list__row" onClick={() => usarAprobado(p)}>
+                  <div>
+                    <p className="eyebrow">{(p.estado || "aprobado").toUpperCase()}</p>
+                    <strong>{p.descripcion?.trim() || "Préstamo aprobado"}</strong>
+                    <p className="subtitle">ID: {p.id}</p>
+                    {p.socio && (
+                      <p className="subtitle">
+                        {p.socio.nombre_completo} · {p.socio.documento || "Sin doc"} · {p.socio.email || "Sin email"}
+                      </p>
+                    )}
+                  </div>
+                  <div className="analista-list__meta">
+                    <span className="badge badge-info">{p.monto}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
             <form className="tesorero-form" onSubmit={handleSubmit}>
               <label>
                 <span>ID de préstamo</span>

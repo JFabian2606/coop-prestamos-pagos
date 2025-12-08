@@ -892,6 +892,59 @@ class SolicitudListView(APIView):
         return Response({"results": results, "count": len(results)}, status=status.HTTP_200_OK)
 
 
+class PrestamosAprobadosListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def _ensure_tesorero(self, request):
+        if not _is_tesorero(request.user):
+            return Response({"detail": "Solo tesorero o admin puede ver préstamos aprobados."}, status=status.HTTP_403_FORBIDDEN)
+        return None
+
+    def get(self, request):
+        forbidden = self._ensure_tesorero(request)
+        if forbidden:
+            return forbidden
+
+        q = (request.query_params.get("q") or "").strip()
+        limit = min(max(int(request.query_params.get("limit", 30)), 1), 100)
+        estados_permitidos = {"aprobado", Prestamo.Estados.ACTIVO, "activo"}
+        qs = (
+            Prestamo.objects.select_related("socio", "socio__usuario")
+            .filter(estado__in=estados_permitidos)
+            .order_by("-created_at")
+        )
+        if q:
+            qs = qs.filter(
+                Q(id__icontains=q)
+                | Q(descripcion__icontains=q)
+                | Q(socio__nombre_completo__icontains=q)
+                | Q(socio__documento__icontains=q)
+            )
+        qs = qs[:limit]
+
+        results = []
+        for prestamo in qs:
+            socio = prestamo.socio
+            results.append(
+                {
+                    "id": str(prestamo.id),
+                    "monto": fmt_decimal(prestamo.monto) if hasattr(prestamo.monto, "quantize") else str(prestamo.monto),
+                    "estado": prestamo.estado,
+                    "descripcion": prestamo.descripcion,
+                    "socio": {
+                        "id": str(socio.id),
+                        "nombre_completo": socio.nombre_completo,
+                        "documento": socio.documento,
+                        "email": socio.usuario.email if socio and socio.usuario else None,
+                    }
+                    if socio
+                    else None,
+                }
+            )
+
+        return Response({"results": results, "count": len(results)}, status=status.HTTP_200_OK)
+
+
 class DesembolsoListCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
