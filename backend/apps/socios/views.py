@@ -5,7 +5,7 @@ import uuid
 from decimal import Decimal
 from datetime import datetime, date
 
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db import connection
@@ -520,6 +520,352 @@ class PrestamoSolicitudCreateView(APIView):
         )
 
 
+def _is_analista(user) -> bool:
+    rol_nombre = getattr(getattr(user, "rol", None), "nombre", "") or getattr(user, "rol", "") or ""
+    return rol_nombre.upper() == "ANALISTA" or getattr(user, "is_staff", False) or getattr(user, "is_superuser", False)
+
+
+def _fetch_solicitud_row(solicitud_id: uuid.UUID) -> tuple[dict, set[str]]:
+    columnas = get_table_columns("solicitud")
+    if not columnas:
+        raise Http404("Tabla solicitud no encontrada.")
+    posibles = [
+        "id",
+        "socio_id",
+        "monto",
+        "tasa_interes",
+        "plazo_meses",
+        "descripcion",
+        "estado",
+        "created_at",
+        "updated_at",
+        "producto_id",
+        "tipo_prestamo_id",
+    ]
+    seleccionadas = [c for c in posibles if c in columnas]
+    if "observaciones" in columnas:
+        seleccionadas.append("observaciones")
+    if not seleccionadas:
+        raise Http404("No hay columnas legibles en la tabla solicitud.")
+
+    table_name = "solicitud" if connection.vendor != "postgresql" else "public.solicitud"
+    solicitud_str = str(solicitud_id)
+    with connection.cursor() as cursor:
+        cursor.execute(
+            f"SELECT {', '.join(seleccionadas)} FROM {table_name} WHERE id = %s LIMIT 1",
+            [solicitud_str],
+        )
+        row = cursor.fetchone()
+    if not row:
+        raise Http404("Solicitud no encontrada.")
+    data = dict(zip(seleccionadas, row))
+    return data, columnas
+
+
+def _extraer_observaciones(row: dict) -> str:
+    if "observaciones" in row:
+        return row.get("observaciones") or ""
+    if "comentarios" in row:
+        return row.get("comentarios") or ""
+    descripcion = row.get("descripcion") or ""
+    marker = "[OBS_ANALISTA]"
+    lines = []
+    for line in descripcion.splitlines():
+        if line.strip().startswith(marker):
+            lines.append(line.replace(marker, "", 1).strip())
+    return "\n".join(lines)
+
+
+def _adjuntar_observacion_en_descripcion(descripcion_actual: str, nueva_obs: str, marker: str = "[OBS_ANALISTA]") -> str:
+    base = descripcion_actual or ""
+    if marker in base and nueva_obs.strip() in base:
+        return base
+    separator = "\n" if base else ""
+    return f"{base}{separator}{marker} {nueva_obs.strip()}"
+
+
+def _obs_column(columnas: set[str]) -> str | None:
+    if "observaciones" in columnas:
+        return "observaciones"
+    if "comentarios" in columnas:
+        return "comentarios"
+    return None
+
+
+def _recomendacion_basica(socio: Socio | None, solicitud: dict) -> str:
+    if not socio or socio.estado != Socio.ESTADO_ACTIVO:
+        return "rechazar"
+    try:
+        monto = Decimal(str(solicitud.get("monto", "0")))
+    except Exception:
+        monto = Decimal("0")
+    if monto <= Decimal("10000000"):
+        return "aprobar"
+    if monto <= Decimal("20000000"):
+        return "revisar"
+    return "rechazar"
+
+
+class SolicitudEvaluarView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def _ensure_analista(self, request):
+        if not _is_analista(request.user):
+            return Response({"detail": "Solo analistas o administradores pueden evaluar solicitudes."}, status=status.HTTP_403_FORBIDDEN)
+        return None
+
+    @extend_schema(
+        tags=["Prestamos"],
+        summary="Evaluar solicitud",
+        description="Retorna detalles de la solicitud y socio para ser evaluada por un analista.",
+        responses={200: OpenApiResponse(description="Detalle de solicitud para evaluar")},
+    )
+    def get(self, request, solicitud_id: uuid.UUID):
+        forbidden = self._ensure_analista(request)
+        if forbidden:
+            return forbidden
+        solicitud, columnas = _fetch_solicitud_row(solicitud_id)
+        socio = Socio.objects.filter(pk=solicitud.get("socio_id")).select_related("usuario").first()
+        recomendacion = _recomendacion_basica(socio, solicitud)
+        observaciones = _extraer_observaciones(solicitud)
+
+        data = {
+            "solicitud": {
+                "id": str(solicitud_id),
+                "estado": solicitud.get("estado"),
+                "monto": str(solicitud.get("monto")),
+                "plazo_meses": solicitud.get("plazo_meses"),
+                "descripcion": solicitud.get("descripcion"),
+                "observaciones": observaciones,
+            },
+            "socio": None,
+            "analisis": {
+                "recomendacion": recomendacion,
+                "puede_aprobar": recomendacion == "aprobar",
+                "columns": list(columnas),
+            },
+        }
+        if socio:
+            data["socio"] = {
+                "id": str(socio.id),
+                "nombre_completo": socio.nombre_completo,
+                "documento": socio.documento,
+                "estado": socio.estado,
+                "email": socio.usuario.email if socio.usuario else None,
+                "fecha_alta": socio.fecha_alta,
+            }
+        return Response(data, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        tags=["Prestamos"],
+        summary="Guardar observaciones de analista",
+        description="Permite registrar observaciones y recomendacion sobre una solicitud.",
+        request=None,
+        responses={200: OpenApiResponse(description="Observacion registrada")},
+    )
+    def put(self, request, solicitud_id: uuid.UUID):
+        forbidden = self._ensure_analista(request)
+        if forbidden:
+            return forbidden
+        observaciones = (request.data or {}).get("observaciones")
+        recomendacion_req = (request.data or {}).get("recomendacion")
+        if observaciones is None and recomendacion_req is None:
+            return Response({"detail": "Debe enviar observaciones o recomendacion."}, status=status.HTTP_400_BAD_REQUEST)
+
+        solicitud, columnas = _fetch_solicitud_row(solicitud_id)
+        obs_col = _obs_column(columnas)
+        updates = {}
+        descripcion_actual = solicitud.get("descripcion") or ""
+        now = timezone.now()
+        if observaciones:
+            if obs_col:
+                updates[obs_col] = observaciones
+            else:
+                updates["descripcion"] = _adjuntar_observacion_en_descripcion(descripcion_actual, observaciones)
+        if recomendacion_req:
+            updates["recomendacion"] = recomendacion_req  # solo se guarda si la columna existe
+        has_updated = "updated_at" in columnas
+        if has_updated:
+            updates["updated_at"] = now
+
+        set_parts = []
+        values = []
+        for col, val in updates.items():
+            if col not in columnas and not (col == "updated_at" and has_updated):
+                continue
+            set_parts.append(f"{col} = %s")
+            values.append(val)
+
+        if has_updated and all(not part.startswith("updated_at") for part in set_parts):
+            set_parts.append("updated_at = %s")
+            values.append(now)
+
+        if not set_parts:
+            return Response({"detail": "No hay columnas para actualizar observaciones."}, status=status.HTTP_400_BAD_REQUEST)
+
+        values.append(str(solicitud_id))
+        table_name = "solicitud" if connection.vendor != "postgresql" else "public.solicitud"
+        with connection.cursor() as cursor:
+            cursor.execute(
+                f"UPDATE {table_name} SET {', '.join(set_parts)} WHERE id = %s",
+                values,
+            )
+
+        solicitud_actualizada, _ = _fetch_solicitud_row(solicitud_id)
+        return Response(
+            {
+                "solicitud_id": str(solicitud_id),
+                "estado": solicitud_actualizada.get("estado"),
+                "observaciones": observaciones or _extraer_observaciones(solicitud_actualizada),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class SolicitudDecisionBaseView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    nuevo_estado: str = ""
+
+    def _ensure_analista(self, request):
+        if not _is_analista(request.user):
+            return Response({"detail": "Solo analistas o administradores pueden decidir solicitudes."}, status=status.HTTP_403_FORBIDDEN)
+        return None
+
+    def patch(self, request, solicitud_id: uuid.UUID):
+        forbidden = self._ensure_analista(request)
+        if forbidden:
+            return forbidden
+        comentario = (request.data or {}).get("comentario") or ""
+
+        solicitud, columnas = _fetch_solicitud_row(solicitud_id)
+        if "estado" not in columnas:
+            return Response({"detail": "La tabla de solicitudes no tiene columna 'estado'."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        descripcion_actual = solicitud.get("descripcion") or ""
+        now = timezone.now()
+
+        has_updated = "updated_at" in columnas
+        updates = {"estado": self.nuevo_estado}
+        if has_updated:
+            updates["updated_at"] = now
+        obs_col = _obs_column(columnas)
+        if obs_col and comentario:
+            updates[obs_col] = comentario
+        elif comentario:
+            updates["descripcion"] = _adjuntar_observacion_en_descripcion(descripcion_actual, comentario, marker="[DECISION]")
+
+        set_parts = []
+        values = []
+        for col, val in updates.items():
+            if col not in columnas and not (col == "updated_at" and has_updated):
+                continue
+            set_parts.append(f"{col} = %s")
+            values.append(val)
+
+        values.append(str(solicitud_id))
+        table_name = "solicitud" if connection.vendor != "postgresql" else "public.solicitud"
+        with connection.cursor() as cursor:
+            cursor.execute(
+                f"UPDATE {table_name} SET {', '.join(set_parts)} WHERE id = %s",
+                values,
+            )
+
+        solicitud_actualizada, _ = _fetch_solicitud_row(solicitud_id)
+        socio = Socio.objects.filter(pk=solicitud.get("socio_id")).first()
+        notificacion = None
+        if socio and getattr(socio, "usuario", None) and socio.usuario.email:
+            notificacion = f"Notificar a {socio.usuario.email} sobre estado {self.nuevo_estado}"
+
+        return Response(
+            {
+                "solicitud_id": str(solicitud_id),
+                "estado": solicitud_actualizada.get("estado"),
+                "comentario": comentario,
+                "notificacion": notificacion,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class SolicitudAprobarView(SolicitudDecisionBaseView):
+    nuevo_estado = "aprobado"
+
+
+class SolicitudRechazarView(SolicitudDecisionBaseView):
+    nuevo_estado = "rechazado"
+
+
+class SolicitudListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        if not _is_analista(request.user):
+            return Response({"detail": "Solo analistas o administradores pueden listar solicitudes."}, status=status.HTTP_403_FORBIDDEN)
+
+        q = (request.query_params.get("q") or "").strip().lower()
+        estado = (request.query_params.get("estado") or "").strip().lower()
+        limit = min(max(int(request.query_params.get("limit", 20)), 1), 100)
+
+        columnas = get_table_columns("solicitud")
+        if not columnas:
+            return Response({"detail": "Tabla solicitud no disponible."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        base_cols = ["id", "socio_id", "monto", "plazo_meses", "estado", "created_at", "updated_at", "descripcion"]
+        select_cols = [c for c in base_cols if c in columnas]
+        if "observaciones" in columnas:
+            select_cols.append("observaciones")
+        table_name = "solicitud" if connection.vendor != "postgresql" else "public.solicitud"
+
+        where_parts = []
+        params: list = []
+        if estado:
+            where_parts.append("LOWER(estado) = %s")
+            params.append(estado)
+        if q:
+            where_parts.append("(LOWER(id::text) LIKE %s OR LOWER(descripcion) LIKE %s)")
+            like = f"%{q}%"
+            params.extend([like, like])
+
+        where_sql = f"WHERE {' AND '.join(where_parts)}" if where_parts else ""
+        sql = f"""
+            SELECT {', '.join(select_cols)}
+            FROM {table_name}
+            {where_sql}
+            ORDER BY created_at DESC
+            LIMIT %s
+        """
+        params.append(limit)
+
+        with connection.cursor() as cursor:
+            cursor.execute(sql, params)
+            rows = cursor.fetchall()
+
+        results = []
+        for row in rows:
+            data = dict(zip(select_cols, row))
+            socio = Socio.objects.filter(pk=data.get("socio_id")).select_related("usuario").first()
+            obs_col = _obs_column(columnas)
+            results.append(
+                {
+                    "id": str(data.get("id")),
+                    "estado": data.get("estado"),
+                    "monto": str(data.get("monto")),
+                    "plazo_meses": data.get("plazo_meses"),
+                    "descripcion": data.get("descripcion"),
+                    "observaciones": data.get(obs_col) if obs_col and obs_col in data else _extraer_observaciones(data),
+                    "created_at": data.get("created_at"),
+                    "socio": {
+                        "id": str(socio.id),
+                        "nombre_completo": socio.nombre_completo,
+                        "documento": socio.documento,
+                        "email": socio.usuario.email if socio and socio.usuario else None,
+                        "estado": socio.estado if socio else None,
+                        "fecha_alta": socio.fecha_alta if socio else None,
+                    } if socio else None,
+                }
+            )
+        return Response({"results": results, "count": len(results)}, status=status.HTTP_200_OK)
+
+
 class PoliticaAprobacionListCreateView(APIView):
     permission_classes = [permissions.IsAdminUser]
 
@@ -611,6 +957,16 @@ class PoliticaAprobacionDetailView(APIView):
             politica.activo = False
             politica.save(update_fields=['activo', 'updated_at'])
         return Response(PoliticaAprobacionSerializer(politica).data, status=status.HTTP_200_OK)
+
+
+class PoliticaAprobacionPublicListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        if not (_is_analista(request.user) or getattr(request.user, "is_staff", False)):
+            return Response({"detail": "No autorizado"}, status=status.HTTP_403_FORBIDDEN)
+        qs = PoliticaAprobacion.objects.filter(activo=True).order_by("nombre")
+        return Response(PoliticaAprobacionSerializer(qs, many=True).data)
 
 
 class SocioAdminDetailView(APIView):
