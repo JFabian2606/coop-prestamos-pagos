@@ -27,6 +27,10 @@ def env_int(name: str, default: int) -> int:
     except (TypeError, ValueError):
         return default
 
+from dotenv import load_dotenv
+load_dotenv()
+import os
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
