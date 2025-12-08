@@ -796,3 +796,23 @@ button.danger {
 .analista-card textarea {
   color: #0f172a;
 }
+
+.analista-modal {
+  width: min(920px, 96vw);
+}
+
+.analista-modal__body {
+  padding-top: 0.5rem;
+}
+
+.analista-tabs {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+  margin-left: auto;
+}
+
+.tab-active {
+  border-color: #2f7c76;
+  color: #2f7c76;
+}

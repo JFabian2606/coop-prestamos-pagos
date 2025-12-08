@@ -299,6 +299,7 @@ export default function AnalistaPanel({ usuario, onLogout }: Props) {
   const [vista, setVista] = useState<"evaluar" | "decidir">("evaluar");
   const [seleccionada, setSeleccionada] = useState<string | undefined>(undefined);
   const [politicas, setPoliticas] = useState<Politica[]>([]);
+  const [showModal, setShowModal] = useState(false);
   const nombreParaMostrar = usuario?.nombre ?? usuario?.email ?? "Analista";
 
   useEffect(() => {
@@ -357,16 +358,12 @@ export default function AnalistaPanel({ usuario, onLogout }: Props) {
         </div>
 
         <div className="analista-modules">
-          <div className="analista-grid">
-            <AnalistaSolicitudesList onSelect={(id) => {
+          <AnalistaSolicitudesList
+            onSelect={(id) => {
               setSeleccionada(id);
-            }} />
-            {vista === "evaluar" ? (
-              <AnalistaEvaluarModule solicitudIdProp={seleccionada} />
-            ) : (
-              <AnalistaDecisionModule solicitudIdProp={seleccionada} />
-            )}
-          </div>
+              setShowModal(true);
+            }}
+          />
           {politicas.length > 0 && (
             <div className="politicas-grid">
               <h3>Políticas de aprobación</h3>
@@ -388,6 +385,44 @@ export default function AnalistaPanel({ usuario, onLogout }: Props) {
             </div>
           )}
         </div>
+
+        {showModal && (
+          <div className="modal-backdrop" role="dialog" aria-modal="true">
+            <div className="modal analista-modal">
+              <div className="modal__header">
+                <h4>{vista === "evaluar" ? "Registrar datos y observaciones" : "Decidir con comentario"}</h4>
+                <div className="analista-tabs">
+                  <button
+                    className={`ghost ${vista === "evaluar" ? "tab-active" : ""}`}
+                    onClick={() => setVista("evaluar")}
+                    type="button"
+                  >
+                    <i className="bx bx-clipboard" aria-hidden />
+                    Evaluar
+                  </button>
+                  <button
+                    className={`ghost ${vista === "decidir" ? "tab-active" : ""}`}
+                    onClick={() => setVista("decidir")}
+                    type="button"
+                  >
+                    <i className="bx bx-check-shield" aria-hidden />
+                    Decidir
+                  </button>
+                </div>
+                <button type="button" className="ghost close-button" onClick={() => setShowModal(false)} aria-label="Cerrar">
+                  ×
+                </button>
+              </div>
+              <div className="modal__body analista-modal__body">
+                {vista === "evaluar" ? (
+                  <AnalistaEvaluarModule solicitudIdProp={seleccionada} />
+                ) : (
+                  <AnalistaDecisionModule solicitudIdProp={seleccionada} />
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       <footer className="admin-footer">Cooprestamos - Panel Analista - {new Date().getFullYear()}</footer>
