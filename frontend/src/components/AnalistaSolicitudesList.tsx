@@ -77,13 +77,18 @@ export default function AnalistaSolicitudesList({ onSelect }: Props) {
         {items.map((item) => (
           <button key={item.id} className="analista-list__row" onClick={() => onSelect(item.id)}>
             <div>
-              <p className="eyebrow">{item.estado ?? "estado"}</p>
-              <strong>{item.descripcion || "Sin descripcion"}</strong>
+              <p className="eyebrow">{(item.estado || "Pendiente").toUpperCase()}</p>
+              <strong>{item.descripcion?.trim() || "Sin descripción"}</strong>
               <p className="subtitle">ID: {item.id}</p>
+              {item.socio && (
+                <p className="subtitle">
+                  {item.socio.nombre_completo} · {item.socio.documento || "Sin doc"} · {item.socio.email || "Sin email"}
+                </p>
+              )}
             </div>
             <div className="analista-list__meta">
-              <span className="badge">{item.monto ?? "-"}</span>
-              <span className="subtitle">{item.socio?.nombre_completo ?? "Sin socio"}</span>
+              <span className="badge badge-info">{item.monto ?? "-"}</span>
+              <span className="subtitle">{item.plazo_meses ? `${item.plazo_meses} meses` : ""}</span>
             </div>
           </button>
         ))}

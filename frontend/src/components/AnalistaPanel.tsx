@@ -18,6 +18,7 @@ type SolicitudDetalle = {
     documento: string | null;
     email?: string | null;
     estado?: string;
+    fecha_alta?: string | null;
   } | null;
   analisis?: {
     recomendacion?: string;
@@ -25,9 +26,30 @@ type SolicitudDetalle = {
   };
 };
 
+type Politica = {
+  id: string;
+  nombre: string;
+  descripcion?: string;
+  score_minimo: number;
+  antiguedad_min_meses: number;
+  ratio_cuota_ingreso_max: string;
+};
+
 type Props = {
   usuario: any;
   onLogout: () => void;
+};
+
+const formatAntiguedad = (fechaAlta?: string | null) => {
+  if (!fechaAlta) return "Sin registro";
+  const alta = new Date(fechaAlta);
+  const hoy = new Date();
+  const diffMs = hoy.getTime() - alta.getTime();
+  const meses = Math.floor(diffMs / (1000 * 60 * 60 * 24 * 30));
+  const anos = Math.floor(meses / 12);
+  const restoMeses = meses % 12;
+  if (anos > 0) return `${anos} años ${restoMeses} meses`;
+  return `${meses} meses`;
 };
 
 const DetalleSolicitud = ({ detalle }: { detalle: SolicitudDetalle | null }) => {
@@ -63,6 +85,16 @@ const DetalleSolicitud = ({ detalle }: { detalle: SolicitudDetalle | null }) => 
             <p className="eyebrow">Estado</p>
             <span className="badge">{socio.estado ?? "N/D"}</span>
           </div>
+          <div>
+            <p className="eyebrow">Antigüedad</p>
+            <span className="subtitle">{formatAntiguedad(socio.fecha_alta)}</span>
+          </div>
+        </div>
+      )}
+      {solicitud.descripcion && (
+        <div className="analista-detail__row">
+          <p className="eyebrow">Descripción</p>
+          <p className="subtitle">{solicitud.descripcion}</p>
         </div>
       )}
       {solicitud.observaciones && (
@@ -266,7 +298,20 @@ const AnalistaDecisionModule = ({ solicitudIdProp }: { solicitudIdProp?: string 
 export default function AnalistaPanel({ usuario, onLogout }: Props) {
   const [vista, setVista] = useState<"evaluar" | "decidir">("evaluar");
   const [seleccionada, setSeleccionada] = useState<string | undefined>(undefined);
+  const [politicas, setPoliticas] = useState<Politica[]>([]);
   const nombreParaMostrar = usuario?.nombre ?? usuario?.email ?? "Analista";
+
+  useEffect(() => {
+    const fetchPoliticas = async () => {
+      try {
+        const { data } = await api.get<Politica[]>("politicas-aprobacion/public");
+        setPoliticas(data ?? []);
+      } catch (err) {
+        console.warn("No se pudieron cargar politicas", err);
+      }
+    };
+    void fetchPoliticas();
+  }, []);
 
   return (
     <div className="admin-shell analista-shell">
@@ -322,6 +367,26 @@ export default function AnalistaPanel({ usuario, onLogout }: Props) {
               <AnalistaDecisionModule solicitudIdProp={seleccionada} />
             )}
           </div>
+          {politicas.length > 0 && (
+            <div className="politicas-grid">
+              <h3>Políticas de aprobación</h3>
+              <p className="subtitle">Úsalas como referencia al evaluar.</p>
+              <div className="cards-grid">
+                {politicas.map((p) => (
+                  <article key={p.id} className="politica-card">
+                    <div className="politica-card__icon"><i className="bx bx-shield-quarter" aria-hidden /></div>
+                    <div>
+                      <h4>{p.nombre}</h4>
+                      <p className="subtitle">{p.descripcion || "Sin descripción"}</p>
+                      <p className="politica-meta">Score mínimo: {p.score_minimo}</p>
+                      <p className="politica-meta">Antigüedad mínima: {p.antiguedad_min_meses} meses</p>
+                      <p className="politica-meta">Ratio cuota/ingreso: {p.ratio_cuota_ingreso_max}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </main>
 

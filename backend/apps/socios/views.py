@@ -642,6 +642,7 @@ class SolicitudEvaluarView(APIView):
                 "documento": socio.documento,
                 "estado": socio.estado,
                 "email": socio.usuario.email if socio.usuario else None,
+                "fecha_alta": socio.fecha_alta,
             }
         return Response(data, status=status.HTTP_200_OK)
 
@@ -838,6 +839,7 @@ class SolicitudListView(APIView):
                         "documento": socio.documento,
                         "email": socio.usuario.email if socio and socio.usuario else None,
                         "estado": socio.estado if socio else None,
+                        "fecha_alta": socio.fecha_alta if socio else None,
                     } if socio else None,
                 }
             )
@@ -935,6 +937,16 @@ class PoliticaAprobacionDetailView(APIView):
             politica.activo = False
             politica.save(update_fields=['activo', 'updated_at'])
         return Response(PoliticaAprobacionSerializer(politica).data, status=status.HTTP_200_OK)
+
+
+class PoliticaAprobacionPublicListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        if not (_is_analista(request.user) or getattr(request.user, "is_staff", False)):
+            return Response({"detail": "No autorizado"}, status=status.HTTP_403_FORBIDDEN)
+        qs = PoliticaAprobacion.objects.filter(activo=True).order_by("nombre")
+        return Response(PoliticaAprobacionSerializer(qs, many=True).data)
 
 
 class SocioAdminDetailView(APIView):

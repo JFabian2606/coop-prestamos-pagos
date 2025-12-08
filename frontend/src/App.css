@@ -729,6 +729,7 @@ button.danger {
   background: #f9fbfb;
   cursor: pointer;
   text-align: left;
+  color: #0f172a;
 }
 
 .analista-list__row:hover {
@@ -747,4 +748,51 @@ button.danger {
   .analista-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.politicas-grid {
+  margin-top: 0.5rem;
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.politica-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.6rem;
+  padding: 0.75rem;
+  border: 1px solid #e4e7ec;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.politica-card__icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: #e3f4f2;
+  color: #2f7c76;
+}
+
+.politica-meta {
+  margin: 0.05rem 0;
+  color: #334155;
+  font-size: 13px;
+}
+
+.analista-detail .subtitle,
+.analista-card .subtitle {
+  color: #334155;
+}
+
+.analista-card input,
+.analista-card select,
+.analista-card textarea {
+  color: #0f172a;
 }
