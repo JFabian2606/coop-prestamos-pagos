@@ -597,6 +597,27 @@ def _obs_column(columnas: set[str]) -> str | None:
     return None
 
 
+def _desembolso_columnas() -> dict:
+    cols = get_table_columns("desembolso")
+    return {
+        "cols": cols,
+        "metodo": "metodo_pago" if "metodo_pago" in cols else ("metodo" if "metodo" in cols else None),
+        "fecha": "created_at" if "created_at" in cols else ("fecha" if "fecha" in cols else None),
+        "comentarios": "comentarios" if "comentarios" in cols else None,
+        "socio": "socio_id" if "socio_id" in cols else None,
+        "updated": "updated_at" if "updated_at" in cols else None,
+        "referencia": "referencia" if "referencia" in cols else None,
+    }
+
+
+def _fmt_uuid(val):
+    if isinstance(val, uuid.UUID):
+        return str(val)
+    if isinstance(val, str) and len(val) == 32 and val.count("-") == 0:
+        return f"{val[0:8]}-{val[8:12]}-{val[12:16]}-{val[16:20]}-{val[20:]}"
+    return val
+
+
 def _recomendacion_basica(socio: Socio | None, solicitud: dict) -> str:
     if not socio or socio.estado != Socio.ESTADO_ACTIVO:
         return "rechazar"
@@ -883,36 +904,153 @@ class DesembolsoListCreateView(APIView):
         forbidden = self._ensure_tesorero(request)
         if forbidden:
             return forbidden
-        qs = Desembolso.objects.select_related("prestamo", "socio").order_by("-created_at")
+        meta = _desembolso_columnas()
+        cols = ["id", "prestamo_id", "monto"]
+        if meta["metodo"]:
+            cols.append(meta["metodo"])
+        if meta["referencia"]:
+            cols.append(meta["referencia"])
+        if meta["comentarios"]:
+            cols.append(meta["comentarios"])
+        if meta["fecha"]:
+            cols.append(meta["fecha"])
+        if meta["updated"]:
+            cols.append(meta["updated"])
+        socio_join = meta["socio"] is not None
+        socio_cols = []
+        if socio_join:
+            socio_cols = ["nombre_completo", "documento", "email"]
+        select_cols = ", ".join([f"d.{c}" for c in cols])
+        table_name = "desembolso" if connection.vendor != "postgresql" else "public.desembolso"
+        sql = f"SELECT {select_cols}"
+        if socio_join:
+            sql += ", s.nombre_completo, s.documento, u.email"
+        sql += f" FROM {table_name} d"
+        if socio_join:
+            sql += " LEFT JOIN socio s ON s.id = d.socio_id LEFT JOIN usuario u ON u.id = s.usuario_id"
+        sql += " ORDER BY d.id DESC LIMIT 100"
+
         data = []
-        for d in qs[:100]:
-            data.append(
-                {
-                    "id": str(d.id),
-                    "monto": str(d.monto),
-                    "metodo_pago": d.metodo_pago,
-                    "referencia": d.referencia,
-                    "comentarios": d.comentarios,
-                    "created_at": d.created_at,
-                    "prestamo_id": str(d.prestamo_id),
-                    "socio": {
-                        "id": str(d.socio_id),
-                        "nombre_completo": d.socio.nombre_completo if d.socio else None,
-                        "documento": d.socio.documento if d.socio else None,
-                        "email": d.socio.usuario.email if d.socio and d.socio.usuario else None,
-                    },
+        with connection.cursor() as cursor:
+            cursor.execute(sql)
+            rows = cursor.fetchall()
+        for row in rows:
+            base = dict(zip([c.split(".")[-1] for c in cols], row[: len(cols)]))
+            record = {
+                "id": str(_fmt_uuid(base.get("id"))),
+                "prestamo_id": str(_fmt_uuid(base.get("prestamo_id"))),
+                "monto": str(base.get("monto")),
+                "metodo_pago": base.get(meta["metodo"]) if meta["metodo"] else None,
+                "referencia": base.get(meta["referencia"]) if meta["referencia"] else None,
+                "comentarios": base.get(meta["comentarios"]) if meta["comentarios"] else None,
+                "created_at": base.get(meta["fecha"]) if meta["fecha"] else None,
+                "updated_at": base.get(meta["updated"]) if meta["updated"] else None,
+                "socio": None,
+            }
+            if socio_join:
+                socio_data = row[len(cols) :]
+                record["socio"] = {
+                    "nombre_completo": socio_data[0],
+                    "documento": socio_data[1],
+                    "email": socio_data[2],
                 }
-            )
+            data.append(record)
         return Response({"results": data, "count": len(data)}, status=status.HTTP_200_OK)
 
     def post(self, request):
         forbidden = self._ensure_tesorero(request)
         if forbidden:
             return forbidden
-        serializer = DesembolsoSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        desembolso = serializer.save()
-        return Response(DesembolsoSerializer(desembolso).data, status=status.HTTP_201_CREATED)
+        meta = _desembolso_columnas()
+        prestamo_id = (request.data or {}).get("prestamo_id")
+        monto = (request.data or {}).get("monto")
+        metodo_pago = (request.data or {}).get("metodo_pago") or (request.data or {}).get("metodo")
+        referencia = (request.data or {}).get("referencia") or ""
+        comentarios = (request.data or {}).get("comentarios") or ""
+
+        if not prestamo_id or not monto or not metodo_pago:
+            return Response({"detail": "prestamo_id, monto y metodo_pago son obligatorios"}, status=status.HTTP_400_BAD_REQUEST)
+
+        prestamo = get_object_or_404(Prestamo, pk=prestamo_id)
+        estado = (prestamo.estado or "").lower()
+        if estado not in {"aprobado", Prestamo.Estados.ACTIVO, "activo"}:
+            return Response({"prestamo_id": "El préstamo no está aprobado/activo para desembolso."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            monto_decimal = Decimal(str(monto))
+        except Exception:
+            return Response({"monto": "Monto inválido."}, status=status.HTTP_400_BAD_REQUEST)
+        if prestamo.monto and monto_decimal > prestamo.monto:
+            return Response({"monto": "El monto excede el valor del préstamo."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Si la tabla coincide con el esquema del modelo (metodo_pago/created_at), usamos ORM
+        if meta["metodo"] == "metodo_pago" and meta["fecha"] == "created_at":
+            serializer = DesembolsoSerializer(data={
+                "prestamo_id": prestamo.id,
+                "monto": monto_decimal,
+                "metodo_pago": metodo_pago,
+                "referencia": referencia,
+                "comentarios": comentarios,
+            })
+            serializer.is_valid(raise_exception=True)
+            desembolso = serializer.save()
+            return Response(DesembolsoSerializer(desembolso).data, status=status.HTTP_201_CREATED)
+
+        payload = {
+            "id": uuid.uuid4(),
+            "prestamo_id": prestamo.id,
+            "monto": monto_decimal,
+        }
+        if meta["metodo"]:
+            payload[meta["metodo"]] = metodo_pago
+        if meta["referencia"]:
+            payload[meta["referencia"]] = referencia
+        if meta["comentarios"]:
+            payload[meta["comentarios"]] = comentarios
+        if meta["fecha"]:
+            payload[meta["fecha"]] = timezone.now()
+        if meta["updated"]:
+            payload[meta["updated"]] = timezone.now()
+        if meta["socio"]:
+            payload[meta["socio"]] = prestamo.socio_id
+
+        cols_presentes = [c for c in payload.keys() if c in meta["cols"] or c in {meta.get("fecha"), meta.get("metodo"), meta.get("referencia"), meta.get("comentarios"), meta.get("updated"), meta.get("socio")}]
+        placeholders = ", ".join(["%s"] * len(cols_presentes))
+        columnas_sql = ", ".join(cols_presentes)
+        valores = [payload[col] for col in cols_presentes]
+        if connection.vendor == "sqlite":
+            conv = []
+            for v in valores:
+                if isinstance(v, uuid.UUID):
+                    conv.append(str(v))
+                elif isinstance(v, Decimal):
+                    conv.append(float(v))
+                else:
+                    conv.append(v)
+            valores = conv
+        table_name = "desembolso" if connection.vendor != "postgresql" else "public.desembolso"
+        with connection.cursor() as cursor:
+            cursor.execute(
+                f"INSERT INTO {table_name} ({columnas_sql}) VALUES ({placeholders})",
+                valores,
+            )
+
+        return Response(
+            {
+                "id": str(payload["id"]),
+                "prestamo_id": str(prestamo.id),
+                "monto": str(monto_decimal),
+                "metodo_pago": metodo_pago,
+                "referencia": referencia,
+                "comentarios": comentarios if meta["comentarios"] else None,
+                "socio": {
+                    "id": str(prestamo.socio_id),
+                    "nombre_completo": prestamo.socio.nombre_completo if prestamo.socio else None,
+                    "documento": prestamo.socio.documento if prestamo.socio else None,
+                    "email": prestamo.socio.usuario.email if prestamo.socio and prestamo.socio.usuario else None,
+                } if meta["socio"] else None,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class PoliticaAprobacionListCreateView(APIView):
