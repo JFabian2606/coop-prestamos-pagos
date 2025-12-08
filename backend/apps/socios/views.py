@@ -565,6 +565,8 @@ def _fetch_solicitud_row(solicitud_id: uuid.UUID) -> tuple[dict, set[str]]:
 def _extraer_observaciones(row: dict) -> str:
     if "observaciones" in row:
         return row.get("observaciones") or ""
+    if "comentarios" in row:
+        return row.get("comentarios") or ""
     descripcion = row.get("descripcion") or ""
     marker = "[OBS_ANALISTA]"
     lines = []
@@ -580,6 +582,14 @@ def _adjuntar_observacion_en_descripcion(descripcion_actual: str, nueva_obs: str
         return base
     separator = "\n" if base else ""
     return f"{base}{separator}{marker} {nueva_obs.strip()}"
+
+
+def _obs_column(columnas: set[str]) -> str | None:
+    if "observaciones" in columnas:
+        return "observaciones"
+    if "comentarios" in columnas:
+        return "comentarios"
+    return None
 
 
 def _recomendacion_basica(socio: Socio | None, solicitud: dict) -> str:
@@ -663,12 +673,13 @@ class SolicitudEvaluarView(APIView):
             return Response({"detail": "Debe enviar observaciones o recomendacion."}, status=status.HTTP_400_BAD_REQUEST)
 
         solicitud, columnas = _fetch_solicitud_row(solicitud_id)
+        obs_col = _obs_column(columnas)
         updates = {}
         descripcion_actual = solicitud.get("descripcion") or ""
         now = timezone.now()
         if observaciones:
-            if "observaciones" in columnas:
-                updates["observaciones"] = observaciones
+            if obs_col:
+                updates[obs_col] = observaciones
             else:
                 updates["descripcion"] = _adjuntar_observacion_en_descripcion(descripcion_actual, observaciones)
         if recomendacion_req:
@@ -731,8 +742,9 @@ class SolicitudDecisionBaseView(APIView):
         now = timezone.now()
 
         updates = {"estado": self.nuevo_estado, "updated_at": now}
-        if "observaciones" in columnas and comentario:
-            updates["observaciones"] = comentario
+        obs_col = _obs_column(columnas)
+        if obs_col and comentario:
+            updates[obs_col] = comentario
         elif comentario:
             updates["descripcion"] = _adjuntar_observacion_en_descripcion(descripcion_actual, comentario, marker="[DECISION]")
 
@@ -826,6 +838,7 @@ class SolicitudListView(APIView):
         for row in rows:
             data = dict(zip(select_cols, row))
             socio = Socio.objects.filter(pk=data.get("socio_id")).select_related("usuario").first()
+            obs_col = _obs_column(columnas)
             results.append(
                 {
                     "id": str(data.get("id")),
@@ -833,7 +846,7 @@ class SolicitudListView(APIView):
                     "monto": str(data.get("monto")),
                     "plazo_meses": data.get("plazo_meses"),
                     "descripcion": data.get("descripcion"),
-                    "observaciones": data.get("observaciones") if "observaciones" in data else _extraer_observaciones(data),
+                    "observaciones": data.get(obs_col) if obs_col and obs_col in data else _extraer_observaciones(data),
                     "created_at": data.get("created_at"),
                     "socio": {
                         "id": str(socio.id),
