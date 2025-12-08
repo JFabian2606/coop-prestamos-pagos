@@ -611,3 +611,95 @@ button.danger {
     width: 92%;
   }
 }
+
+/* Analista */
+.analista-shell {
+  background: #eef3f4;
+}
+
+.analista-modules {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.analista-card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1rem 1.1rem;
+  box-shadow: 0 8px 18px rgba(31, 41, 51, 0.06);
+}
+
+.analista-card__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.analista-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.analista-input {
+  border: 1px solid #d0d5dd;
+  border-radius: 10px;
+  padding: 0.45rem 0.75rem;
+  min-width: 220px;
+}
+
+.analista-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.analista-form textarea {
+  border: 1px solid #d0d5dd;
+  border-radius: 10px;
+  padding: 0.65rem 0.75rem;
+  font: inherit;
+}
+
+.analista-detail {
+  border: 1px dashed #d0d5dd;
+  border-radius: 12px;
+  padding: 0.75rem 0.9rem;
+  background: #f9fbfb;
+  margin-top: 0.35rem;
+}
+
+.analista-detail__row {
+  margin-bottom: 0.5rem;
+}
+
+.analista-detail__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.5rem;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: #e3f4f2;
+  color: #2f7c76;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.badge-info {
+  background: #eaf1ff;
+  color: #0b6efb;
+}
+
+.analista-card .alert {
+  margin-top: 0.35rem;
+}

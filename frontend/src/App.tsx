@@ -9,6 +9,7 @@ import PoliticasAprobacion from "./components/PoliticasAprobacion";
 import LandingHome from "./components/LandingHome";
 import SolicitudPrestamo from "./components/SolicitudPrestamo";
 import UsuariosRoles from "./components/UsuariosRoles";
+import AnalistaPanel from "./components/AnalistaPanel";
 import type { SocioDto } from "./components/SociosViewer";
 import logo from "./assets/solo-logo-cooprestamos-vector.svg";
 import avatarFallback from "./assets/solo-logo-cooprestamos-vector.svg";
@@ -122,13 +123,21 @@ function App() {
     return <LoginRegistro />;
   }
 
-  // Si el usuario no es staff/admin, mostramos la landing pública para socios.
-  if (!usuario?.is_staff) {
+  const rolNombre = (usuario?.rol ?? "").toString();
+  const isAnalista = rolNombre.toUpperCase() === "ANALISTA";
+  const isAdmin = Boolean(usuario?.is_staff);
+
+  // Si el usuario no es staff/admin ni analista, mostramos la landing pública para socios.
+  if (!isAdmin && !isAnalista) {
     return vistaSocio === "solicitud" ? (
       <SolicitudPrestamo usuario={usuario} onVolver={() => setVistaSocio("landing")} />
     ) : (
       <LandingHome onSolicitar={() => setVistaSocio("solicitud")} onLogout={handleLogout} />
     );
+  }
+
+  if (isAnalista && !isAdmin) {
+    return <AnalistaPanel usuario={usuario} onLogout={handleLogout} />;
   }
 
   type Accion = {
