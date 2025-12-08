@@ -168,7 +168,7 @@ export default function TesoreroPanel({ usuario, onLogout }: Props) {
             <h3>Nuevo desembolso</h3>
             <form className="tesorero-form" onSubmit={handleSubmit}>
               <label>
-                <span>ID de pr?stamo</span>
+                <span>ID de préstamo</span>
                 <input
                   type="text"
                   value={form.prestamo_id}
@@ -188,7 +188,7 @@ export default function TesoreroPanel({ usuario, onLogout }: Props) {
                 />
               </label>
               <label>
-                <span>M?todo de pago</span>
+                <span>Método de pago</span>
                 <select
                   value={form.metodo_pago}
                   onChange={(e) => setForm((prev) => ({ ...prev, metodo_pago: e.target.value }))}
@@ -249,17 +249,17 @@ export default function TesoreroPanel({ usuario, onLogout }: Props) {
               </div>
               {aprobadosError && <div className="alert error">{aprobadosError}</div>}
               {loadingAprobados && <p className="muted">Cargando aprobados...</p>}
-              {!loadingAprobados && aprobados.length === 0 && <p className="muted">No hay pr?stamos aprobados/activos.</p>}
+              {!loadingAprobados && aprobados.length === 0 && <p className="muted">No hay préstamos aprobados/activos.</p>}
               <div className="analista-list">
                 {aprobados.map((p) => (
                   <button type="button" key={p.id} className="analista-list__row" onClick={() => usarAprobado(p)}>
                     <div>
                       <p className="eyebrow">{(p.estado || "aprobado").toUpperCase()}</p>
-                      <strong>{p.descripcion?.trim() || "Pr?stamo aprobado"}</strong>
+                      <strong>{p.descripcion?.trim() || "Préstamo aprobado"}</strong>
                       <p className="subtitle">ID: {p.id}</p>
                       {p.socio && (
                         <p className="subtitle">
-                          {p.socio.nombre_completo} ? {p.socio.documento || "Sin doc"} ? {p.socio.email || "Sin email"}
+                          {p.socio.nombre_completo} · {p.socio.documento || "Sin doc"} · {p.socio.email || "Sin email"}
                         </p>
                       )}
                     </div>
@@ -281,7 +281,7 @@ export default function TesoreroPanel({ usuario, onLogout }: Props) {
                     <div>
                       <p className="eyebrow">{d.metodo_pago}</p>
                       <h4>{d.monto}</h4>
-                      <p className="subtitle">Pr?stamo: {d.prestamo_id}</p>
+                    <p className="subtitle">Préstamo: {d.prestamo_id}</p>
                       {d.referencia && <p className="subtitle">Ref: {d.referencia}</p>}
                       {d.comentarios && <p className="subtitle">Nota: {d.comentarios}</p>}
                     </div>
