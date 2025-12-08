@@ -1,0 +1,9 @@
+Comando: python manage.py test apps.usuarios.tests -v 2
+Resultado:
+  Ran 3 tests in 5.246s
+  OK
+
+Pruebas:
+  - test_roles_list_requires_admin ... OK
+  - test_patch_role_updates_user_and_staff_flag ... OK
+  - test_patch_role_requires_admin_and_valid_role ... OK

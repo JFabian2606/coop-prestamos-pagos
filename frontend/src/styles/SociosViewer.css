@@ -91,6 +91,11 @@
   overflow: hidden;
 }
 
+.usuarios-table {
+  overflow: visible;
+  position: relative;
+}
+
 .socios-table__head {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr;
@@ -108,15 +113,22 @@
   flex-direction: column;
 }
 
+.usuarios-table .socios-table__body {
+  overflow: auto;
+}
+
 .socios-row {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr;
-  padding: 0.85rem 1rem;
+  padding: 1rem 1.2rem;
   text-align: left;
   border: none;
   border-bottom: 1px solid #f2f4f7;
   background: white;
   border-radius: 0;
+  align-items: center;
+  column-gap: 1rem;
+  position: relative;
 }
 
 .socios-row span {
@@ -124,11 +136,39 @@
   flex-direction: column;
   gap: 2px;
   color: #101828;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .socios-row small {
   color: #667085;
   font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.usuarios-table .socios-table__head {
+  grid-template-columns: 2fr 2fr 1fr 1fr;
+}
+
+.usuarios-table .socios-row {
+  grid-template-columns: 2fr 2fr 1fr 1fr;
+  overflow: visible;
+}
+
+.usuarios-table .socios-row.menu-open {
+  z-index: 80;
+}
+
+.usuarios-table .rol-cell {
+  overflow: visible;
+}
+
+.usuarios-table .estado-pill--action {
+  min-width: 120px;
+  justify-content: center;
+  padding: 0.35rem 1rem;
 }
 
 .socios-row:hover {
@@ -144,16 +184,19 @@
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  padding: 0.25rem 0.75rem;
+  padding: 0.35rem 0.9rem;
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: capitalize;
+  min-width: 110px;
 }
 
 .estado-pill--action {
   cursor: pointer;
   gap: 0.35rem;
-  border: 1px solid transparent;
+  border: 1px solid #0f766e;
+  background: #e2f3ed;
+  color: #0f766e;
 }
 
 .estado-pill--action:disabled {
@@ -172,13 +215,15 @@
 }
 
 .estado-pill--activo {
-  background: rgba(2, 122, 72, 0.12);
-  color: #027a48;
+  background: #d6eae1;
+  color: #1d8250;
+  border: 1px solid #b7d8c8;
 }
 
 .estado-pill--inactivo {
-  background: rgba(102, 112, 133, 0.12);
-  color: #475467;
+  background: #e7e8ee;
+  color: #4b5563;
+  border: 1px solid #d5d7df;
 }
 
 .estado-pill--suspendido {
@@ -189,6 +234,7 @@
 .estado-control {
   position: relative;
   display: inline-flex;
+  z-index: 5;
 }
 
 .estado-menu {
@@ -201,7 +247,7 @@
   box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
   padding: 0.4rem;
   min-width: 180px;
-  z-index: 10;
+  z-index: 100;
 }
 
 .estado-menu__label {

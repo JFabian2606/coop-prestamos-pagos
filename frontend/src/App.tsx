@@ -8,6 +8,7 @@ import TiposPrestamo from "./components/TiposPrestamo";
 import PoliticasAprobacion from "./components/PoliticasAprobacion";
 import LandingHome from "./components/LandingHome";
 import SolicitudPrestamo from "./components/SolicitudPrestamo";
+import UsuariosRoles from "./components/UsuariosRoles";
 import type { SocioDto } from "./components/SociosViewer";
 import logo from "./assets/solo-logo-cooprestamos-vector.svg";
 import avatarFallback from "./assets/solo-logo-cooprestamos-vector.svg";
@@ -39,7 +40,7 @@ const Loader = () => (
 function App() {
   const [usuario, setUsuario] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [vistaActiva, setVistaActiva] = useState<"home" | "socios" | "historial" | "tipos" | "configuracion" | "landing">("home");
+  const [vistaActiva, setVistaActiva] = useState<"home" | "socios" | "historial" | "tipos" | "configuracion" | "usuarios" | "landing">("home");
   const [vistaSocio, setVistaSocio] = useState<"landing" | "solicitud">("landing");
   const [ultimosSocios, setUltimosSocios] = useState<SocioDto[]>([]);
   const [ultimosPrestamos, setUltimosPrestamos] = useState<any[]>([]);
@@ -197,6 +198,8 @@ function App() {
       descripcion: "Credenciales y permisos internos.",
       icono: "bx-user-circle",
       variante: "outline",
+      onClick: () => setVistaActiva("usuarios"),
+      cta: "Ver roles",
     },
   ];
 
@@ -470,6 +473,23 @@ function App() {
             </div>
           </div>
           <PoliticasAprobacion />
+        </main>
+      ) : vistaActiva === "usuarios" ? (
+        <main className="admin-container">
+          <div className="page-header">
+            <div>
+              <p className="eyebrow">Usuarios</p>
+              <h1>Roles y permisos</h1>
+              <p className="subtitle">Asignar rol (socio, cajero, analista, admin) a cada cuenta.</p>
+            </div>
+            <div className="header-meta">
+              <button className="ghost" onClick={() => setVistaActiva("home")}>
+                <i className="bx bx-chevron-left" aria-hidden="true" />
+                Volver al inicio
+              </button>
+            </div>
+          </div>
+          <UsuariosRoles />
         </main>
       ) : vistaActiva === "landing" ? (
         <LandingHome />

@@ -1,1 +1,1 @@
-# Package de tests para la app de usuarios
+"""Paquete de pruebas para el app de usuarios."""
