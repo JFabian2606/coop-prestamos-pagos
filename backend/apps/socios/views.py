@@ -659,6 +659,7 @@ def _desembolso_columnas() -> dict:
         "fecha": "created_at" if "created_at" in cols else ("fecha" if "fecha" in cols else None),
         "comentarios": "comentarios" if "comentarios" in cols else None,
         "socio": "socio_id" if "socio_id" in cols else None,
+        "tesorero": "tesorero_id" if "tesorero_id" in cols else None,
         "updated": "updated_at" if "updated_at" in cols else None,
         "referencia": "referencia" if "referencia" in cols else None,
     }
@@ -1135,6 +1136,8 @@ class DesembolsoListCreateView(APIView):
             payload[meta["updated"]] = timezone.now()
         if meta["socio"]:
             payload[meta["socio"]] = prestamo.socio_id
+        if meta.get("tesorero"):
+            payload[meta["tesorero"]] = getattr(request.user, "id", None)
 
         cols_presentes = [c for c in payload.keys() if c in meta["cols"] or c in {meta.get("fecha"), meta.get("metodo"), meta.get("referencia"), meta.get("comentarios"), meta.get("updated"), meta.get("socio")}]
         placeholders = ", ".join(["%s"] * len(cols_presentes))
