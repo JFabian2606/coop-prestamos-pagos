@@ -809,9 +809,13 @@ button.danger {
 
 .analista-tabs {
   display: flex;
-  gap: 0.35rem;
+  gap: 0.6rem;
   align-items: center;
   margin-left: auto;
+}
+
+.analista-modal .close-button {
+  margin-left: 0.6rem;
 }
 
 .tab-active {

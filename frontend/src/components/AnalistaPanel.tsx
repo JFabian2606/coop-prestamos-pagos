@@ -164,17 +164,6 @@ const AnalistaEvaluarModule = ({ solicitudIdProp }: { solicitudIdProp?: string }
           <p className="eyebrow">Evaluar solicitud</p>
           <h2>Revisar datos y agregar observaciones</h2>
         </div>
-        <div className="analista-actions">
-          <input
-            className="analista-input"
-            placeholder="ID de solicitud"
-            value={solicitudId}
-            onChange={(e) => setSolicitudId(e.target.value)}
-          />
-          <button onClick={() => void buscar()} disabled={loading || !solicitudId}>
-            {loading ? "Cargando..." : "Buscar"}
-          </button>
-        </div>
       </div>
       {error && <div className="alert error">{error}</div>}
       {ok && <div className="alert success">{ok}</div>}
@@ -260,17 +249,6 @@ const AnalistaDecisionModule = ({ solicitudIdProp }: { solicitudIdProp?: string 
         <div>
           <p className="eyebrow">Aprobar / Rechazar</p>
           <h2>Decidir con comentario</h2>
-        </div>
-        <div className="analista-actions">
-          <input
-            className="analista-input"
-            placeholder="ID de solicitud"
-            value={solicitudId}
-            onChange={(e) => setSolicitudId(e.target.value)}
-          />
-          <button onClick={() => void buscar()} disabled={loading || !solicitudId}>
-            {loading ? "Cargando..." : "Buscar"}
-          </button>
         </div>
       </div>
       {error && <div className="alert error">{error}</div>}
