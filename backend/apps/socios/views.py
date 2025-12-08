@@ -9,7 +9,7 @@ from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db import connection
-from django.db.models import Q
+from django.db.models import Q, Count
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
@@ -910,7 +910,12 @@ class PrestamosAprobadosListView(APIView):
         estados_permitidos = {"aprobado", Prestamo.Estados.ACTIVO, "activo"}
         qs = (
             Prestamo.objects.select_related("socio", "socio__usuario")
+            .annotate(
+                desembolsos_count=Count("desembolsos"),
+                pagos_count=Count("pagos"),
+            )
             .filter(estado__in=estados_permitidos)
+            .filter(desembolsos_count=0, pagos_count=0)
             .order_by("-created_at")
         )
         if q:

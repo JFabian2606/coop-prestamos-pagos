@@ -6,7 +6,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from apps.socios.models import Prestamo, Socio, TipoPrestamo, Desembolso
+from apps.socios.models import Prestamo, Socio, TipoPrestamo, Desembolso, Pago
 from apps.usuarios.models import Usuario, Rol
 
 
@@ -91,8 +91,47 @@ class DesembolsoApiTests(TestCase):
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("prestamo_id", resp.data)
 
+    def test_prestamos_aprobados_excluye_con_desembolso(self):
+        prestamo_sin_desembolso = Prestamo.objects.create(
+            socio=self.socio,
+            tipo=self.prestamo.tipo,
+            monto=Decimal("750000.00"),
+            tasa_interes=Decimal("5.0"),
+            estado=Prestamo.Estados.ACTIVO,
+            fecha_desembolso=date.today(),
+        )
+        prestamo_con_pago = Prestamo.objects.create(
+            socio=self.socio,
+            tipo=self.prestamo.tipo,
+            monto=Decimal("500000.00"),
+            tasa_interes=Decimal("5.0"),
+            estado=Prestamo.Estados.ACTIVO,
+            fecha_desembolso=date.today(),
+        )
+        Pago.objects.create(
+            prestamo=prestamo_con_pago,
+            monto=Decimal("10000.00"),
+            fecha_pago=date.today(),
+            metodo="efectivo",
+            referencia="pago prueba",
+        )
+        Desembolso.objects.create(
+            prestamo=self.prestamo,
+            socio=self.socio,
+            monto=Decimal("1234.00"),
+            metodo_pago="efectivo",
+            referencia="ya pagado",
+        )
+        url = reverse("prestamos-aprobados")
+        self.client.force_authenticate(user=self.tesorero)
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        ids = {item["id"] for item in resp.data["results"]}
+        self.assertIn(str(prestamo_sin_desembolso.id), ids)
+        self.assertNotIn(str(self.prestamo.id), ids)
+        self.assertNotIn(str(prestamo_con_pago.id), ids)
+
     def test_get_listado_con_tesorero(self):
-        # crea uno
         Desembolso.objects.create(
             prestamo=self.prestamo,
             socio=self.socio,
