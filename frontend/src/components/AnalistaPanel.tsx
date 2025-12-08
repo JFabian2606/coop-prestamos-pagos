@@ -318,12 +318,6 @@ export default function AnalistaPanel({ usuario, onLogout }: Props) {
               <p className="user-chip__name">{nombreParaMostrar}</p>
             </div>
           </div>
-          <button className="ghost" onClick={() => setVista("evaluar")}>
-            Evaluar
-          </button>
-          <button className="ghost" onClick={() => setVista("decidir")}>
-            Aprobar/Rechazar
-          </button>
           <button className="danger" onClick={onLogout}>
             Cerrar sesion
           </button>
@@ -342,12 +336,6 @@ export default function AnalistaPanel({ usuario, onLogout }: Props) {
         </div>
 
         <div className="analista-modules">
-          <AnalistaSolicitudesList
-            onSelect={(id) => {
-              setSeleccionada(id);
-              setShowModal(true);
-            }}
-          />
           {politicas.length > 0 && (
             <div className="politicas-grid">
               <h3>Políticas de aprobación</h3>
@@ -368,6 +356,12 @@ export default function AnalistaPanel({ usuario, onLogout }: Props) {
               </div>
             </div>
           )}
+          <AnalistaSolicitudesList
+            onSelect={(id) => {
+              setSeleccionada(id);
+              setShowModal(true);
+            }}
+          />
         </div>
 
         {showModal && (

@@ -820,5 +820,7 @@ button.danger {
 
 .tab-active {
   border-color: #2f7c76;
-  color: #2f7c76;
+  background: #2f7c76;
+  color: #fff;
+  box-shadow: 0 6px 14px rgba(47, 124, 118, 0.14);
 }
