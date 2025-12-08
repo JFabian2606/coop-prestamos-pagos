@@ -8,7 +8,7 @@ from datetime import datetime, date
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.db import connection
+from django.db import connection, transaction
 from django.db.models import Q, Count
 from django.db.models.functions import Lower, Trim
 from openpyxl import Workbook
@@ -598,6 +598,59 @@ def _obs_column(columnas: set[str]) -> str | None:
     return None
 
 
+def _crear_prestamo_desde_solicitud_row(solicitud_row: dict):
+    """
+    Genera un registro en prestamo usando los datos de la solicitud aprobada.
+    Devuelve (prestamo, error:str|None). Usa el id de la solicitud para mantener trazabilidad/idempotencia.
+    """
+    solicitud_id = solicitud_row.get("id")
+    socio_id = solicitud_row.get("socio_id")
+    if not socio_id:
+        return None, "La solicitud no tiene socio asociado."
+    socio = Socio.objects.filter(pk=socio_id).first()
+    if not socio:
+        return None, "No se encontró el socio asociado a la solicitud."
+
+    # Evita duplicar si ya existe el préstamo con ese id
+    if solicitud_id and Prestamo.objects.filter(pk=solicitud_id).exists():
+        return Prestamo.objects.get(pk=solicitud_id), None
+
+    tipo_id = solicitud_row.get("tipo_prestamo_id") or solicitud_row.get("producto_id")
+    tipo = TipoPrestamo.objects.filter(pk=tipo_id).first() if tipo_id else None
+
+    try:
+        monto = Decimal(str(solicitud_row.get("monto") or "0"))
+    except Exception:
+        return None, "Monto de solicitud inválido."
+
+    try:
+        tasa = Decimal(str(solicitud_row.get("tasa_interes") or "0"))
+    except Exception:
+        tasa = Decimal("0")
+
+    plazo_raw = solicitud_row.get("plazo_meses")
+    try:
+        plazo_meses = int(plazo_raw) if plazo_raw is not None else None
+    except (TypeError, ValueError):
+        plazo_meses = None
+
+    fecha_desembolso = timezone.now().date()
+    fecha_vencimiento = add_months(fecha_desembolso, plazo_meses) if plazo_meses else None
+
+    prestamo = Prestamo.objects.create(
+        id=solicitud_id or uuid.uuid4(),
+        socio=socio,
+        tipo=tipo,
+        monto=monto,
+        tasa_interes=tasa,
+        estado="aprobado",
+        fecha_desembolso=fecha_desembolso,
+        fecha_vencimiento=fecha_vencimiento,
+        descripcion=solicitud_row.get("descripcion") or "",
+    )
+    return prestamo, None
+
+
 def _desembolso_columnas() -> dict:
     cols = get_table_columns("desembolso")
     return {
@@ -790,14 +843,23 @@ class SolicitudDecisionBaseView(APIView):
 
         values.append(str(solicitud_id))
         table_name = "solicitud" if connection.vendor != "postgresql" else "public.solicitud"
-        with connection.cursor() as cursor:
-            cursor.execute(
-                f"UPDATE {table_name} SET {', '.join(set_parts)} WHERE id = %s",
-                values,
-            )
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    f"UPDATE {table_name} SET {', '.join(set_parts)} WHERE id = %s",
+                    values,
+                )
 
-        solicitud_actualizada, _ = _fetch_solicitud_row(solicitud_id)
-        socio = Socio.objects.filter(pk=solicitud.get("socio_id")).first()
+            solicitud_actualizada, _ = _fetch_solicitud_row(solicitud_id)
+            prestamo_id = None
+            if self.nuevo_estado == "aprobado":
+                prestamo, error = _crear_prestamo_desde_solicitud_row(solicitud_actualizada)
+                if error:
+                    raise ValidationError({"detail": error})
+                if prestamo:
+                    prestamo_id = str(prestamo.id)
+
+        socio = Socio.objects.filter(pk=solicitud_actualizada.get("socio_id")).first()
         notificacion = None
         if socio and getattr(socio, "usuario", None) and socio.usuario.email:
             notificacion = f"Notificar a {socio.usuario.email} sobre estado {self.nuevo_estado}"
@@ -808,6 +870,7 @@ class SolicitudDecisionBaseView(APIView):
                 "estado": solicitud_actualizada.get("estado"),
                 "comentario": comentario,
                 "notificacion": notificacion,
+                "prestamo_id": prestamo_id,
             },
             status=status.HTTP_200_OK,
         )
