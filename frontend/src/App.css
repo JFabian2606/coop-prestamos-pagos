@@ -828,3 +828,11 @@ button.danger {
 .analista-tabs .tab-active i {
   color: #fff;
 }
+
+@media (max-width: 640px) {
+  .analista-modal {
+    width: 95vw;
+    max-height: 90vh;
+    margin: 0 auto;
+  }
+}

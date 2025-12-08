@@ -725,6 +725,8 @@ class SolicitudDecisionBaseView(APIView):
         comentario = (request.data or {}).get("comentario") or ""
 
         solicitud, columnas = _fetch_solicitud_row(solicitud_id)
+        if "estado" not in columnas:
+            return Response({"detail": "La tabla de solicitudes no tiene columna 'estado'."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         descripcion_actual = solicitud.get("descripcion") or ""
         now = timezone.now()
 
