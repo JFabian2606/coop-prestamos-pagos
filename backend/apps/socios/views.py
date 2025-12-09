@@ -997,10 +997,17 @@ def _crear_prestamo_desde_solicitud_row(solicitud_row: dict):
 
 def _desembolso_columnas() -> dict:
     cols = get_table_columns("desembolso")
+    fecha_col = None
+    if "created_at" in cols:
+        fecha_col = "created_at"
+    elif "fecha" in cols:
+        fecha_col = "fecha"
+    elif "updated_at" in cols:
+        fecha_col = "updated_at"
     return {
         "cols": cols,
         "metodo": "metodo_pago" if "metodo_pago" in cols else ("metodo" if "metodo" in cols else None),
-        "fecha": "created_at" if "created_at" in cols else ("fecha" if "fecha" in cols else None),
+        "fecha": fecha_col,
         "comentarios": "comentarios" if "comentarios" in cols else None,
         "socio": "socio_id" if "socio_id" in cols else None,
         "tesorero": "tesorero_id" if "tesorero_id" in cols else None,
@@ -1016,6 +1023,10 @@ def _desembolso_prefetch() -> tuple[Prefetch | None, dict]:
     qs = Desembolso.objects.all()
     if not meta["comentarios"]:
         qs = qs.defer("comentarios")
+    if meta["fecha"] and meta["fecha"] != "created_at":
+        qs = qs.order_by(f"-{meta['fecha']}")
+    elif not meta["fecha"]:
+        qs = qs.order_by()  # remove default ordering that expects created_at
     return Prefetch("desembolsos", queryset=qs), meta
 
 
