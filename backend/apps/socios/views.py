@@ -10,7 +10,7 @@ from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db import connection, transaction
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Prefetch
 from django.db.models.functions import Lower, Trim
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
@@ -537,11 +537,16 @@ class MisPrestamosSocioView(APIView):
         if not socio:
             return Response({"detail": "Perfil de socio no encontrado."}, status=status.HTTP_404_NOT_FOUND)
 
+        desembolso_prefetch, desembolso_meta = _desembolso_prefetch()
+        prefetches = ["pagos"]
+        if desembolso_prefetch:
+            prefetches.append(desembolso_prefetch)
+
         solicitudes = {str(row.get("id")): row for row in _solicitudes_por_socio(socio.id, limit=100)}
         prestamos_qs = (
             Prestamo.objects.filter(socio=socio)
             .select_related("tipo")
-            .prefetch_related("pagos", "desembolsos")
+            .prefetch_related(*prefetches)
             .order_by("-fecha_desembolso", "-created_at")
         )
 
@@ -564,7 +569,7 @@ class MisPrestamosSocioView(APIView):
         for prestamo in prestamos_qs:
             solicitud = solicitudes.pop(str(prestamo.id), None)
             pagos = list(prestamo.pagos.all())
-            desembolsos = list(prestamo.desembolsos.all())
+            desembolsos = list(prestamo.desembolsos.all()) if desembolso_meta["cols"] else []
             plan_info = _plan_cliente_para_prestamo(prestamo, solicitud)
             total_pagado = sum((p.monto for p in pagos), Decimal("0"))
             saldo = prestamo.monto - total_pagado
@@ -675,16 +680,21 @@ class PagoSimuladoView(APIView):
         if not socio:
             return Response({"detail": "Perfil de socio no encontrado."}, status=status.HTTP_404_NOT_FOUND)
 
+        desembolso_prefetch, desembolso_meta = _desembolso_prefetch()
+        prefetches = ["pagos"]
+        if desembolso_prefetch:
+            prefetches.append(desembolso_prefetch)
+
         prestamo = (
             Prestamo.objects.filter(pk=prestamo_id, socio=socio)
             .select_related("tipo")
-            .prefetch_related("pagos", "desembolsos")
+            .prefetch_related(*prefetches)
             .first()
         )
         if not prestamo:
             raise Http404("Prestamo no encontrado.")
 
-        desembolsos = list(prestamo.desembolsos.all())
+        desembolsos = list(prestamo.desembolsos.all()) if desembolso_meta["cols"] else []
         if not desembolsos:
             return Response({"detail": "El prestamo aun no esta desembolsado."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -997,6 +1007,16 @@ def _desembolso_columnas() -> dict:
         "updated": "updated_at" if "updated_at" in cols else None,
         "referencia": "referencia" if "referencia" in cols else None,
     }
+
+
+def _desembolso_prefetch() -> tuple[Prefetch | None, dict]:
+    meta = _desembolso_columnas()
+    if not meta["cols"]:
+        return None, meta
+    qs = Desembolso.objects.all()
+    if not meta["comentarios"]:
+        qs = qs.defer("comentarios")
+    return Prefetch("desembolsos", queryset=qs), meta
 
 
 def _fmt_uuid(val):
@@ -1440,8 +1460,14 @@ class DesembolsoListCreateView(APIView):
         if prestamo.monto and monto_decimal > prestamo.monto:
             return Response({"monto": "El monto excede el valor del préstamo."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Si la tabla coincide con el esquema del modelo (metodo_pago/created_at), usamos ORM
-        if meta["metodo"] == "metodo_pago" and meta["fecha"] == "created_at":
+        # Si la tabla coincide con el esquema del modelo (metodo_pago/created_at y columnas clave), usamos ORM
+        can_use_orm = (
+            meta["metodo"] == "metodo_pago"
+            and meta["fecha"] == "created_at"
+            and meta["comentarios"] == "comentarios"
+            and meta["socio"] == "socio_id"
+        )
+        if can_use_orm:
             serializer = DesembolsoSerializer(data={
                 "prestamo_id": prestamo.id,
                 "monto": monto_decimal,
