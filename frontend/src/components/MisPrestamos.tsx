@@ -341,6 +341,8 @@ export default function MisPrestamos({ onVolver, onSolicitar, usuario }: MisPres
             {prestamosFiltrados.map((prestamo) => {
               const puedePagarEste = puedePagar(prestamo);
               const moraInfo = calcularMora(prestamo);
+              const saldoActual = toNumber(prestamo.saldo_pendiente || prestamo.monto);
+              const saldoProximo = moraInfo.tieneSaldo ? saldoActual * (1 + PENALIDAD_MORA_MENSUAL) : 0;
               return (
                 <article key={prestamo.id} className="prestamo-card">
                   <header className="prestamo-head">
@@ -391,6 +393,11 @@ export default function MisPrestamos({ onVolver, onSolicitar, usuario }: MisPres
                     {moraInfo.tieneSaldo && (
                       <p className="mora-small">
                         No pagar este mes incrementa +{(PENALIDAD_MORA_MENSUAL * 100).toFixed(1)}% (total seria +{(moraInfo.penalidadProxima * 100).toFixed(1)}%).
+                      </p>
+                    )}
+                    {moraInfo.tieneSaldo && (
+                      <p className="mora-forecast">
+                        Proximo mes seria: {currency.format(saldoProximo)} con el +{(PENALIDAD_MORA_MENSUAL * 100).toFixed(1)}% aplicado.
                       </p>
                     )}
                   </div>

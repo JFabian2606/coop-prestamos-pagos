@@ -281,6 +281,12 @@
   font-size: 12px;
 }
 
+.mora-forecast {
+  margin: 0;
+  font-weight: 700;
+  color: #111827;
+}
+
 .empty-state {
   border: 1px dashed #cbd5e1;
   background: #f8fafc;
