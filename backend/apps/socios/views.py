@@ -1021,6 +1021,8 @@ def _desembolso_prefetch() -> tuple[Prefetch | None, dict]:
     if not meta["cols"]:
         return None, meta
     qs = Desembolso.objects.all()
+    if "created_at" not in meta["cols"]:
+        qs = qs.defer("created_at")
     if not meta["comentarios"]:
         qs = qs.defer("comentarios")
     # Solo ordenamos si la columna existe como campo del modelo (created_at)
