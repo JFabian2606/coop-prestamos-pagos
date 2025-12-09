@@ -1000,10 +1000,10 @@ def _desembolso_columnas() -> dict:
     fecha_col = None
     if "created_at" in cols:
         fecha_col = "created_at"
-    elif "fecha" in cols:
-        fecha_col = "fecha"
     elif "updated_at" in cols:
         fecha_col = "updated_at"
+    elif "fecha" in cols:
+        fecha_col = "fecha"
     return {
         "cols": cols,
         "metodo": "metodo_pago" if "metodo_pago" in cols else ("metodo" if "metodo" in cols else None),
@@ -1023,10 +1023,11 @@ def _desembolso_prefetch() -> tuple[Prefetch | None, dict]:
     qs = Desembolso.objects.all()
     if not meta["comentarios"]:
         qs = qs.defer("comentarios")
-    if meta["fecha"] and meta["fecha"] != "created_at":
+    allowed_order = {"created_at", "updated_at"}
+    if meta["fecha"] in allowed_order:
         qs = qs.order_by(f"-{meta['fecha']}")
-    elif not meta["fecha"]:
-        qs = qs.order_by()  # remove default ordering that expects created_at
+    else:
+        qs = qs.order_by()  # remove default ordering that might hit missing/unknown columns
     return Prefetch("desembolsos", queryset=qs), meta
 
 
