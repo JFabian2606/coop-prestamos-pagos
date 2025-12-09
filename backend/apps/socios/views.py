@@ -2134,3 +2134,173 @@ class AdminActivityView(APIView):
             for log in qs
         ]
         return Response(data)
+
+
+def _parse_date_param(request, param_name: str):
+    raw = (request.query_params.get(param_name) or "").strip()
+    if not raw:
+        return None
+    try:
+        return datetime.fromisoformat(raw).date()
+    except Exception:
+        raise ValidationError({param_name: "Usa formato ISO AAAA-MM-DD."})
+
+
+class ReportesAdminView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    @extend_schema(
+        tags=["Reportes"],
+        summary="Reportes de socios y prestamos",
+        description="Devuelve data filtrada (socios/prestamos) y permite exportar PDF (param export=pdf).",
+    )
+    def get(self, request):
+        entidad = (request.query_params.get("entidad") or "todos").strip().lower()
+        estados_param = {
+            e.strip().lower() for e in (request.query_params.get("estado") or "").split(",") if e.strip()
+        }
+        q = (request.query_params.get("q") or "").strip()
+        fecha_desde = _parse_date_param(request, "desde")
+        fecha_hasta = _parse_date_param(request, "hasta")
+        tipo_prestamo = (request.query_params.get("tipo") or request.query_params.get("tipo_prestamo") or "").strip()
+        limit = min(max(int(request.query_params.get("limit", 120)), 1), 500)
+
+        include_socios = entidad in {"todos", "socios"}
+        include_prestamos = entidad in {"todos", "prestamos"}
+
+        data_socios = {"items": [], "resumen": {}, "total": 0}
+        if include_socios:
+            socios_qs = Socio.objects.all().order_by("-created_at")
+            if fecha_desde:
+                socios_qs = socios_qs.filter(created_at__date__gte=fecha_desde)
+            if fecha_hasta:
+                socios_qs = socios_qs.filter(created_at__date__lte=fecha_hasta)
+            if estados_param:
+                socios_qs = socios_qs.filter(estado__in=estados_param)
+            if q:
+                socios_qs = socios_qs.filter(
+                    Q(nombre_completo__icontains=q) | Q(documento__icontains=q) | Q(usuario__email__icontains=q)
+                )
+
+            resumen_socios = {
+                "activo": socios_qs.filter(estado=Socio.ESTADO_ACTIVO).count(),
+                "inactivo": socios_qs.filter(estado=Socio.ESTADO_INACTIVO).count(),
+                "suspendido": socios_qs.filter(estado=Socio.ESTADO_SUSPENDIDO).count(),
+            }
+            data_socios["resumen"] = resumen_socios
+            data_socios["total"] = socios_qs.count()
+            data_socios["items"] = [
+                {
+                    "id": str(s.id),
+                    "nombre": s.nombre_completo,
+                    "documento": s.documento,
+                    "estado": s.estado,
+                    "email": s.usuario.email if s.usuario else None,
+                    "created_at": s.created_at,
+                    "fecha_alta": s.fecha_alta,
+                }
+                for s in socios_qs[:limit]
+            ]
+
+        data_prestamos = {"items": [], "resumen": {}, "total": 0}
+        if include_prestamos:
+            qs = (
+                Prestamo.objects.select_related("socio", "socio__usuario", "tipo")
+                .annotate(
+                    desembolsos_count=Count("desembolsos"),
+                    pagos_count=Count("pagos"),
+                    estado_norm=Lower(Trim("estado")),
+                )
+                .order_by("-fecha_desembolso", "-created_at")
+            )
+            if fecha_desde:
+                qs = qs.filter(fecha_desembolso__gte=fecha_desde)
+            if fecha_hasta:
+                qs = qs.filter(fecha_desembolso__lte=fecha_hasta)
+            if tipo_prestamo:
+                qs = qs.filter(tipo_id=tipo_prestamo)
+            if q:
+                qs = qs.filter(
+                    Q(socio__nombre_completo__icontains=q)
+                    | Q(socio__documento__icontains=q)
+                    | Q(id__icontains=q)
+                    | Q(descripcion__icontains=q)
+                )
+
+            def estado_visible(prestamo):
+                base = (getattr(prestamo, "estado_norm", "") or prestamo.estado or "").strip().lower()
+                saldo = prestamo.saldo_pendiente if hasattr(prestamo, "saldo_pendiente") else Decimal("0")
+                if saldo <= 0 or base == "pagado":
+                    return "pagado"
+                if base == "cancelado":
+                    return "cancelado"
+                if base == "moroso":
+                    return "moroso"
+                if getattr(prestamo, "desembolsos_count", 0) > 0:
+                    return "desembolsado"
+                if base in {"aprobado", "activo"}:
+                    return "aprobado"
+                return base or "desconocido"
+
+            resumen_prestamos = {
+                "aprobado": 0,
+                "desembolsado": 0,
+                "moroso": 0,
+                "pagado": 0,
+                "cancelado": 0,
+            }
+
+            prestamos_items = []
+            for prestamo in qs:
+                estado_vis = estado_visible(prestamo)
+                if estados_param and estado_vis not in estados_param:
+                    continue
+                socio = prestamo.socio
+                tipo = prestamo.tipo
+                resumen_prestamos[estado_vis] = resumen_prestamos.get(estado_vis, 0) + 1
+                prestamos_items.append(
+                    {
+                        "id": str(prestamo.id),
+                        "monto": fmt_decimal(prestamo.monto),
+                        "estado": prestamo.estado,
+                        "estado_visible": estado_vis,
+                        "fecha_desembolso": prestamo.fecha_desembolso,
+                        "fecha_vencimiento": prestamo.fecha_vencimiento,
+                        "socio": {
+                            "id": str(socio.id) if socio else None,
+                            "nombre": socio.nombre_completo if socio else None,
+                            "documento": socio.documento if socio else None,
+                            "estado": socio.estado if socio else None,
+                        },
+                        "tipo": {
+                            "id": str(tipo.id) if tipo else None,
+                            "nombre": tipo.nombre if tipo else None,
+                        },
+                        "total_pagado": fmt_decimal(prestamo.total_pagado),
+                        "saldo_pendiente": fmt_decimal(prestamo.saldo_pendiente),
+                        "desembolsos": getattr(prestamo, "desembolsos_count", 0),
+                    }
+                )
+
+            data_prestamos["resumen"] = resumen_prestamos
+            data_prestamos["total"] = len(prestamos_items)
+            data_prestamos["items"] = prestamos_items[:limit]
+
+        filtros_info = {
+            "entidad": entidad,
+            "estado": list(estados_param),
+            "desde": fecha_desde,
+            "hasta": fecha_hasta,
+            "tipo": tipo_prestamo or None,
+            "limit": limit,
+            "q": q or None,
+        }
+
+        return Response(
+            {
+                "filtros": filtros_info,
+                "socios": data_socios if include_socios else None,
+                "prestamos": data_prestamos if include_prestamos else None,
+            },
+            status=status.HTTP_200_OK,
+        )
