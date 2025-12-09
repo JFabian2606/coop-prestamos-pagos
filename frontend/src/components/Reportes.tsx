@@ -181,6 +181,80 @@ export default function Reportes() {
     return [...estadoSociosOpts, ...estadoPrestamoOpts];
   }, [entidad]);
 
+  const buildPdfHtml = () => {
+    const fecha = new Date().toLocaleString("es-CO");
+    const socioRows =
+      data?.socios?.items
+        .map(
+          (s: SocioReporte) => `
+        <tr>
+          <td>${s.nombre || ""}</td>
+          <td>${s.documento || ""}</td>
+          <td>${s.estado || ""}</td>
+          <td>${s.created_at ? String(s.created_at).slice(0, 10) : ""}</td>
+        </tr>`
+        )
+        .join("") || "";
+    const prestRows =
+      data?.prestamos?.items
+        .map(
+          (p: PrestamoReporte) => `
+        <tr>
+          <td>${p.socio?.nombre || ""}</td>
+          <td>${p.tipo?.nombre || ""}</td>
+          <td>${p.estado_visible || p.estado || ""}</td>
+          <td>${currency.format(Number(p.monto || 0))}</td>
+          <td>${p.fecha_desembolso || ""}</td>
+        </tr>`
+        )
+        .join("") || "";
+    return `
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Reporte Cooprestamos</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; color: #111; }
+    h1 { margin: 0 0 6px; }
+    .muted { color: #6b7280; font-size: 12px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { border: 1px solid #e5e7eb; padding: 6px; font-size: 12px; text-align: left; }
+    th { background: #f8fafc; }
+    .pill { display: inline-block; padding: 2px 8px; border-radius: 12px; background: #e6f4f1; color: #0f766e; font-weight: 700; font-size: 11px; }
+    .section { margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <h1>Reporte de gestion</h1>
+  <p class="muted">Generado: ${fecha}</p>
+  <p class="muted">Entidad: ${entidad}, Estados: ${estados.join(",") || "todos"}, Rango: ${fechaDesde || "-"} a ${fechaHasta || "-"}, Tipo: ${tipo || "todos"}, Busqueda: ${busqueda || "-"}</p>
+  ${
+    data?.socios
+      ? `<div class="section">
+    <h3>Socios <span class="pill">Total ${data.socios.total}</span></h3>
+    <table>
+      <thead><tr><th>Nombre</th><th>Documento</th><th>Estado</th><th>Alta</th></tr></thead>
+      <tbody>${socioRows || "<tr><td colspan='4'>Sin resultados</td></tr>"}</tbody>
+    </table>
+  </div>`
+      : ""
+  }
+  ${
+    data?.prestamos
+      ? `<div class="section">
+    <h3>Prestamos <span class="pill">Total ${data.prestamos.total}</span></h3>
+    <table>
+      <thead><tr><th>Socio</th><th>Tipo</th><th>Estado</th><th>Monto</th><th>Desembolso</th></tr></thead>
+      <tbody>${prestRows || "<tr><td colspan='5'>Sin resultados</td></tr>"}</tbody>
+    </table>
+  </div>`
+      : ""
+  }
+</body>
+</html>`;
+  };
+
   return (
     <section className="reportes-panel">
       <header className="reportes-header">
@@ -362,77 +436,3 @@ export default function Reportes() {
       </div>
     </section>
   );
-}
-  const buildPdfHtml = () => {
-    const fecha = new Date().toLocaleString("es-CO");
-    const socioRows =
-      data?.socios?.items
-        .map(
-          (s) => `
-        <tr>
-          <td>${s.nombre || ""}</td>
-          <td>${s.documento || ""}</td>
-          <td>${s.estado || ""}</td>
-          <td>${s.created_at ? String(s.created_at).slice(0, 10) : ""}</td>
-        </tr>`
-        )
-        .join("") || "";
-    const prestRows =
-      data?.prestamos?.items
-        .map(
-          (p) => `
-        <tr>
-          <td>${p.socio?.nombre || ""}</td>
-          <td>${p.tipo?.nombre || ""}</td>
-          <td>${p.estado_visible || p.estado || ""}</td>
-          <td>${currency.format(Number(p.monto || 0))}</td>
-          <td>${p.fecha_desembolso || ""}</td>
-        </tr>`
-        )
-        .join("") || "";
-    return `
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <title>Reporte Cooprestamos</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 24px; color: #111; }
-    h1 { margin: 0 0 6px; }
-    .muted { color: #6b7280; font-size: 12px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-    th, td { border: 1px solid #e5e7eb; padding: 6px; font-size: 12px; text-align: left; }
-    th { background: #f8fafc; }
-    .pill { display: inline-block; padding: 2px 8px; border-radius: 12px; background: #e6f4f1; color: #0f766e; font-weight: 700; font-size: 11px; }
-    .section { margin-top: 16px; }
-  </style>
-</head>
-<body>
-  <h1>Reporte de gestion</h1>
-  <p class="muted">Generado: ${fecha}</p>
-  <p class="muted">Entidad: ${entidad}, Estados: ${estados.join(",") || "todos"}, Rango: ${fechaDesde || "-"} a ${fechaHasta || "-"}, Tipo: ${tipo || "todos"}, Busqueda: ${busqueda || "-"}</p>
-  ${
-    data?.socios
-      ? `<div class="section">
-    <h3>Socios <span class="pill">Total ${data.socios.total}</span></h3>
-    <table>
-      <thead><tr><th>Nombre</th><th>Documento</th><th>Estado</th><th>Alta</th></tr></thead>
-      <tbody>${socioRows || "<tr><td colspan='4'>Sin resultados</td></tr>"}</tbody>
-    </table>
-  </div>`
-      : ""
-  }
-  ${
-    data?.prestamos
-      ? `<div class="section">
-    <h3>Prestamos <span class="pill">Total ${data.prestamos.total}</span></h3>
-    <table>
-      <thead><tr><th>Socio</th><th>Tipo</th><th>Estado</th><th>Monto</th><th>Desembolso</th></tr></thead>
-      <tbody>${prestRows || "<tr><td colspan='5'>Sin resultados</td></tr>"}</tbody>
-    </table>
-  </div>`
-      : ""
-  }
-</body>
-</html>`;
-  };
