@@ -1023,11 +1023,11 @@ def _desembolso_prefetch() -> tuple[Prefetch | None, dict]:
     qs = Desembolso.objects.all()
     if not meta["comentarios"]:
         qs = qs.defer("comentarios")
-    allowed_order = {"created_at", "updated_at"}
-    if meta["fecha"] in allowed_order:
-        qs = qs.order_by(f"-{meta['fecha']}")
+    # Solo ordenamos si la columna existe como campo del modelo (created_at)
+    if meta["fecha"] == "created_at":
+        qs = qs.order_by("-created_at")
     else:
-        qs = qs.order_by()  # remove default ordering that might hit missing/unknown columns
+        qs = qs.order_by()  # elimina orden por defecto que pueda apuntar a columnas inexistentes
     return Prefetch("desembolsos", queryset=qs), meta
 
 
