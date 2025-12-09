@@ -20,10 +20,8 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.usuarios.models import Usuario
 from .audit import snapshot_socio, register_audit_entry
 from .models import Prestamo, Socio, SocioAuditLog, TipoPrestamo, PoliticaAprobacion, Desembolso
-from .notify import send_mail
 from .serializers import (
     HistorialCrediticioSerializer,
     ProfileCreateSerializer,
@@ -504,21 +502,6 @@ class PrestamoSolicitudCreateView(APIView):
             return Response({'detail': f'No se pudo registrar la solicitud: {exc}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Notificar a analistas (simple)
-        analistas_emails = list(
-            Usuario.objects.filter(
-                rol__nombre__iexact="ANALISTA",
-                activo=True,
-                email__isnull=False,
-            )
-            .values_list("email", flat=True)
-            .distinct()
-        )[:3]  # evitar timeouts si hay muchos correos y SMTP lento
-        if analistas_emails:
-            asunto = "Nueva solicitud de prestamo"
-            html = f"<p>Llego una nueva solicitud: <strong>{solicitud_id}</strong></p><p>Socio: {socio.nombre_completo} ({socio.documento or 'sin doc'})</p>"
-            for correo in analistas_emails:
-                send_mail(correo, asunto, html)
-
         return Response(
             {
                 "solicitud_id": str(solicitud_id),
@@ -1136,14 +1119,6 @@ class DesembolsoListCreateView(APIView):
             serializer.is_valid(raise_exception=True)
             desembolso = serializer.save()
 
-            if getattr(prestamo, "socio", None) and getattr(prestamo.socio, "usuario", None) and prestamo.socio.usuario.email:
-                asunto = "Desembolso registrado"
-                html = (
-                    f"<p>Se desembolso tu prestamo <strong>{prestamo.id}</strong> por {monto_decimal} ({metodo_pago}).</p>"
-                    f"<p>Ref: {referencia or 'N/A'}</p>"
-                )
-                send_mail(prestamo.socio.usuario.email, asunto, html)
-
             return Response(DesembolsoSerializer(desembolso).data, status=status.HTTP_201_CREATED)
 
         payload = {
@@ -1186,14 +1161,6 @@ class DesembolsoListCreateView(APIView):
                 f"INSERT INTO {table_name} ({columnas_sql}) VALUES ({placeholders})",
                 valores,
             )
-
-        if getattr(prestamo, "socio", None) and getattr(prestamo.socio, "usuario", None) and prestamo.socio.usuario.email:
-            asunto = "Desembolso registrado"
-            html = (
-                f"<p>Se desembolso tu prestamo <strong>{prestamo.id}</strong> por {monto_decimal} ({metodo_pago}).</p>"
-                f"<p>Ref: {referencia or 'N/A'}</p>"
-            )
-            send_mail(prestamo.socio.usuario.email, asunto, html)
 
         return Response(
             {
