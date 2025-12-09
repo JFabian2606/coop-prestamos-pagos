@@ -512,7 +512,7 @@ class PrestamoSolicitudCreateView(APIView):
             )
             .values_list("email", flat=True)
             .distinct()
-        )
+        )[:3]  # evitar timeouts si hay muchos correos y SMTP lento
         if analistas_emails:
             asunto = "Nueva solicitud de prestamo"
             html = f"<p>Llego una nueva solicitud: <strong>{solicitud_id}</strong></p><p>Socio: {socio.nombre_completo} ({socio.documento or 'sin doc'})</p>"

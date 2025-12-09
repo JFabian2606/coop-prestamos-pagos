@@ -21,7 +21,7 @@ def send_mail(to: str, subject: str, html: str) -> bool:
             from_email=remitente,
             recipient_list=[to],
             html_message=html,
-            fail_silently=False,
+            fail_silently=True,  # no bloquear si SMTP falla
         )
         return True
     except Exception:
