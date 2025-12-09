@@ -30,6 +30,13 @@ type PagoForm = {
   metodo: string;
 };
 
+type PagoTarjeta = {
+  titular: string;
+  numero: string;
+  cvv: string;
+  direccion: string;
+};
+
 type MisPrestamosProps = {
   onVolver?: () => void;
   onSolicitar?: () => void;
@@ -101,6 +108,12 @@ export default function MisPrestamos({ onVolver, onSolicitar, usuario }: MisPres
   const [filtro, setFiltro] = useState<EstadoResumenItem["key"]>("todos");
   const [pago, setPago] = useState<PagoForm | null>(null);
   const [procesandoPago, setProcesandoPago] = useState(false);
+  const [pagoTarjeta, setPagoTarjeta] = useState<PagoTarjeta>({
+    titular: "",
+    numero: "",
+    cvv: "",
+    direccion: "",
+  });
 
   const calcularMaxCuotas = (p: Prestamo | null | undefined) => {
     if (!p) return 1;
@@ -178,6 +191,7 @@ export default function MisPrestamos({ onVolver, onSolicitar, usuario }: MisPres
       cuotas: Math.min(maxPermitidas, Math.max(1, sugeridas)),
       metodo: "tarjeta",
     });
+    setPagoTarjeta({ titular: "", numero: "", cvv: "", direccion: "" });
     setOk("");
     setError("");
   };
@@ -186,6 +200,22 @@ export default function MisPrestamos({ onVolver, onSolicitar, usuario }: MisPres
 
   const pagar = async () => {
     if (!pago) return;
+    if (pago.metodo === "tarjeta") {
+      if (!pagoTarjeta.titular.trim() || !pagoTarjeta.numero.trim() || !pagoTarjeta.cvv.trim() || !pagoTarjeta.direccion.trim()) {
+        setError("Completa los datos de la tarjeta para continuar.");
+        return;
+      }
+      const digits = pagoTarjeta.numero.replace(/\D/g, "");
+      const cvvDigits = pagoTarjeta.cvv.replace(/\D/g, "");
+      if (digits.length < 12 || digits.length > 19) {
+        setError("Ingresa un numero de tarjeta valido.");
+        return;
+      }
+      if (cvvDigits.length < 3 || cvvDigits.length > 4) {
+        setError("Ingresa un CVV valido.");
+        return;
+      }
+    }
     setProcesandoPago(true);
     setOk("");
     setError("");
@@ -403,12 +433,60 @@ export default function MisPrestamos({ onVolver, onSolicitar, usuario }: MisPres
             <select
               id="metodo"
               value={pago.metodo}
-              onChange={(e) => setPago({ ...pago, metodo: e.target.value })}
+              onChange={(e) => {
+                const value = e.target.value;
+                setPago({ ...pago, metodo: value });
+              }}
             >
               <option value="tarjeta">Tarjeta</option>
               <option value="pse">PSE</option>
               <option value="efectivo">Efectivo</option>
             </select>
+
+            {pago.metodo === "tarjeta" && (
+              <div className="pago-tarjeta">
+                <label htmlFor="tarjeta-titular">Nombre del titular</label>
+                <input
+                  id="tarjeta-titular"
+                  type="text"
+                  placeholder="Como aparece en la tarjeta"
+                  value={pagoTarjeta.titular}
+                  onChange={(e) => setPagoTarjeta({ ...pagoTarjeta, titular: e.target.value })}
+                />
+
+                <label htmlFor="tarjeta-numero">Numero de tarjeta</label>
+                <input
+                  id="tarjeta-numero"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="0000 0000 0000 0000"
+                  value={pagoTarjeta.numero}
+                  onChange={(e) => setPagoTarjeta({ ...pagoTarjeta, numero: e.target.value })}
+                />
+
+                <div className="pago-row">
+                  <label htmlFor="tarjeta-cvv">CVV</label>
+                  <input
+                    id="tarjeta-cvv"
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={4}
+                    placeholder="123"
+                    value={pagoTarjeta.cvv}
+                    onChange={(e) => setPagoTarjeta({ ...pagoTarjeta, cvv: e.target.value })}
+                  />
+                </div>
+
+                <label htmlFor="tarjeta-direccion">Direccion</label>
+                <input
+                  id="tarjeta-direccion"
+                  type="text"
+                  placeholder="Calle, numero y ciudad"
+                  value={pagoTarjeta.direccion}
+                  onChange={(e) => setPagoTarjeta({ ...pagoTarjeta, direccion: e.target.value })}
+                />
+              </div>
+            )}
 
             {totalPago && (
               <div className="pago-detalle">

@@ -373,6 +373,17 @@
   font-size: 14px;
 }
 
+.pago-tarjeta {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.25rem;
+}
+
+.pago-row {
+  display: grid;
+  gap: 0.3rem;
+}
+
 .pago-detalle {
   background: #f8fafc;
   border: 1px solid #e5e7eb;
