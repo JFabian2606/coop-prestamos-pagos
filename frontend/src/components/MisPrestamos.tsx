@@ -37,6 +37,9 @@ type PagoTarjeta = {
   direccion: string;
 };
 
+const PENALIDAD_MORA_MENSUAL = 0.02; // 2% de incremento por mes de mora
+const MS_IN_MONTH = 1000 * 60 * 60 * 24 * 30;
+
 type MisPrestamosProps = {
   onVolver?: () => void;
   onSolicitar?: () => void;
@@ -98,6 +101,32 @@ const normalizarPrestamo = (p: Prestamo): Prestamo => ({
 const toNumber = (value: number | string | null | undefined): number => {
   const num = Number(value);
   return Number.isFinite(num) ? num : 0;
+};
+
+const parseDate = (valor: string | Date | null | undefined): Date | null => {
+  if (!valor) return null;
+  if (valor instanceof Date) return valor;
+  const parsed = new Date(valor);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const calcularMora = (prestamo: Prestamo) => {
+  const fechaDes = parseDate(prestamo.fecha_desembolso);
+  if (!fechaDes) {
+    return { moraMeses: 0, penalidadActual: 0, penalidadProxima: PENALIDAD_MORA_MENSUAL, tieneSaldo: false };
+  }
+  const hoy = new Date();
+  const elapsed = Math.max(0, Math.floor((hoy.getTime() - fechaDes.getTime()) / MS_IN_MONTH));
+  const pagosRegistrados = Math.max(0, toNumber(prestamo.pagos_registrados));
+  const cuota = toNumber(prestamo.cuota_mensual);
+  const pagado = toNumber(prestamo.total_pagado);
+  const cuotasPorMonto = cuota > 0 ? Math.floor(pagado / cuota) : 0;
+  const cuotasPagadas = pagosRegistrados > 0 ? pagosRegistrados : cuotasPorMonto;
+  const moraMeses = Math.max(0, elapsed - cuotasPagadas);
+  const penalidadActual = moraMeses * PENALIDAD_MORA_MENSUAL;
+  const penalidadProxima = penalidadActual + PENALIDAD_MORA_MENSUAL;
+  const tieneSaldo = toNumber(prestamo.saldo_pendiente || prestamo.monto) > 0;
+  return { moraMeses, penalidadActual, penalidadProxima, tieneSaldo };
 };
 
 export default function MisPrestamos({ onVolver, onSolicitar, usuario }: MisPrestamosProps) {
@@ -310,6 +339,7 @@ export default function MisPrestamos({ onVolver, onSolicitar, usuario }: MisPres
 
             {prestamosFiltrados.map((prestamo) => {
               const puedePagarEste = puedePagar(prestamo);
+              const moraInfo = calcularMora(prestamo);
               return (
                 <article key={prestamo.id} className="prestamo-card">
                   <header className="prestamo-head">
@@ -346,6 +376,22 @@ export default function MisPrestamos({ onVolver, onSolicitar, usuario }: MisPres
                         {currency.format(toNumber(prestamo.saldo_pendiente || prestamo.monto))}
                       </p>
                     </div>
+                  </div>
+
+                  <div className="mora-box">
+                    <p className="meta-label">Morosidad y tasa</p>
+                    {moraInfo.moraMeses > 0 ? (
+                      <p className="mora-text">
+                        Morosidad de {moraInfo.moraMeses} mes(es). Interes +{(moraInfo.penalidadActual * 100).toFixed(1)}%.
+                      </p>
+                    ) : (
+                      <p className="mora-text">Al dia. Si no pagas este mes, el interes sube +{(PENALIDAD_MORA_MENSUAL * 100).toFixed(1)}%.</p>
+                    )}
+                    {moraInfo.tieneSaldo && (
+                      <p className="mora-small">
+                        No pagar este mes incrementa +{(PENALIDAD_MORA_MENSUAL * 100).toFixed(1)}% (total seria +{(moraInfo.penalidadProxima * 100).toFixed(1)}%).
+                      </p>
+                    )}
                   </div>
 
                   <footer className="prestamo-footer">

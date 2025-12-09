@@ -260,6 +260,27 @@
   font-size: 12px;
 }
 
+.mora-box {
+  border: 1px dashed #cbd5e1;
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 0.6rem 0.75rem;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.mora-text {
+  margin: 0;
+  font-weight: 600;
+  color: #111827;
+}
+
+.mora-small {
+  margin: 0;
+  color: #0f766e;
+  font-size: 12px;
+}
+
 .empty-state {
   border: 1px dashed #cbd5e1;
   background: #f8fafc;
