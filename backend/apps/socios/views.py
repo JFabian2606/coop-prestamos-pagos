@@ -20,9 +20,6 @@ from rest_framework import permissions, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
-from reportlab.lib.units import mm
 
 from .audit import snapshot_socio, register_audit_entry
 from .models import Prestamo, Socio, SocioAuditLog, TipoPrestamo, PoliticaAprobacion, Desembolso, Pago
@@ -2162,10 +2159,10 @@ class ReportesAdminView(APIView):
         estados_param = {
             e.strip().lower() for e in (request.query_params.get("estado") or "").split(",") if e.strip()
         }
+        q = (request.query_params.get("q") or "").strip()
         fecha_desde = _parse_date_param(request, "desde")
         fecha_hasta = _parse_date_param(request, "hasta")
         tipo_prestamo = (request.query_params.get("tipo") or request.query_params.get("tipo_prestamo") or "").strip()
-        export_pdf = (request.query_params.get("export") or "").strip().lower() == "pdf"
         limit = min(max(int(request.query_params.get("limit", 120)), 1), 500)
 
         include_socios = entidad in {"todos", "socios"}
@@ -2180,6 +2177,10 @@ class ReportesAdminView(APIView):
                 socios_qs = socios_qs.filter(created_at__date__lte=fecha_hasta)
             if estados_param:
                 socios_qs = socios_qs.filter(estado__in=estados_param)
+            if q:
+                socios_qs = socios_qs.filter(
+                    Q(nombre_completo__icontains=q) | Q(documento__icontains=q) | Q(usuario__email__icontains=q)
+                )
 
             resumen_socios = {
                 "activo": socios_qs.filter(estado=Socio.ESTADO_ACTIVO).count(),
@@ -2218,6 +2219,13 @@ class ReportesAdminView(APIView):
                 qs = qs.filter(fecha_desembolso__lte=fecha_hasta)
             if tipo_prestamo:
                 qs = qs.filter(tipo_id=tipo_prestamo)
+            if q:
+                qs = qs.filter(
+                    Q(socio__nombre_completo__icontains=q)
+                    | Q(socio__documento__icontains=q)
+                    | Q(id__icontains=q)
+                    | Q(descripcion__icontains=q)
+                )
 
             def estado_visible(prestamo):
                 if getattr(prestamo, "desembolsos_count", 0) > 0:
@@ -2284,93 +2292,8 @@ class ReportesAdminView(APIView):
             "hasta": fecha_hasta,
             "tipo": tipo_prestamo or None,
             "limit": limit,
+            "q": q or None,
         }
-
-        if export_pdf:
-            buffer = io.BytesIO()
-            pdf = canvas.Canvas(buffer, pagesize=A4)
-            width, height = A4
-            y = height - 20 * mm
-
-            def add_line(text, bold=False, size=10, gap=5):
-                nonlocal y
-                if y < 25 * mm:
-                    pdf.showPage()
-                    y = height - 20 * mm
-                font = "Helvetica-Bold" if bold else "Helvetica"
-                pdf.setFont(font, size)
-                pdf.drawString(20 * mm, y, text)
-                y -= gap
-
-            def add_table(headers, rows, max_rows=20):
-                nonlocal y
-                add_line("", gap=0)
-                pdf.setFont("Helvetica-Bold", 9)
-                line_y = y
-                for idx, header in enumerate(headers):
-                    pdf.drawString(20 * mm + idx * 40, line_y, header[:18])
-                y = line_y - 6
-                pdf.setFont("Helvetica", 8)
-                for ridx, row in enumerate(rows[:max_rows]):
-                    if y < 25 * mm:
-                        pdf.showPage()
-                        y = height - 20 * mm
-                    line_y = y
-                    for idx, cell in enumerate(row):
-                        pdf.drawString(20 * mm + idx * 40, line_y, str(cell)[:18])
-                    y = line_y - 6
-
-            add_line("Cooprestamos - Reporte de gestion", bold=True, size=13, gap=8)
-            add_line(f"Filtros: entidad={entidad}, estados={','.join(estados_param) or 'todos'}", size=9)
-            add_line(
-                f"Rango: {fecha_desde or '-'} a {fecha_hasta or '-'} - Tipo: {tipo_prestamo or 'todos'} - Limite: {limit}",
-                size=9,
-                gap=10,
-            )
-
-            if include_socios:
-                add_line("Socios", bold=True, size=11, gap=8)
-                add_line(f"Total: {data_socios['total']} | Activos: {data_socios['resumen'].get('activo', 0)} | Inactivos: {data_socios['resumen'].get('inactivo', 0)} | Suspendidos: {data_socios['resumen'].get('suspendido', 0)}", size=9)
-                socio_rows = [
-                    [
-                        item.get("nombre") or "",
-                        item.get("documento") or "",
-                        item.get("estado") or "",
-                        (item.get("created_at") or "").strftime("%Y-%m-%d") if item.get("created_at") else "",
-                    ]
-                    for item in data_socios["items"]
-                ]
-                if socio_rows:
-                    add_table(["Nombre", "Documento", "Estado", "Alta"], socio_rows, max_rows=25)
-                y -= 8
-
-            if include_prestamos:
-                add_line("Prestamos", bold=True, size=11, gap=8)
-                resumen_p = data_prestamos["resumen"]
-                add_line(
-                    f"Total: {data_prestamos['total']} | Aprobados: {resumen_p.get('aprobado', 0)} | Desembolsados: {resumen_p.get('desembolsado', 0)} | Morosos: {resumen_p.get('moroso', 0)} | Pagados: {resumen_p.get('pagado', 0)}",
-                    size=9,
-                )
-                prest_rows = [
-                    [
-                        item.get("socio", {}).get("nombre") or "-",
-                        item.get("tipo", {}).get("nombre") or "-",
-                        item.get("estado_visible") or item.get("estado") or "",
-                        item.get("monto") or "",
-                    ]
-                    for item in data_prestamos["items"]
-                ]
-                if prest_rows:
-                    add_table(["Socio", "Tipo", "Estado", "Monto"], prest_rows, max_rows=25)
-
-            pdf.showPage()
-            pdf.save()
-            pdf_bytes = buffer.getvalue()
-            buffer.close()
-
-            response = HttpResponse(pdf_bytes, content_type="application/pdf")
-            response["Content-Disposition"] = 'attachment; filename="reporte_cooprestamos.pdf"'
-            return response
 
         return Response(
             {

@@ -89,6 +89,7 @@ export default function Reportes() {
   const [fechaHasta, setFechaHasta] = useState("");
   const [tipo, setTipo] = useState("");
   const [tipos, setTipos] = useState<TipoPrestamoDto[]>([]);
+  const [busqueda, setBusqueda] = useState("");
   const [data, setData] = useState<ReporteData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -120,6 +121,7 @@ export default function Reportes() {
       if (fechaDesde) params.desde = fechaDesde;
       if (fechaHasta) params.hasta = fechaHasta;
       if (tipo) params.tipo = tipo;
+      if (busqueda.trim()) params.q = busqueda.trim();
       const { data } = await api.get<ReporteData>("reportes", { params });
       setData(data);
     } catch (err: any) {
@@ -142,20 +144,14 @@ export default function Reportes() {
       if (fechaDesde) params.desde = fechaDesde;
       if (fechaHasta) params.hasta = fechaHasta;
       if (tipo) params.tipo = tipo;
-      const { data: pdfData } = await api.get<ArrayBuffer>("reportes", {
-        params,
-        responseType: "arraybuffer",
-      });
-      const blob = new Blob([pdfData], { type: "application/pdf" });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      const stamp = new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14);
-      link.download = `reporte_cooprestamos_${stamp}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+      if (busqueda.trim()) params.q = busqueda.trim();
+      const html = buildPdfHtml();
+      const w = window.open("", "_blank", "width=900,height=1200");
+      if (!w) throw new Error("No se pudo abrir la ventana de exportacion.");
+      w.document.write(html);
+      w.document.close();
+      w.focus();
+      w.print();
     } catch (err: any) {
       const detail = err?.response?.data?.detail || "No pudimos exportar el PDF.";
       setError(typeof detail === "string" ? detail : "No pudimos exportar el PDF.");
@@ -214,6 +210,15 @@ export default function Reportes() {
             <option value="socios">Solo socios</option>
             <option value="prestamos">Solo prestamos</option>
           </select>
+        </label>
+        <label className="filtro">
+          <span>Busqueda (doc, socio, prestamo)</span>
+          <input
+            type="text"
+            placeholder="Documento, socio o ID de prestamo"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+          />
         </label>
         <label className="filtro">
           <span>Desde</span>
@@ -358,3 +363,76 @@ export default function Reportes() {
     </section>
   );
 }
+  const buildPdfHtml = () => {
+    const fecha = new Date().toLocaleString("es-CO");
+    const socioRows =
+      data?.socios?.items
+        .map(
+          (s) => `
+        <tr>
+          <td>${s.nombre || ""}</td>
+          <td>${s.documento || ""}</td>
+          <td>${s.estado || ""}</td>
+          <td>${s.created_at ? String(s.created_at).slice(0, 10) : ""}</td>
+        </tr>`
+        )
+        .join("") || "";
+    const prestRows =
+      data?.prestamos?.items
+        .map(
+          (p) => `
+        <tr>
+          <td>${p.socio?.nombre || ""}</td>
+          <td>${p.tipo?.nombre || ""}</td>
+          <td>${p.estado_visible || p.estado || ""}</td>
+          <td>${currency.format(Number(p.monto || 0))}</td>
+          <td>${p.fecha_desembolso || ""}</td>
+        </tr>`
+        )
+        .join("") || "";
+    return `
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Reporte Cooprestamos</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; color: #111; }
+    h1 { margin: 0 0 6px; }
+    .muted { color: #6b7280; font-size: 12px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { border: 1px solid #e5e7eb; padding: 6px; font-size: 12px; text-align: left; }
+    th { background: #f8fafc; }
+    .pill { display: inline-block; padding: 2px 8px; border-radius: 12px; background: #e6f4f1; color: #0f766e; font-weight: 700; font-size: 11px; }
+    .section { margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <h1>Reporte de gestion</h1>
+  <p class="muted">Generado: ${fecha}</p>
+  <p class="muted">Entidad: ${entidad}, Estados: ${estados.join(",") || "todos"}, Rango: ${fechaDesde || "-"} a ${fechaHasta || "-"}, Tipo: ${tipo || "todos"}, Busqueda: ${busqueda || "-"}</p>
+  ${
+    data?.socios
+      ? `<div class="section">
+    <h3>Socios <span class="pill">Total ${data.socios.total}</span></h3>
+    <table>
+      <thead><tr><th>Nombre</th><th>Documento</th><th>Estado</th><th>Alta</th></tr></thead>
+      <tbody>${socioRows || "<tr><td colspan='4'>Sin resultados</td></tr>"}</tbody>
+    </table>
+  </div>`
+      : ""
+  }
+  ${
+    data?.prestamos
+      ? `<div class="section">
+    <h3>Prestamos <span class="pill">Total ${data.prestamos.total}</span></h3>
+    <table>
+      <thead><tr><th>Socio</th><th>Tipo</th><th>Estado</th><th>Monto</th><th>Desembolso</th></tr></thead>
+      <tbody>${prestRows || "<tr><td colspan='5'>Sin resultados</td></tr>"}</tbody>
+    </table>
+  </div>`
+      : ""
+  }
+</body>
+</html>`;
+  };
