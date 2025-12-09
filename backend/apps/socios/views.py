@@ -648,16 +648,20 @@ class MisPrestamosSocioView(APIView):
             )
 
         def _parse_fecha(valor):
+            tz = timezone.get_current_timezone()
             if isinstance(valor, datetime):
-                return valor
+                return valor if timezone.is_aware(valor) else timezone.make_aware(valor, tz)
             if isinstance(valor, date):
-                return datetime.combine(valor, datetime.min.time())
+                base = datetime.combine(valor, datetime.min.time())
+                return timezone.make_aware(base, tz)
             if isinstance(valor, str):
                 try:
-                    return datetime.fromisoformat(valor)
+                    parsed = datetime.fromisoformat(valor)
+                    return parsed if timezone.is_aware(parsed) else timezone.make_aware(parsed, tz)
                 except Exception:
-                    return datetime.min
-            return datetime.min
+                    pass
+            fallback = datetime(1900, 1, 1)
+            return timezone.make_aware(fallback, timezone.utc)
 
         resultados.sort(
             key=lambda item: _parse_fecha(item.get("fecha_desembolso") or item.get("fecha_solicitud")),
