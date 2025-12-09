@@ -12,6 +12,7 @@ import UsuariosRoles from "./components/UsuariosRoles";
 import TesoreroPanel from "./components/TesoreroPanel";
 import AnalistaPanel from "./components/AnalistaPanel";
 import MisPrestamos from "./components/MisPrestamos";
+import Reportes from "./components/Reportes";
 import type { SocioDto } from "./components/SociosViewer";
 import logo from "./assets/solo-logo-cooprestamos-vector.svg";
 import avatarFallback from "./assets/solo-logo-cooprestamos-vector.svg";
@@ -43,7 +44,7 @@ const Loader = () => (
 function App() {
   const [usuario, setUsuario] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [vistaActiva, setVistaActiva] = useState<"home" | "socios" | "historial" | "tipos" | "configuracion" | "usuarios" | "landing">("home");
+  const [vistaActiva, setVistaActiva] = useState<"home" | "socios" | "historial" | "tipos" | "configuracion" | "usuarios" | "landing" | "reportes">("home");
   const [vistaSocio, setVistaSocio] = useState<"landing" | "solicitud" | "prestamos">("landing");
   const [ultimosSocios, setUltimosSocios] = useState<SocioDto[]>([]);
   const [ultimosPrestamos, setUltimosPrestamos] = useState<any[]>([]);
@@ -208,6 +209,8 @@ function App() {
       descripcion: "Indicadores diarios y cierres mensuales.",
       icono: "bx-bar-chart-alt-2",
       variante: "outline",
+      onClick: () => setVistaActiva("reportes"),
+      cta: "Ver reportes",
     },
     {
       titulo: "Configuracion",
@@ -503,6 +506,23 @@ function App() {
             </div>
           </div>
           <PoliticasAprobacion />
+      </main>
+      ) : vistaActiva === "reportes" ? (
+        <main className="admin-container">
+          <div className="page-header">
+            <div>
+              <p className="eyebrow">Gestion</p>
+              <h1>Reportes</h1>
+              <p className="subtitle">Indicadores, filtros por estado/fecha y exporte a PDF.</p>
+            </div>
+            <div className="header-meta">
+              <button className="ghost" onClick={() => setVistaActiva("home")}>
+                <i className="bx bx-chevron-left" aria-hidden="true" />
+                Volver al inicio
+              </button>
+            </div>
+          </div>
+          <Reportes />
         </main>
       ) : vistaActiva === "usuarios" ? (
         <main className="admin-container">

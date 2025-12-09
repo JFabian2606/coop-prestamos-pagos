@@ -1,0 +1,207 @@
+.reportes-panel {
+  display: grid;
+  gap: 1rem;
+  padding: 0.5rem 0 2rem;
+}
+
+.reportes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.reportes-actions {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.filtros-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 0.8rem;
+}
+
+.filtro {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.filtro input,
+.filtro select {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 0.5rem 0.65rem;
+}
+
+.estado-filtros {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.estado-filtros__label {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.estado-filtros__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.pill-checkbox {
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  background: #fff;
+}
+
+.resumen-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.summary-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 0.9rem;
+  background: #fff;
+  display: grid;
+  gap: 0.2rem;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.04);
+}
+
+.summary-card h3 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.summary-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  color: #0f172a;
+  font-size: 0.9rem;
+}
+
+.reportes-layout {
+  display: grid;
+  gap: 1rem;
+}
+
+.panel-section {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 0.85rem;
+  background: #fff;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.04);
+}
+
+.panel-section__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.reportes-table {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.reportes-table__head,
+.reportes-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  padding: 0.6rem 0.75rem;
+  gap: 0.5rem;
+}
+
+.reportes-table__head {
+  background: #f8fafc;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.reportes-row {
+  border-top: 1px solid #e5e7eb;
+  align-items: center;
+}
+
+.reportes-row small {
+  color: #6b7280;
+  display: block;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid #d1d5db;
+  text-transform: capitalize;
+}
+
+.status-pill--aprobado,
+.status-pill--activo,
+.status-pill--desembolsado {
+  background: #ecfdf3;
+  color: #166534;
+  border-color: #bbf7d0;
+}
+
+.status-pill--moroso,
+.status-pill--suspendido {
+  background: #fffbeb;
+  color: #92400e;
+  border-color: #fcd34d;
+}
+
+.status-pill--pagado {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #e2e8f0;
+}
+
+.status-pill--cancelado,
+.status-pill--inactivo {
+  background: #f8fafc;
+  color: #475569;
+}
+
+.alert {
+  padding: 0.75rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid #fca5a5;
+  background: #fff1f2;
+  color: #b91c1c;
+}
+
+@media (max-width: 900px) {
+  .reportes-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .reportes-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .reportes-table__head,
+  .reportes-row {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  }
+}

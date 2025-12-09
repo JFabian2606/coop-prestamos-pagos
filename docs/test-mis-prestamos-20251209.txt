@@ -1,0 +1,21 @@
+Test run: mis_prestamos
+Fecha: 2025-12-09
+Comando: cd backend; .venv\Scripts\python manage.py test apps.socios.tests.test_mis_prestamos --verbosity 2
+Entorno: SQLite en memoria (default de Django tests)
+
+Estado: FALLA al preparar la base de datos de pruebas.
+
+Detalle:
+- OK  : Migraciones aplicadas hasta socios.0005_desembolso.
+- OK  : Se encontraron 2 tests en apps.socios.tests.test_mis_prestamos.
+- FAIL: Al aplicar migracion socios.0006_add_metodo_pago_column -> sqlite3.OperationalError: near "DO": syntax error.
+        Esta migracion incluye SQL especifico de PostgreSQL (DO $$ ...), no compatible con SQLite de test.
+
+Salida relevante:
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 2 test(s).
+Applying socios.0006_add_metodo_pago_column... django.db.utils.OperationalError: near "DO": syntax error
+
+Notas:
+- Los tests no llegaron a ejecutarse por la incompatibilidad de la migracion en SQLite.
+- Opciones: correr tests contra PostgreSQL (config TEST DB), o adaptar la migracion para que sea no-op en SQLite.
