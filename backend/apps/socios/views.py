@@ -506,10 +506,12 @@ class PrestamoSolicitudCreateView(APIView):
         # Notificar a analistas (simple)
         analistas_emails = list(
             Usuario.objects.filter(
-                Q(rol__nombre__iexact="ANALISTA") | Q(is_staff=True) | Q(is_superuser=True),
+                rol__nombre__iexact="ANALISTA",
                 activo=True,
                 email__isnull=False,
-            ).values_list("email", flat=True)
+            )
+            .values_list("email", flat=True)
+            .distinct()
         )
         if analistas_emails:
             asunto = "Nueva solicitud de prestamo"
