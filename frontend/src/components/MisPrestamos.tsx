@@ -20,6 +20,7 @@ type Prestamo = {
   total_pagado?: number | string | null;
   saldo_pendiente?: number | string | null;
   cuotas_restantes?: number | null;
+  pagos_registrados?: number | null;
   tiene_desembolso?: boolean;
   puede_pagar?: boolean;
 };
