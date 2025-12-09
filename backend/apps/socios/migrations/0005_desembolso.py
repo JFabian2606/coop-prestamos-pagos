@@ -11,7 +11,11 @@ def create_desembolso_table(apps, schema_editor):
     if 'desembolso' in schema_editor.connection.introspection.table_names():
         return
 
-    Desembolso = apps.get_model('socios', 'Desembolso')
+    try:
+        Desembolso = apps.get_model('socios', 'Desembolso')
+    except LookupError:
+        # Fallback to current model definition if it is not yet in the migration state
+        from apps.socios.models import Desembolso  # type: ignore
     schema_editor.create_model(Desembolso)
 
 

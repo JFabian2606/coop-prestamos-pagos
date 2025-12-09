@@ -2,6 +2,7 @@ import io
 import json
 import calendar
 import uuid
+import math
 from decimal import Decimal
 from datetime import datetime, date
 
@@ -9,7 +10,7 @@ from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db import connection, transaction
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Prefetch
 from django.db.models.functions import Lower, Trim
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
@@ -21,7 +22,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .audit import snapshot_socio, register_audit_entry
-from .models import Prestamo, Socio, SocioAuditLog, TipoPrestamo, PoliticaAprobacion, Desembolso
+from .models import Prestamo, Socio, SocioAuditLog, TipoPrestamo, PoliticaAprobacion, Desembolso, Pago
 from .serializers import (
     HistorialCrediticioSerializer,
     ProfileCreateSerializer,
@@ -501,6 +502,7 @@ class PrestamoSolicitudCreateView(APIView):
         except Exception as exc:
             return Response({'detail': f'No se pudo registrar la solicitud: {exc}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+        # Notificar a analistas (simple)
         return Response(
             {
                 "solicitud_id": str(solicitud_id),
@@ -517,6 +519,260 @@ class PrestamoSolicitudCreateView(APIView):
                 "monto": fmt_decimal(monto),
                 "plazo_meses": tipo.plazo_meses,
                 **plan,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class MisPrestamosSocioView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        tags=["Prestamos"],
+        summary="Mis prestamos (socio)",
+        description="Devuelve solicitudes y prestamos del socio autenticado incluyendo estado visible y posibilidad de pago cuando hay desembolso.",
+    )
+    def get(self, request):
+        socio = getattr(request.user, "socio", None)
+        if not socio:
+            return Response({"detail": "Perfil de socio no encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+        desembolso_prefetch, desembolso_meta = _desembolso_prefetch()
+        prefetches = ["pagos"]
+        if desembolso_prefetch:
+            prefetches.append(desembolso_prefetch)
+
+        solicitudes = {str(row.get("id")): row for row in _solicitudes_por_socio(socio.id, limit=100)}
+        prestamos_qs = (
+            Prestamo.objects.filter(socio=socio)
+            .select_related("tipo")
+            .prefetch_related(*prefetches)
+            .order_by("-fecha_desembolso", "-created_at")
+        )
+
+        resumen = {
+            "pendientes": 0,
+            "aprobados": 0,
+            "rechazados": 0,
+            "desembolsados": 0,
+            "pagados": 0,
+        }
+        resumen_map = {
+            "pendiente": "pendientes",
+            "aprobado": "aprobados",
+            "rechazado": "rechazados",
+            "desembolsado": "desembolsados",
+            "pagado": "pagados",
+        }
+
+        resultados = []
+        for prestamo in prestamos_qs:
+            solicitud = solicitudes.pop(str(prestamo.id), None)
+            pagos = list(prestamo.pagos.all())
+            desembolsos = list(prestamo.desembolsos.all()) if desembolso_meta["cols"] else []
+            plan_info = _plan_cliente_para_prestamo(prestamo, solicitud)
+            total_pagado = sum((p.monto for p in pagos), Decimal("0"))
+            saldo = prestamo.monto - total_pagado
+            if saldo < Decimal("0"):
+                saldo = Decimal("0")
+            cuota_dec = plan_info.get("cuota_decimal", Decimal("0"))
+            cuotas_restantes = 0
+            if cuota_dec > Decimal("0") and saldo > Decimal("0"):
+                cuotas_restantes = max(1, math.ceil(saldo / cuota_dec))
+
+            estado_visible = _estado_cliente_prestamo(prestamo, solicitud, bool(desembolsos))
+            resumen_key = resumen_map.get(estado_visible)
+            if resumen_key:
+                resumen[resumen_key] += 1
+
+            resultados.append(
+                {
+                    "id": str(prestamo.id),
+                    "solicitud_id": str(solicitud.get("id") or prestamo.id) if solicitud else str(prestamo.id),
+                    "estado": estado_visible,
+                    "monto": fmt_decimal(prestamo.monto),
+                    "cuota_mensual": plan_info.get("cuota_mensual"),
+                    "plazo_meses": plan_info.get("plazo_meses"),
+                    "tipo": {
+                        "id": str(prestamo.tipo.id) if prestamo.tipo else None,
+                        "nombre": prestamo.tipo.nombre if prestamo.tipo else None,
+                    },
+                    "descripcion": (solicitud or {}).get("descripcion") or prestamo.descripcion,
+                    "fecha_solicitud": (solicitud or {}).get("created_at"),
+                    "fecha_desembolso": prestamo.fecha_desembolso,
+                    "fecha_vencimiento": prestamo.fecha_vencimiento,
+                    "total_pagado": fmt_decimal(total_pagado),
+                    "saldo_pendiente": fmt_decimal(saldo),
+                    "pagos_registrados": len(pagos),
+                    "cuotas_restantes": cuotas_restantes,
+                    "tiene_desembolso": bool(desembolsos),
+                    "puede_pagar": bool(desembolsos) and saldo > Decimal("0"),
+                }
+            )
+
+        for solicitud in solicitudes.values():
+            estado_raw = (solicitud.get("estado") or "pendiente").strip().lower()
+            resumen_key = resumen_map.get(estado_raw)
+            if resumen_key:
+                resumen[resumen_key] += 1
+            try:
+                monto_dec = Decimal(str(solicitud.get("monto") or "0"))
+            except Exception:
+                monto_dec = Decimal("0")
+            plazo_raw = solicitud.get("plazo_meses")
+            try:
+                plazo = int(plazo_raw) if plazo_raw is not None else None
+            except (TypeError, ValueError):
+                plazo = None
+
+            resultados.append(
+                {
+                    "id": str(_fmt_uuid(solicitud.get("id"))),
+                    "solicitud_id": str(_fmt_uuid(solicitud.get("id"))),
+                    "estado": estado_raw or "pendiente",
+                    "monto": fmt_decimal(monto_dec),
+                    "cuota_mensual": None,
+                    "plazo_meses": plazo,
+                    "tipo": None,
+                    "descripcion": solicitud.get("descripcion") or "",
+                    "fecha_solicitud": solicitud.get("created_at"),
+                    "fecha_desembolso": None,
+                    "fecha_vencimiento": None,
+                    "total_pagado": "0.00",
+                    "saldo_pendiente": fmt_decimal(monto_dec),
+                    "pagos_registrados": 0,
+                    "cuotas_restantes": plazo or 0,
+                    "tiene_desembolso": False,
+                    "puede_pagar": False,
+                }
+            )
+
+        def _parse_fecha(valor):
+            tz = timezone.get_current_timezone()
+            if isinstance(valor, datetime):
+                return valor if timezone.is_aware(valor) else timezone.make_aware(valor, tz)
+            if isinstance(valor, date):
+                base = datetime.combine(valor, datetime.min.time())
+                return timezone.make_aware(base, tz)
+            if isinstance(valor, str):
+                try:
+                    parsed = datetime.fromisoformat(valor)
+                    return parsed if timezone.is_aware(parsed) else timezone.make_aware(parsed, tz)
+                except Exception:
+                    pass
+            fallback = datetime(1900, 1, 1)
+            return timezone.make_aware(fallback, timezone.utc)
+
+        resultados.sort(
+            key=lambda item: _parse_fecha(item.get("fecha_desembolso") or item.get("fecha_solicitud")),
+            reverse=True,
+        )
+
+        return Response({"prestamos": resultados, "resumen": resumen}, status=status.HTTP_200_OK)
+
+
+class PagoSimuladoView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        tags=["Prestamos"],
+        summary="Registrar pago simulado de cuotas",
+        description="Permite al socio pagar una o varias cuotas de un préstamo desembolsado (pasarela simulada).",
+    )
+    def post(self, request, prestamo_id: uuid.UUID):
+        socio = getattr(request.user, "socio", None)
+        if not socio:
+            return Response({"detail": "Perfil de socio no encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+        desembolso_prefetch, desembolso_meta = _desembolso_prefetch()
+        prefetches = ["pagos"]
+        if desembolso_prefetch:
+            prefetches.append(desembolso_prefetch)
+
+        prestamo = (
+            Prestamo.objects.filter(pk=prestamo_id, socio=socio)
+            .select_related("tipo")
+            .prefetch_related(*prefetches)
+            .first()
+        )
+        if not prestamo:
+            raise Http404("Prestamo no encontrado.")
+
+        desembolsos = list(prestamo.desembolsos.all()) if desembolso_meta["cols"] else []
+        if not desembolsos:
+            return Response({"detail": "El prestamo aun no esta desembolsado."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            cuotas = int((request.data or {}).get("cuotas") or 0)
+        except (TypeError, ValueError):
+            return Response({"cuotas": "Ingresa un numero de cuotas valido."}, status=status.HTTP_400_BAD_REQUEST)
+        if cuotas < 1:
+            return Response({"cuotas": "Debes elegir al menos 1 cuota."}, status=status.HTTP_400_BAD_REQUEST)
+
+        metodo = (request.data or {}).get("metodo") or (request.data or {}).get("metodo_pago") or "pasarela"
+        solicitud_rel = None
+        try:
+            solicitud_rel, _ = _fetch_solicitud_row(prestamo.id)
+        except Http404:
+            solicitudes = _solicitudes_por_socio(socio.id, limit=120)
+            solicitud_rel = next((s for s in solicitudes if str(s.get("id")) == str(prestamo.id)), None)
+
+        plan_info = _plan_cliente_para_prestamo(prestamo, solicitud_rel)
+        cuota_dec = plan_info.get("cuota_decimal", Decimal("0"))
+        if cuota_dec <= Decimal("0"):
+            plazo = plan_info.get("plazo_meses") or cuotas
+            try:
+                plazo_int = int(plazo) if plazo else cuotas
+            except (TypeError, ValueError):
+                plazo_int = cuotas
+            cuota_dec = (prestamo.monto / Decimal(plazo_int or 1)).quantize(Decimal("0.01"))
+
+        total_pagado_actual = sum((p.monto for p in prestamo.pagos.all()), Decimal("0"))
+        saldo = prestamo.monto - total_pagado_actual
+        if saldo <= Decimal("0"):
+            return Response({"detail": "El prestamo ya no tiene saldo pendiente."}, status=status.HTTP_400_BAD_REQUEST)
+
+        monto_pagar = (cuota_dec * Decimal(cuotas)).quantize(Decimal("0.01"))
+        if monto_pagar <= Decimal("0"):
+            monto_pagar = saldo
+        if monto_pagar > saldo:
+            monto_pagar = saldo
+
+        pago = Pago.objects.create(
+            prestamo=prestamo,
+            monto=monto_pagar,
+            fecha_pago=timezone.now().date(),
+            metodo=str(metodo)[:50],
+            referencia=f"SIM-{timezone.now():%Y%m%d%H%M%S}-{uuid.uuid4().hex[:6].upper()}",
+        )
+
+        total_pagado = sum((p.monto for p in prestamo.pagos.all()), Decimal("0"))
+        saldo_restante = prestamo.monto - total_pagado
+        if saldo_restante < Decimal("0"):
+            saldo_restante = Decimal("0")
+
+        if saldo_restante == Decimal("0"):
+            prestamo.estado = Prestamo.Estados.PAGADO
+            prestamo.save(update_fields=["estado", "updated_at"])
+            estado_visible = "pagado"
+        else:
+            estado_visible = _estado_cliente_prestamo(prestamo, solicitud_rel, bool(desembolsos))
+
+        return Response(
+            {
+                "pago": {
+                    "id": pago.id,
+                    "monto": fmt_decimal(pago.monto),
+                    "fecha_pago": pago.fecha_pago,
+                    "metodo": pago.metodo,
+                    "referencia": pago.referencia,
+                },
+                "prestamo": {
+                    "id": str(prestamo.id),
+                    "estado": estado_visible,
+                    "total_pagado": fmt_decimal(total_pagado),
+                    "saldo_pendiente": fmt_decimal(saldo_restante),
+                },
             },
             status=status.HTTP_201_CREATED,
         )
@@ -598,6 +854,98 @@ def _obs_column(columnas: set[str]) -> str | None:
     return None
 
 
+def _solicitudes_por_socio(socio_id: uuid.UUID, limit: int = 50) -> list[dict]:
+    """Devuelve las solicitudes registradas por el socio (si existe la tabla)."""
+    columnas = get_table_columns("solicitud")
+    if not columnas:
+        return []
+    posibles = [
+        "id",
+        "socio_id",
+        "monto",
+        "tasa_interes",
+        "plazo_meses",
+        "descripcion",
+        "estado",
+        "created_at",
+        "updated_at",
+        "producto_id",
+        "tipo_prestamo_id",
+    ]
+    seleccionadas = [c for c in posibles if c in columnas]
+    if "observaciones" in columnas:
+        seleccionadas.append("observaciones")
+    if not seleccionadas:
+        return []
+
+    table_name = "solicitud" if connection.vendor != "postgresql" else "public.solicitud"
+    socio_param = str(socio_id)
+    sql = f"""
+        SELECT {', '.join(seleccionadas)}
+        FROM {table_name}
+        WHERE socio_id = %s
+        ORDER BY created_at DESC
+        LIMIT %s
+    """
+    with connection.cursor() as cursor:
+        cursor.execute(sql, [socio_param, limit])
+        rows = cursor.fetchall()
+
+    data = []
+    for row in rows:
+        record = dict(zip(seleccionadas, row))
+        record["id"] = _fmt_uuid(record.get("id"))
+        record["socio_id"] = _fmt_uuid(record.get("socio_id"))
+        data.append(record)
+    return data
+
+
+def _estado_cliente_prestamo(prestamo: Prestamo, solicitud: dict | None, tiene_desembolso: bool) -> str:
+    estado_bruto = (prestamo.estado or (solicitud or {}).get("estado") or "").strip().lower()
+    if tiene_desembolso:
+        return "desembolsado"
+    if estado_bruto in {"pendiente", "rechazado"}:
+        return estado_bruto
+    if estado_bruto in {"aprobado", Prestamo.Estados.ACTIVO, "activo"}:
+        return "aprobado"
+    if estado_bruto == Prestamo.Estados.PAGADO:
+        return "pagado"
+    if estado_bruto == Prestamo.Estados.MOROSO:
+        return "moroso"
+    if estado_bruto == Prestamo.Estados.CANCELADO:
+        return "cancelado"
+    return estado_bruto or "pendiente"
+
+
+def _plan_cliente_para_prestamo(prestamo: Prestamo, solicitud: dict | None) -> dict:
+    """Calcula cuota mensual estimada para el prestamo con data de solicitud o tipo."""
+    plazo_raw = solicitud.get("plazo_meses") if solicitud else None
+    try:
+        plazo_meses = int(plazo_raw) if plazo_raw is not None else None
+    except (TypeError, ValueError):
+        plazo_meses = None
+    if not plazo_meses or plazo_meses <= 0:
+        plazo_meses = getattr(prestamo.tipo, "plazo_meses", None) or 12
+
+    tasa_raw = None
+    if solicitud:
+        tasa_raw = solicitud.get("tasa_interes") or solicitud.get("tasa_interes_anual")
+    if tasa_raw is None:
+        tasa_raw = prestamo.tasa_interes or getattr(prestamo.tipo, "tasa_interes_anual", Decimal("0"))
+    try:
+        tasa_decimal = Decimal(str(tasa_raw))
+    except Exception:
+        tasa_decimal = Decimal("0")
+
+    plan = calcular_tabla_amortizacion(prestamo.monto, tasa_decimal, plazo_meses)
+    cuota_decimal = Decimal(plan["cuota_mensual"])
+    return {
+        "plazo_meses": plazo_meses,
+        "cuota_mensual": plan["cuota_mensual"],
+        "cuota_decimal": cuota_decimal,
+    }
+
+
 def _crear_prestamo_desde_solicitud_row(solicitud_row: dict):
     """
     Genera un registro en prestamo usando los datos de la solicitud aprobada.
@@ -653,16 +1001,40 @@ def _crear_prestamo_desde_solicitud_row(solicitud_row: dict):
 
 def _desembolso_columnas() -> dict:
     cols = get_table_columns("desembolso")
+    fecha_col = None
+    if "created_at" in cols:
+        fecha_col = "created_at"
+    elif "updated_at" in cols:
+        fecha_col = "updated_at"
+    elif "fecha" in cols:
+        fecha_col = "fecha"
     return {
         "cols": cols,
         "metodo": "metodo_pago" if "metodo_pago" in cols else ("metodo" if "metodo" in cols else None),
-        "fecha": "created_at" if "created_at" in cols else ("fecha" if "fecha" in cols else None),
+        "fecha": fecha_col,
         "comentarios": "comentarios" if "comentarios" in cols else None,
         "socio": "socio_id" if "socio_id" in cols else None,
         "tesorero": "tesorero_id" if "tesorero_id" in cols else None,
         "updated": "updated_at" if "updated_at" in cols else None,
         "referencia": "referencia" if "referencia" in cols else None,
     }
+
+
+def _desembolso_prefetch() -> tuple[Prefetch | None, dict]:
+    meta = _desembolso_columnas()
+    if not meta["cols"]:
+        return None, meta
+    qs = Desembolso.objects.all()
+    if "created_at" not in meta["cols"]:
+        qs = qs.defer("created_at")
+    if not meta["comentarios"]:
+        qs = qs.defer("comentarios")
+    # Solo ordenamos si la columna existe como campo del modelo (created_at)
+    if meta["fecha"] == "created_at":
+        qs = qs.order_by("-created_at")
+    else:
+        qs = qs.order_by()  # elimina orden por defecto que pueda apuntar a columnas inexistentes
+    return Prefetch("desembolsos", queryset=qs), meta
 
 
 def _fmt_uuid(val):
@@ -1106,8 +1478,14 @@ class DesembolsoListCreateView(APIView):
         if prestamo.monto and monto_decimal > prestamo.monto:
             return Response({"monto": "El monto excede el valor del préstamo."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Si la tabla coincide con el esquema del modelo (metodo_pago/created_at), usamos ORM
-        if meta["metodo"] == "metodo_pago" and meta["fecha"] == "created_at":
+        # Si la tabla coincide con el esquema del modelo (metodo_pago/created_at y columnas clave), usamos ORM
+        can_use_orm = (
+            meta["metodo"] == "metodo_pago"
+            and meta["fecha"] == "created_at"
+            and meta["comentarios"] == "comentarios"
+            and meta["socio"] == "socio_id"
+        )
+        if can_use_orm:
             serializer = DesembolsoSerializer(data={
                 "prestamo_id": prestamo.id,
                 "monto": monto_decimal,
@@ -1117,6 +1495,11 @@ class DesembolsoListCreateView(APIView):
             })
             serializer.is_valid(raise_exception=True)
             desembolso = serializer.save()
+
+            if prestamo.estado not in {Prestamo.Estados.PAGADO, Prestamo.Estados.CANCELADO}:
+                prestamo.estado = "desembolsado"
+                prestamo.save(update_fields=["estado", "updated_at"])
+
             return Response(DesembolsoSerializer(desembolso).data, status=status.HTTP_201_CREATED)
 
         payload = {
@@ -1159,6 +1542,10 @@ class DesembolsoListCreateView(APIView):
                 f"INSERT INTO {table_name} ({columnas_sql}) VALUES ({placeholders})",
                 valores,
             )
+
+        if prestamo.estado not in {Prestamo.Estados.PAGADO, Prestamo.Estados.CANCELADO}:
+            prestamo.estado = "desembolsado"
+            prestamo.save(update_fields=["estado", "updated_at"])
 
         return Response(
             {

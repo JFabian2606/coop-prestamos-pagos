@@ -11,6 +11,7 @@ import SolicitudPrestamo from "./components/SolicitudPrestamo";
 import UsuariosRoles from "./components/UsuariosRoles";
 import TesoreroPanel from "./components/TesoreroPanel";
 import AnalistaPanel from "./components/AnalistaPanel";
+import MisPrestamos from "./components/MisPrestamos";
 import type { SocioDto } from "./components/SociosViewer";
 import logo from "./assets/solo-logo-cooprestamos-vector.svg";
 import avatarFallback from "./assets/solo-logo-cooprestamos-vector.svg";
@@ -43,7 +44,7 @@ function App() {
   const [usuario, setUsuario] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [vistaActiva, setVistaActiva] = useState<"home" | "socios" | "historial" | "tipos" | "configuracion" | "usuarios" | "landing">("home");
-  const [vistaSocio, setVistaSocio] = useState<"landing" | "solicitud">("landing");
+  const [vistaSocio, setVistaSocio] = useState<"landing" | "solicitud" | "prestamos">("landing");
   const [ultimosSocios, setUltimosSocios] = useState<SocioDto[]>([]);
   const [ultimosPrestamos, setUltimosPrestamos] = useState<any[]>([]);
   const [actividadReciente, setActividadReciente] = useState<any[]>([]);
@@ -131,10 +132,24 @@ function App() {
 
   // Si el usuario no es staff/admin ni analista, mostramos la landing pública para socios.
   if (!isAdmin && !isAnalista && !isTesorero) {
-    return vistaSocio === "solicitud" ? (
-      <SolicitudPrestamo usuario={usuario} onVolver={() => setVistaSocio("landing")} />
-    ) : (
-      <LandingHome onSolicitar={() => setVistaSocio("solicitud")} onLogout={handleLogout} />
+    if (vistaSocio === "solicitud") {
+      return <SolicitudPrestamo usuario={usuario} onVolver={() => setVistaSocio("landing")} />;
+    }
+    if (vistaSocio === "prestamos") {
+      return (
+        <MisPrestamos
+          usuario={usuario}
+          onSolicitar={() => setVistaSocio("solicitud")}
+          onVolver={() => setVistaSocio("landing")}
+        />
+      );
+    }
+    return (
+      <LandingHome
+        onSolicitar={() => setVistaSocio("solicitud")}
+        onMisPrestamos={() => setVistaSocio("prestamos")}
+        onLogout={handleLogout}
+      />
     );
   }
 

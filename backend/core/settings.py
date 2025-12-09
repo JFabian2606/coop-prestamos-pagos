@@ -241,3 +241,7 @@ SPECTACULAR_SETTINGS = {
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
 }
+
+# Notificaciones (Resend)
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
+NOTIFY_FROM = os.environ.get("NOTIFY_FROM", "onboarding@resend.dev")
