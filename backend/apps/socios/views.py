@@ -2228,17 +2228,18 @@ class ReportesAdminView(APIView):
                 )
 
             def estado_visible(prestamo):
+                base = (getattr(prestamo, "estado_norm", "") or prestamo.estado or "").strip().lower()
+                saldo = prestamo.saldo_pendiente if hasattr(prestamo, "saldo_pendiente") else Decimal("0")
+                if saldo <= 0 or base == "pagado":
+                    return "pagado"
+                if base == "cancelado":
+                    return "cancelado"
+                if base == "moroso":
+                    return "moroso"
                 if getattr(prestamo, "desembolsos_count", 0) > 0:
                     return "desembolsado"
-                base = (getattr(prestamo, "estado_norm", "") or prestamo.estado or "").strip().lower()
                 if base in {"aprobado", "activo"}:
                     return "aprobado"
-                if base in {"moroso"}:
-                    return "moroso"
-                if base in {"pagado"}:
-                    return "pagado"
-                if base in {"cancelado"}:
-                    return "cancelado"
                 return base or "desconocido"
 
             resumen_prestamos = {
