@@ -1,0 +1,297 @@
+.mis-shell {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.mis-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.4rem;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.mis-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.mis-brand img {
+  width: 44px;
+  height: 44px;
+}
+
+.mis-brand h1 {
+  margin: 0;
+  font-size: 20px;
+  color: var(--green-dark);
+}
+
+.mis-actions {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.mis-body {
+  width: min(1100px, calc(100% - 2rem));
+  margin: 1.2rem auto 2rem;
+}
+
+.mis-user {
+  margin: 0 0 0.5rem;
+  color: #4b5563;
+  font-size: 14px;
+}
+
+.resumen-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.resumen-card {
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid var(--border);
+}
+
+.resumen-card .resumen-label {
+  margin: 0;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.resumen-card .resumen-value {
+  margin: 0.25rem 0 0;
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.resumen-card.tone-success {
+  background: var(--green-light);
+  border-color: #c2e7df;
+}
+
+.resumen-card.tone-danger {
+  background: #fff1f2;
+  border-color: #fca5a5;
+}
+
+.resumen-card.tone-info {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+}
+
+.resumen-card.tone-muted {
+  background: #f8fafc;
+}
+
+.resumen-card.tone-ghost {
+  background: #f1f5f9;
+}
+
+.alert {
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  margin: 0.2rem 0 0.9rem;
+  border: 1px solid;
+}
+
+.alert.success {
+  background: #ecfdf3;
+  color: #166534;
+  border-color: #a3e635;
+}
+
+.alert.danger {
+  background: #fff1f2;
+  color: #b91c1c;
+  border-color: #fca5a5;
+}
+
+.mis-loader {
+  padding: 1rem;
+  text-align: center;
+  color: #6b7280;
+}
+
+.prestamos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.prestamo-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.04);
+}
+
+.prestamo-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.prestamo-head h3 {
+  margin: 0.15rem 0;
+  font-size: 22px;
+}
+
+.estado {
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: #eef2ff;
+  color: #312e81;
+}
+
+.estado.success {
+  background: #ecfdf3;
+  color: #166534;
+}
+
+.estado.info {
+  background: #eef2ff;
+  color: #1d4ed8;
+}
+
+.estado.danger {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.estado.warning {
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.estado.muted {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.estado.ghost {
+  background: #f8fafc;
+  color: #111827;
+}
+
+.prestamo-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.prestamo-meta dt {
+  margin: 0;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.prestamo-meta dd {
+  margin: 0.1rem 0 0;
+  font-weight: 700;
+}
+
+.prestamo-meta .accent {
+  color: var(--green-dark);
+}
+
+.prestamo-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.prestamo-footer .fechas {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.muted {
+  color: #6b7280;
+}
+
+.muted.small {
+  font-size: 12px;
+}
+
+.pago-panel {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  max-width: 320px;
+  width: calc(100% - 2rem);
+  z-index: 10;
+}
+
+.pago-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1rem;
+  box-shadow: 0 18px 30px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.pago-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pago-card label {
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.pago-card input,
+.pago-card select {
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .prestamo-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .mis-topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+
+  .mis-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
