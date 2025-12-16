@@ -1,0 +1,7 @@
+flowchart LR
+    U[Usuario] --> FE[Frontend React/Vite]
+    FE --> API[Django REST API]
+    API --> DB[(PostgreSQL / Supabase)]
+    API --> AUTH[Supabase Auth / JWT]
+    API --> STORAGE[(Archivos/Comprobantes)]
+    DEV[Render CI/CD] -. despliegue .-> API
