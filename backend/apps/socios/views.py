@@ -1001,6 +1001,8 @@ def _crear_prestamo_desde_solicitud_row(solicitud_row: dict):
 
 def _desembolso_columnas() -> dict:
     cols = get_table_columns("desembolso")
+    metodo_col = "metodo_pago" if "metodo_pago" in cols else ("metodo" if "metodo" in cols else None)
+    metodo_legacy = "metodo" if "metodo" in cols and "metodo_pago" in cols else None
     fecha_col = None
     if "created_at" in cols:
         fecha_col = "created_at"
@@ -1010,7 +1012,8 @@ def _desembolso_columnas() -> dict:
         fecha_col = "fecha"
     return {
         "cols": cols,
-        "metodo": "metodo_pago" if "metodo_pago" in cols else ("metodo" if "metodo" in cols else None),
+        "metodo": metodo_col,
+        "metodo_legacy": metodo_legacy,
         "fecha": fecha_col,
         "comentarios": "comentarios" if "comentarios" in cols else None,
         "socio": "socio_id" if "socio_id" in cols else None,
@@ -1458,6 +1461,7 @@ class DesembolsoListCreateView(APIView):
         if forbidden:
             return forbidden
         meta = _desembolso_columnas()
+        legacy_metodo = meta.get("metodo_legacy")
         prestamo_id = (request.data or {}).get("prestamo_id")
         monto = (request.data or {}).get("monto")
         metodo_pago = (request.data or {}).get("metodo_pago") or (request.data or {}).get("metodo")
@@ -1484,6 +1488,8 @@ class DesembolsoListCreateView(APIView):
             and meta["fecha"] == "created_at"
             and meta["comentarios"] == "comentarios"
             and meta["socio"] == "socio_id"
+            and not meta["tesorero"]
+            and not legacy_metodo
         )
         if can_use_orm:
             serializer = DesembolsoSerializer(data={
@@ -1509,6 +1515,8 @@ class DesembolsoListCreateView(APIView):
         }
         if meta["metodo"]:
             payload[meta["metodo"]] = metodo_pago
+        if legacy_metodo and legacy_metodo != meta["metodo"]:
+            payload[legacy_metodo] = metodo_pago
         if meta["referencia"]:
             payload[meta["referencia"]] = referencia
         if meta["comentarios"]:

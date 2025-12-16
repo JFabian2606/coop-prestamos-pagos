@@ -1,0 +1,7 @@
+erDiagram
+    USUARIO ||--o{ SOCIO : posee
+    ROL ||--o{ USUARIO : asigna
+    SOCIO ||--o{ PRESTAMO : solicita
+    TIPO_PRESTAMO ||--o{ PRESTAMO : define
+    PRESTAMO ||--o{ PAGO : registra
+    PRESTAMO ||--o{ DESEMBOLSO : liquida
