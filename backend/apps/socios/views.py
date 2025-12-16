@@ -1488,6 +1488,7 @@ class DesembolsoListCreateView(APIView):
             and meta["fecha"] == "created_at"
             and meta["comentarios"] == "comentarios"
             and meta["socio"] == "socio_id"
+            and not meta["tesorero"]
             and not legacy_metodo
         )
         if can_use_orm:
