@@ -1,4 +1,4 @@
-# COOP PRESTAMOS PAGOS
+# COOPRESTAMOS
 Plataforma para gestionar el ciclo completo de prestamos en una cooperativa: solicitudes, aprobacion, desembolsos, pagos y reportes.
 
 > Diagrama? Se pueden sumar diagramas de arquitectura (backend/frontend), ERD de base de datos o flujos de negocio (solicitud -> aprobacion -> desembolso -> pagos). Si quieres, los añadimos en `docs/` y los referenciamos aqui.
