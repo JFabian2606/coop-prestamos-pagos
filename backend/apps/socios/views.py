@@ -377,6 +377,29 @@ class TipoPrestamoPublicListView(APIView):
         return Response(TipoPrestamoSerializer(qs, many=True).data)
 
 
+class TipoPrestamoPublicDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        tags=["Prestamos"],
+        summary="Detalle público de tipo de préstamo",
+        description="Devuelve información y requisitos de un producto activo para socios autenticados.",
+        responses={200: TipoPrestamoSerializer, 404: OpenApiResponse(description="Tipo no encontrado")},
+    )
+    def get(self, request, tipo_id: uuid.UUID):
+        socio = getattr(request.user, "socio", None)
+        if not socio:
+            return Response({"detail": "Perfil de socio no encontrado."}, status=status.HTTP_404_NOT_FOUND)
+        if socio.estado != Socio.ESTADO_ACTIVO:
+            return Response({"detail": "El socio no se encuentra activo."}, status=status.HTTP_400_BAD_REQUEST)
+
+        tipo = get_object_or_404(TipoPrestamo, pk=tipo_id, activo=True)
+        data = TipoPrestamoSerializer(tipo).data
+        if not data.get("requisitos"):
+            data["mensaje"] = "No hay requisitos configurados para este producto por ahora."
+        return Response(data)
+
+
 class PrestamoSimulacionView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -522,6 +545,146 @@ class PrestamoSolicitudCreateView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+
+
+class SolicitudEstadoClienteView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        tags=["Prestamos"],
+        summary="Estado y resumen de mi solicitud",
+        description="Entrega estado visible de la solicitud y, si ya existe el préstamo, incluye pagos y desembolsos registrados.",
+    )
+    def get(self, request, solicitud_id: uuid.UUID):
+        socio = getattr(request.user, "socio", None)
+        if not socio:
+            return Response({"detail": "Perfil de socio no encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+        solicitud = None
+        columnas: set[str] = set()
+        try:
+            solicitud, columnas = _fetch_solicitud_row(solicitud_id)
+        except Http404:
+            solicitud = None
+
+        if solicitud:
+            socio_raw = str(_fmt_uuid(solicitud.get("socio_id"))) if solicitud.get("socio_id") else None
+            if socio_raw and socio_raw != str(socio.id):
+                return Response({"detail": "No autorizado para esta solicitud."}, status=status.HTTP_403_FORBIDDEN)
+
+        desembolso_prefetch, desembolso_meta = _desembolso_prefetch()
+        prefetches = ["pagos"]
+        if desembolso_prefetch:
+            prefetches.append(desembolso_prefetch)
+        prestamo = (
+            Prestamo.objects.filter(pk=solicitud_id, socio=socio)
+            .select_related("tipo")
+            .prefetch_related(*prefetches)
+            .first()
+        )
+
+        if not solicitud and not prestamo:
+            return Response(
+                {"detail": "No encontramos la solicitud para tu usuario."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        mensajes: list[str] = []
+        solicitud_info = None
+        if solicitud:
+            try:
+                monto = Decimal(str(solicitud.get("monto") or "0"))
+            except Exception:
+                monto = Decimal("0")
+            obs_col = _obs_column(columnas)
+            solicitud_info = {
+                "id": str(_fmt_uuid(solicitud.get("id"))) if solicitud.get("id") else str(solicitud_id),
+                "estado": (solicitud.get("estado") or "pendiente").strip().lower() or "pendiente",
+                "monto": fmt_decimal(monto),
+                "plazo_meses": solicitud.get("plazo_meses"),
+                "tasa_interes": solicitud.get("tasa_interes"),
+                "descripcion": solicitud.get("descripcion") or "",
+                "observaciones": solicitud.get(obs_col) if obs_col else _extraer_observaciones(solicitud),
+                "created_at": solicitud.get("created_at"),
+                "updated_at": solicitud.get("updated_at"),
+            }
+
+        pagos_data = []
+        desembolsos_data = []
+        prestamo_info = None
+        if prestamo:
+            solicitud_rel = solicitud
+            desembolsos = list(prestamo.desembolsos.all()) if desembolso_meta["cols"] else []
+            total_pagado = sum((p.monto for p in prestamo.pagos.all()), Decimal("0"))
+            saldo = prestamo.monto - total_pagado
+            if saldo < Decimal("0"):
+                saldo = Decimal("0")
+            plan_info = _plan_cliente_para_prestamo(prestamo, solicitud_rel)
+            cuota_dec = plan_info.get("cuota_decimal", Decimal("0"))
+            cuotas_pendientes = 0
+            if cuota_dec > Decimal("0") and saldo > Decimal("0"):
+                cuotas_pendientes = max(1, math.ceil(saldo / cuota_dec))
+            for pago in prestamo.pagos.all():
+                pagos_data.append(
+                    {
+                        "id": pago.id,
+                        "monto": fmt_decimal(pago.monto),
+                        "fecha_pago": pago.fecha_pago,
+                        "metodo": pago.metodo,
+                        "referencia": pago.referencia,
+                    }
+                )
+            for des in desembolsos:
+                desembolsos_data.append(
+                    {
+                        "id": str(des.id),
+                        "monto": fmt_decimal(des.monto),
+                        "metodo_pago": getattr(des, "metodo_pago", None),
+                        "referencia": getattr(des, "referencia", None),
+                        "comentarios": getattr(des, "comentarios", None),
+                        "created_at": getattr(des, "created_at", None),
+                    }
+                )
+
+            estado_visible = _estado_cliente_prestamo(prestamo, solicitud_rel, bool(desembolsos))
+            prestamo_info = {
+                "id": str(prestamo.id),
+                "estado": estado_visible,
+                "monto": fmt_decimal(prestamo.monto),
+                "saldo_pendiente": fmt_decimal(saldo),
+                "total_pagado": fmt_decimal(total_pagado),
+                "cuota_mensual": plan_info.get("cuota_mensual"),
+                "plazo_meses": plan_info.get("plazo_meses"),
+                "cuotas_pendientes": cuotas_pendientes,
+                "fecha_desembolso": prestamo.fecha_desembolso,
+                "fecha_vencimiento": prestamo.fecha_vencimiento,
+                "tipo": {
+                    "id": str(prestamo.tipo.id) if prestamo.tipo else None,
+                    "nombre": prestamo.tipo.nombre if prestamo.tipo else None,
+                },
+                "tiene_desembolso": bool(desembolsos),
+                "puede_pagar": bool(desembolsos) and saldo > Decimal("0"),
+            }
+            if not pagos_data:
+                mensajes.append("Aún no registras pagos para este préstamo.")
+        else:
+            estado_visible = (solicitud_info.get("estado") if solicitud_info else "") or "pendiente"
+            mensajes.append("Tu solicitud sigue en revisión; aún no hay préstamo desembolsado.")
+
+        if not solicitud_info:
+            mensajes.append("No hay detalles de solicitud almacenados; si ya enviaste una, intenta de nuevo más tarde.")
+
+        response = {
+            "solicitud_id": str(solicitud_id),
+            "estado": estado_visible,
+            "solicitud": solicitud_info,
+            "prestamo": prestamo_info,
+            "pagos": pagos_data,
+            "desembolsos": desembolsos_data,
+        }
+        if mensajes:
+            response["mensajes"] = mensajes
+        return Response(response, status=status.HTTP_200_OK)
 
 
 class MisPrestamosSocioView(APIView):
