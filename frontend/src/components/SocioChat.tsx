@@ -26,7 +26,7 @@ export default function SocioChat({ webhookUrl, socioId, socioEmail, rol, mode =
       webhookUrl,
       target: `#${targetId}`,
       mode,
-      defaultLanguage: "es",
+      defaultLanguage: "en", // n8n chat solo acepta 'en' en los tipos actuales
       metadata: { socioId, socioEmail, rol },
       initialMessages: ["Hola, soy el asistente virtual de Cooprestamos. ¿En qué te ayudo hoy?"],
       loadPreviousSession: true,
