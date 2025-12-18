@@ -66,8 +66,8 @@
 
 .form-grid{
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px 12px;
+    grid-template-columns: repeat(2, minmax(240px, 1fr));
+    gap: 12px 14px;
     width: 100%;
     margin-top: 6px;
 }
@@ -98,12 +98,11 @@
 .auth-page .container form{
     background-color: #fff;
     display: flex;
-    align-items: flex-start;
-    justify-content: flex-start;
+    align-items: center;
+    justify-content: center;
     flex-direction: column;
-    padding: 32px 48px 48px;
+    padding: 0 48px;
     height: 100%;
-    gap: 10px;
 }
 
 /* Logo en la parte superior de los formularios */
