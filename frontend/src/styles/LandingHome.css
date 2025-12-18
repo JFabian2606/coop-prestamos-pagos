@@ -580,6 +580,19 @@
   color: #0f766e;
 }
 
+/* Estilos del chat n8n embebido */
+#cooprestamos-chat {
+  --chat--color--primary: #2a857f;
+  --chat--color--primary-shade-50: #25746f;
+  --chat--color--primary--shade-100: #1f645f;
+  --chat--color--secondary: #2a857f;
+  --chat--toggle--background: #2a857f;
+  --chat--toggle--hover--background: #25746f;
+  --chat--toggle--active--background: #1f645f;
+  --chat--header--background: #2a857f;
+  --chat--header--color: #f8fafc;
+}
+
 @media (max-width: 768px) {
   .landing__navbar {
     padding: 0 1rem;

@@ -28,9 +28,21 @@ export default function SocioChat({ webhookUrl, socioId, socioEmail, rol, mode =
       mode,
       defaultLanguage: "en", // n8n chat solo acepta 'en' en los tipos actuales
       metadata: { socioId, socioEmail, rol },
-      initialMessages: ["Hola, soy el asistente virtual de Cooprestamos. ¿En qué te ayudo hoy?"],
+      initialMessages: [
+        "¡Hola! ✌️\nSoy el asistente virtual de COOPRESTAMOS, estoy aquí para brindarte una guía por el sitio web. Puedo ayudarte en cosas como decirte dónde solicitar tus préstamos, hasta una simulación rápida de uno. Estoy aquí para aclarar tus dudas, que no se te olvide. 😊",
+      ],
       loadPreviousSession: true,
       showWelcomeScreen: false,
+      i18n: {
+        en: {
+          title: "¡Hola! ✌️",
+          subtitle:
+            "Soy el asistente virtual de COOPRESTAMOS. Pregúntame dónde solicitar tus préstamos o haz una simulación rápida.",
+          footer: "",
+          getStarted: "Nueva conversación",
+          inputPlaceholder: "Escribe tu pregunta...",
+        },
+      },
     });
 
     return () => {
