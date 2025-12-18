@@ -9,7 +9,8 @@
     flex-direction: column;
     min-height: 100vh;
     width: 100vw;
-    padding: 0;
+    padding: 16px 0 24px;
+    overflow-y: auto;
 }
 
 .auth-page *{
@@ -24,10 +25,11 @@
     border-radius: 30px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.35);
     position: relative;
-    overflow: hidden;
+    overflow: auto;
     width: 900px;
     max-width: 100%;
     min-height: 560px;
+    max-height: calc(100vh - 48px);
 }
 
 .auth-page .container p{
@@ -78,6 +80,7 @@
     .auth-page .container{
         width: 95%;
         min-height: 600px;
+        max-height: none;
     }
     .auth-page .container form{
         padding: 0 32px;
@@ -297,5 +300,3 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
-
-
