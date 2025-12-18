@@ -41,6 +41,7 @@ export default function SocioChat({ webhookUrl, socioId, socioEmail, rol, mode =
           footer: "",
           getStarted: "Nueva conversación",
           inputPlaceholder: "Escribe tu pregunta...",
+          closeButtonTooltip: "Cerrar chat",
         },
       },
     });
