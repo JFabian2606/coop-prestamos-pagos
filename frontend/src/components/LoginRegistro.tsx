@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import "../styles/autenticacion.css";
 import logo from "../assets/logo-cooprestamos-vector.svg";
@@ -8,6 +8,7 @@ type ModoVista = "iniciar" | "registrar";
 
 export default function LoginRegistro() {
   const [modoVista, setModoVista] = useState<ModoVista>("iniciar");
+  const contenedorRef = useRef<HTMLDivElement | null>(null);
 
   const [correo, setCorreo] = useState("");
   const [contrasena, setContrasena] = useState("");
@@ -20,6 +21,12 @@ export default function LoginRegistro() {
     () => `container ${modoVista === "registrar" ? "active" : ""}`,
     [modoVista]
   );
+
+  useEffect(() => {
+    if (contenedorRef.current) {
+      contenedorRef.current.scrollTo({ top: 0, behavior: "auto" });
+    }
+  }, [modoVista]);
 
   const manejarEnvioInicioSesion = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -60,7 +67,7 @@ export default function LoginRegistro() {
 
   return (
     <div className="auth-page">
-      <div className={contenedorClase} id="contenedorAutenticacion">
+      <div className={contenedorClase} id="contenedorAutenticacion" ref={contenedorRef}>
         {/* Panel de Registro */}
         <div className="form-container sign-up">
           <form onSubmit={manejarEnvioRegistro} aria-label="Formulario de registro">

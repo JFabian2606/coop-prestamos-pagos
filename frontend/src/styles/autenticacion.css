@@ -9,7 +9,8 @@
     flex-direction: column;
     min-height: 100vh;
     width: 100vw;
-    padding: 0;
+    padding: 16px 0 24px;
+    overflow-y: auto;
 }
 
 .auth-page *{
@@ -62,15 +63,15 @@
     cursor: pointer;
 }
 
-.form-grid{
+.auth-page .form-grid{
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 16px;
     width: 100%;
     margin-top: 6px;
 }
 
-.form-grid input{
+.auth-page .form-grid input{
     margin: 0;
 }
 
@@ -78,11 +79,12 @@
     .auth-page .container{
         width: 95%;
         min-height: 600px;
+        max-height: none;
     }
     .auth-page .container form{
         padding: 0 32px;
     }
-    .form-grid{
+    .auth-page .form-grid{
         grid-template-columns: 1fr;
     }
 }
@@ -297,5 +299,3 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
-
-

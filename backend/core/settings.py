@@ -66,6 +66,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'core.middleware.ApiKeyAuthMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -226,7 +227,8 @@ AUTH_USER_MODEL = 'usuarios.Usuario'
 # DRF configuration
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework.authentication.SessionAuthentication',  # Autenticación propia
+        'core.auth.ApiKeyAuthentication',  # Para n8n / integraciones
+        'rest_framework.authentication.SessionAuthentication',  # Autenticaci?n propia
         # 'apps.socios.auth.SupabaseAuthentication',  # Deshabilitado - usando auth propia
     ),
     'DEFAULT_PERMISSION_CLASSES': (

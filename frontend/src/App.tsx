@@ -147,6 +147,7 @@ function App() {
     }
     return (
       <LandingHome
+        usuario={usuario}
         onSolicitar={() => setVistaSocio("solicitud")}
         onMisPrestamos={() => setVistaSocio("prestamos")}
         onLogout={handleLogout}
@@ -542,7 +543,7 @@ function App() {
           <UsuariosRoles />
         </main>
       ) : vistaActiva === "landing" ? (
-        <LandingHome />
+        <LandingHome usuario={usuario} />
       ) : (
         <main className="admin-container">
           <div className="page-header">

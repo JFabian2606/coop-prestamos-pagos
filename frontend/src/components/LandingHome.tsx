@@ -1,12 +1,16 @@
 import "../styles/LandingHome.css";
+import SocioChat from "./SocioChat";
 
 type LandingHomeProps = {
+  usuario?: any;
   onSolicitar?: () => void;
   onLogout?: () => void;
   onMisPrestamos?: () => void;
 };
 
-export default function LandingHome({ onSolicitar, onLogout, onMisPrestamos }: LandingHomeProps) {
+export default function LandingHome({ usuario, onSolicitar, onLogout, onMisPrestamos }: LandingHomeProps) {
+  const chatWebhook = import.meta.env.VITE_N8N_CHAT_WEBHOOK as string | undefined;
+
   return (
     <div className="landing">
       <header className="landing__navbar">
@@ -214,6 +218,15 @@ export default function LandingHome({ onSolicitar, onLogout, onMisPrestamos }: L
               <p className="testimonio__role">Profesional independiente</p>
             </article>
           </div>
+        </section>
+
+        <section className="landing-section" id="chat-socios" aria-label="Chat para socios">
+          <SocioChat
+            webhookUrl={chatWebhook}
+            socioId={usuario?.id}
+            socioEmail={usuario?.email}
+            rol={usuario?.rol}
+          />
         </section>
       </main>
 
